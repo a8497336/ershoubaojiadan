@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数码回收网报价单 - 高级圆形中心按钮</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: #333;
+            padding-bottom: 85px;
+        }
+        
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background-color: #fff;
+        }
+        
+        /* 状态栏和标题栏 */
+        .status-bar {
+            height: 20px;
+            background-color: #000;
+        }
+        
+        .header {
+            height: 44px;
+            background-color: #e64340;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .content {
+            padding: 20px 15px 30px;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .page-desc {
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .demo-card {
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* 底部导航栏 - 高级圆形设计 */
+        .tab-bar-advanced {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 85px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+        
+        .tab-item-advanced {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+        
+        .tab-item-advanced.active {
+            color: #e64340;
+        }
+        
+        .tab-icon-advanced {
+            font-size: 22px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .tab-text-advanced {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* 普通标签选中状态指示器 */
+        .tab-indicator-advanced {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 4px;
+            background-color: #e64340;
+            border-radius: 0 0 2px 2px;
+            opacity: 0;
+        }
+        
+        .tab-item-advanced.active:not(.center-tab) .tab-indicator-advanced {
+            opacity: 1;
+        }
+        
+        /* 高级圆形中心突出按钮 - 扫码报价 */
+        .tab-item-advanced.center-tab {
+            margin-top: -30px;
+        }
+        
+        /* 中心按钮容器 */
+        .center-button-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 5px;
+        }
+        
+        /* 外圈光晕 */
+        .center-button-outer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(230, 67, 64, 0.15) 0%, transparent 70%);
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        /* 中心按钮主体 */
+        .center-button-main {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e64340, #ff4757);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 10px 25px rgba(230, 67, 64, 0.4),
+                0 5px 10px rgba(230, 67, 64, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        /* 内部高光 */
+        .center-button-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent);
+            border-radius: 50% 50% 0 0;
+        }
+        
+        /* 中心按钮图标 */
+        .center-button-icon {
+            font-size: 24px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 选中状态 */
+        .center-tab.active .center-button-main {
+            transform: translateY(-8px) scale(1.1);
+            box-shadow: 
+                0 15px 35px rgba(230, 67, 64, 0.5),
+                0 8px 20px rgba(230, 67, 64, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 脉冲动画 */
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        
+        /* 中心按钮文字 */
+        .center-tab .tab-text-advanced {
+            margin-top: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #e64340;
+            position: relative;
+        }
+        
+        /* 中心按钮文字装饰线 */
+        .center-tab .tab-text-advanced::before {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(to right, #e64340, #ff4757);
+            border-radius: 1px;
+            transition: width 0.3s ease;
+        }
+        
+        .center-tab.active .tab-text-advanced::before {
+            width: 100%;
+        }
+        
+        /* 徽章样式 */
+        .tab-badge-advanced {
+            position: absolute;
+            top: 8px;
+            right: 50%;
+            transform: translateX(20px);
+            background: linear-gradient(135deg, #e64340, #ff4757);
+            color: white;
+            font-size: 10px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #fff;
+            font-weight: 600;
+            box-shadow: 0 3px 6px rgba(230, 67, 64, 0.3);
+            z-index: 10;
+        }
+        
+        .tab-badge-advanced.dot {
+            min-width: 10px;
+            width: 10px;
+            height: 10px;
+            padding: 0;
+        }
+        
+        /* 中心按钮的新功能徽章 */
+        .center-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+            color: white;
+            font-size: 9px;
+            padding: 2px 5px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 2px solid #fff;
+            z-index: 20;
+            box-shadow: 0 2px 5px rgba(255, 107, 107, 0.4);
+        }
+        
+        /* 功能内容展示 */
+        .function-demo {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .function-demo h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .function-demo p {
+            line-height: 1.6;
+            color: #666;
+        }
+        
+        /* 高级感设计展示 */
+        .advanced-design-showcase {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .showcase-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .showcase-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .showcase-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #e64340, #ff4757);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 5px 15px rgba(230, 67, 64, 0.3);
+        }
+        
+        .showcase-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .showcase-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 设计原理展示 */
+        .design-principles {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+            border-radius: 12px;
+        }
+        
+        .design-principles h3 {
+            color: #e64340;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .principles-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .principle-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .principle-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #e64340, #ff4757);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        
+        .principle-text {
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-bar"></div>
+        <div class="header">数码回收网报价单</div>
+        
+        <div class="content">
+            <h1 class="page-title">底部固定栏 - 高级圆形中心按钮</h1>
+            <p class="page-desc">完美圆形设计 + 多层视觉层次 | 高度85px | 红色渐变主题</p>
+            
+            <div class="demo-card">
+                <h2>高级圆形设计说明</h2>
+                <p>此方案采用完美的圆形中心按钮设计，结合多层视觉元素、动态效果和高级交互反馈，创造出现代、精致的高级感体验。</p>
+                
+                <div class="advanced-design-showcase">
+                    <div class="showcase-item">
+                        <div class="showcase-icon">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <div class="showcase-title">完美圆形</div>
+                        <div class="showcase-desc">60px完美圆形按钮，符合黄金比例</div>
+                    </div>
+                    <div class="showcase-item">
+                        <div class="showcase-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="showcase-title">三层结构</div>
+                        <div class="showcase-desc">外圈光晕+主体按钮+内部高光</div>
+                    </div>
+                    <div class="showcase-item">
+                        <div class="showcase-icon">
+                            <i class="fas fa-wave-square"></i>
+                        </div>
+                        <div class="showcase-title">脉冲动画</div>
+                        <div class="showcase-desc">外圈光晕有呼吸式脉冲效果</div>
+                    </div>
+                    <div class="showcase-item">
+                        <div class="showcase-icon">
+                            <i class="fas fa-bezier-curve"></i>
+                        </div>
+                        <div class="showcase-title">流畅动画</div>
+                        <div class="showcase-desc">cubic-bezier缓动函数，顺滑交互</div>
+                    </div>
+                </div>
+                
+                <div class="design-principles">
+                    <h3>高级感设计原理</h3>
+                    <div class="principles-list">
+                        <div class="principle-item">
+                            <div class="principle-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="principle-text">使用完美的几何圆形，而非椭圆或圆角矩形</div>
+                        </div>
+                        <div class="principle-item">
+                            <div class="principle-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="principle-text">多层阴影叠加创造深度感和立体感</div>
+                        </div>
+                        <div class="principle-item">
+                            <div class="principle-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="principle-text">渐变色彩与高光反射模拟真实材质</div>
+                        </div>
+                        <div class="principle-item">
+                            <div class="principle-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="principle-text">微妙的动态效果增强交互反馈</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="function-demo" id="tabContent">
+                <h3>首页</h3>
+                <p>这里是数码回收网报价单小程序首页，展示最新报价、热门活动和公告信息。</p>
+                <p style="margin-top: 10px; color: #e64340; font-weight: 500;">点击下方导航栏切换功能演示</p>
+            </div>
+        </div>
+        
+        <!-- 底部导航栏 - 高级圆形设计 -->
+        <div class="tab-bar-advanced" id="tabBarAdvanced">
+            <div class="tab-item-advanced active" data-tab="home">
+                <div class="tab-indicator-advanced"></div>
+                <div class="tab-icon-advanced">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="tab-text-advanced">首页</div>
+            </div>
+            
+            <div class="tab-item-advanced" data-tab="priceList">
+                <div class="tab-indicator-advanced"></div>
+                <div class="tab-icon-advanced">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="tab-text-advanced">报价单</div>
+            </div>
+            
+            <div class="tab-item-advanced center-tab active" data-tab="scanPrice">
+                <div class="center-button-container">
+                    <div class="center-button-outer"></div>
+                    <div class="center-button-main">
+                        <div class="center-button-highlight"></div>
+                        <div class="center-button-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                    </div>
+                    <div class="center-badge">NEW</div>
+                </div>
+                <div class="tab-text-advanced">扫码报价</div>
+            </div>
+            
+            <div class="tab-item-advanced" data-tab="cart">
+                <div class="tab-indicator-advanced"></div>
+                <div class="tab-icon-advanced">
+                    <i class="fas fa-shopping-cart"></i>
+                    <div class="tab-badge-advanced">3</div>
+                </div>
+                <div class="tab-text-advanced">购物车</div>
+            </div>
+            
+            <div class="tab-item-advanced" data-tab="mine">
+                <div class="tab-indicator-advanced"></div>
+                <div class="tab-icon-advanced">
+                    <i class="fas fa-user"></i>
+                    <div class="tab-badge-advanced dot"></div>
+                </div>
+                <div class="tab-text-advanced">我的</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 底部导航切换功能
+        document.querySelectorAll('.tab-item-advanced').forEach(item => {
+            item.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // 移除所有active类
+                document.querySelectorAll('.tab-item-advanced').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // 给当前点击的项添加active类
+                this.classList.add('active');
+                
+                // 更新内容区域
+                const contentDiv = document.getElementById('tabContent');
+                
+                const contentMap = {
+                    'home': {
+                        title: '首页',
+                        desc: '这里是数码回收网报价单小程序首页，展示最新报价、热门活动和公告信息。您可以在这里查看各类数码产品的回收价格趋势。'
+                    },
+                    'priceList': {
+                        title: '报价单',
+                        desc: '查看完整的数码产品回收报价单，支持按品牌、型号、配置筛选。报价每日更新，确保您获得最准确的价格参考。'
+                    },
+                    'scanPrice': {
+                        title: '扫码报价',
+                        desc: '通过扫描设备二维码或条码，快速获取设备估价。这是最快捷的估价方式，支持主流品牌手机、平板、电脑等设备。'
+                    },
+                    'cart': {
+                        title: '购物车',
+                        desc: '您有3个待回收商品在购物车中。可以编辑商品信息、选择回收方式并提交回收订单。'
+                    },
+                    'mine': {
+                        title: '我的',
+                        desc: '个人中心，管理我的订单、回收记录、钱包余额、优惠券和账户设置。'
+                    }
+                };
+                
+                if (contentMap[tabName]) {
+                    contentDiv.innerHTML = `
+                        <h3>${contentMap[tabName].title}</h3>
+                        <p>${contentMap[tabName].desc}</p>
+                        <p style="margin-top: 10px; color: #e64340; font-weight: 500;">当前选中的是：${this.querySelector('.tab-text-advanced').textContent}</p>
+                    `;
+                }
+            });
+        });
+        
+        // 为高级圆形中心按钮添加悬停效果
+        const centerButton = document.querySelector('.center-button-main');
+        const centerOuter = document.querySelector('.center-button-outer');
+        
+        centerButton.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px) scale(1.08)';
+            centerOuter.style.animation = 'pulse 0.8s infinite ease-in-out';
+        });
+        
+        centerButton.addEventListener('mouseleave', function() {
+            if (!document.querySelector('.center-tab').classList.contains('active')) {
+                this.style.transform = '';
+                centerOuter.style.animation = 'pulse 2s infinite ease-in-out';
+            }
+        });
+        
+        // 点击中心按钮时的效果
+        centerButton.addEventListener('mousedown', function() {
+            this.style.transform = 'translateY(-8px) scale(0.95)';
+        });
+        
+        centerButton.addEventListener('mouseup', function() {
+            this.style.transform = 'translateY(-8px) scale(1.1)';
+        });
+    </script>
+</body>
+</html>

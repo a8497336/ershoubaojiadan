@@ -1,0 +1,29 @@
+<view class="skeleton {{animate ? 'animate' : ''}}">
+  <block wx:if="{{type === 'list'}}">
+    <view class="skeleton-item" wx:for="{{rowCount}}" wx:key="index">
+      <view class="skeleton-avatar" wx:if="{{showAvatar}}"></view>
+      <view class="skeleton-content">
+        <view class="skeleton-line" style="width: {{60 + Math.random() * 40}}%"></view>
+        <view class="skeleton-line short" wx:if="{{multipleLines}}"></view>
+      </view>
+    </view>
+  </block>
+  <block wx:if="{{type === 'card'}}">
+    <view class="skeleton-card" wx:for="{{rowCount}}" wx:key="index">
+      <view class="skeleton-image"></view>
+      <view class="skeleton-card-content">
+        <view class="skeleton-line"></view>
+        <view class="skeleton-line short"></view>
+      </view>
+    </view>
+  </block>
+  <block wx:if="{{type === 'detail'}}">
+    <view class="skeleton-detail">
+      <view class="skeleton-image large"></view>
+      <view class="skeleton-line title"></view>
+      <view class="skeleton-line"></view>
+      <view class="skeleton-line"></view>
+      <view class="skeleton-line short"></view>
+    </view>
+  </block>
+</view>

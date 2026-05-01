@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "价格趋势",
+  "usingComponents": {
+    "empty-state": "../../components/common/empty-state/empty-state",
+    "loading-skeleton": "../../components/common/loading-skeleton/loading-skeleton"
+  }
+}

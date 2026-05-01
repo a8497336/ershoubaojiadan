@@ -1,0 +1,387 @@
+@import '/styles/design-tokens.wxss';
+
+.order-detail-page {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding-bottom: 160rpx;
+}
+
+/* 状态卡片 */
+.status-card {
+  background: var(--color-background-white);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.status-icon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.status-desc {
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+/* 区块卡片 */
+.section-card {
+  background: var(--color-background-white);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.section-action {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+}
+
+/* 物流信息 */
+.logistics-info {
+  margin-bottom: var(--space-3);
+}
+
+.logistics-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+}
+
+.logistics-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.logistics-value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.logistics-value.status {
+  color: var(--color-primary);
+}
+
+/* 物流时间轴 */
+.timeline-section {
+  border-top: 1rpx solid var(--color-border-light);
+  padding-top: var(--space-3);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.timeline-toggle {
+  color: var(--color-primary);
+}
+
+.timeline {
+  margin-top: var(--space-3);
+  padding-left: var(--space-2);
+}
+
+.timeline-item {
+  display: flex;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  position: relative;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 11rpx;
+  top: 24rpx;
+  bottom: 0;
+  width: 2rpx;
+  background: var(--color-border);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-dot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  border: 4rpx solid var(--color-background-white);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.timeline-item.active .timeline-dot {
+  background: var(--color-primary);
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.timeline-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.timeline-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* 商品清单 */
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.product-condition {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  background: var(--color-background-gray);
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-sm);
+}
+
+.product-price {
+  text-align: right;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.product-quantity {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  display: block;
+  margin-top: 4rpx;
+}
+
+/* 订单汇总 */
+.order-summary {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1rpx solid var(--color-border-light);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.summary-row.total {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1rpx solid var(--color-border-light);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.total-price {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+}
+
+/* 订单信息 */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.info-value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-background-white);
+  padding: var(--space-3);
+  display: flex;
+  gap: var(--space-3);
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+.bottom-actions .btn {
+  flex: 1;
+}
+
+/* 加载状态 */
+.loading-container {
+  padding: var(--space-3);
+}
+
+.skeleton-detail {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.skeleton-line {
+  height: 32rpx;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-line.title {
+  width: 60%;
+  height: 40rpx;
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+/* 订单流程时间轴 */
+.process-timeline {
+  position: relative;
+  padding-left: var(--space-2);
+}
+
+.process-timeline-item {
+  display: flex;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  position: relative;
+}
+
+.process-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 11rpx;
+  top: 28rpx;
+  bottom: 0;
+  width: 2rpx;
+  background: var(--color-border-light);
+}
+
+.process-timeline-item:last-child::before {
+  display: none;
+}
+
+.process-timeline-item.completed::before {
+  background: var(--color-primary);
+}
+
+.process-dot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  border: 4rpx solid var(--color-background-white);
+  flex-shrink: 0;
+  z-index: 1;
+  position: relative;
+}
+
+.process-timeline-item.active .process-dot,
+.process-timeline-item.completed .process-dot {
+  background: var(--color-primary);
+}
+
+.process-content {
+  flex: 1;
+  padding-top: 2rpx;
+}
+
+.process-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.process-timeline-item.active .process-title,
+.process-timeline-item.completed .process-title {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.process-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.process-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  display: block;
+}
+
+.process-timeline-item.active .process-time,
+.process-timeline-item.completed .process-time {
+  color: var(--color-text-secondary);
+}

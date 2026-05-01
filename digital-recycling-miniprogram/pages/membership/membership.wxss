@@ -1,0 +1,346 @@
+@import '/styles/design-tokens.wxss';
+
+.membership {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  padding-bottom: 160rpx;
+}
+
+.main-content {
+  padding-bottom: 80rpx;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-light) 240rpx, var(--color-background) 400rpx);
+}
+
+.user-card {
+  margin: 24rpx 32rpx;
+  background: linear-gradient(135deg, #f5e6c8 0%, #e6c88a 100%);
+  border-radius: 32rpx;
+  padding: 40rpx 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.user-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.user-avatar image {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.user-detail {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #8B4513;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.wechat-icon {
+  width: 32rpx;
+  height: 32rpx;
+  background: #07C160;
+  border-radius: 6rpx;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20rpx;
+}
+
+.user-status {
+  font-size: 26rpx;
+  color: #B8860B;
+  margin-top: 8rpx;
+}
+
+.income-bar {
+  margin-top: 28rpx;
+  background: rgba(255,255,255,0.6);
+  border-radius: 40rpx;
+  padding: 16rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 26rpx;
+  color: #8B4513;
+}
+
+.income-icon {
+  width: 40rpx;
+  height: 40rpx;
+  background: var(--color-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+}
+
+.income-num {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 30rpx;
+}
+
+.privilege-section {
+  margin: 40rpx 32rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 32rpx;
+}
+
+.privilege-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32rpx;
+}
+
+.privilege-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.privilege-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  background: linear-gradient(135deg, #ffe4b5 0%, var(--color-accent) 100%);
+  box-shadow: 0 4rpx 16rpx rgba(255,215,0,0.3);
+}
+
+.privilege-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.plan-section {
+  margin: 48rpx 32rpx 32rpx;
+}
+
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.plan-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.plan-card.active {
+  background: linear-gradient(135deg, #fff8e7 0%, #fff0d4 100%);
+  border-color: #e6a23c;
+  box-shadow: 0 8rpx 24rpx rgba(230,162,60,0.15);
+}
+
+.plan-card:not(.active) {
+  border: 1rpx solid var(--color-border);
+}
+
+.plan-info {
+  flex: 1;
+}
+
+.plan-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.plan-original {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+}
+
+.plan-price-box {
+  text-align: right;
+}
+
+.plan-price {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.plan-card.active .plan-price {
+  color: #e6a23c;
+}
+
+.plan-price-symbol {
+  font-size: 32rpx;
+  margin-right: 4rpx;
+}
+
+.plan-count {
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  margin-top: 12rpx;
+}
+
+.rules-section {
+  margin: 40rpx 32rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+}
+
+.rules-header {
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  margin-bottom: 24rpx;
+}
+
+.rules-subtitle {
+  font-size: 26rpx;
+  color: var(--color-text-tertiary);
+  margin-bottom: 24rpx;
+}
+
+.rule-item {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  padding: 8rpx 0;
+}
+
+.rule-item .highlight {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.contact-num {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20rpx 32rpx 48rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.05);
+  z-index: 1000;
+}
+
+.btn-text {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  padding: 20rpx 16rpx;
+}
+
+.btn-gold {
+  flex: 1;
+  background: linear-gradient(135deg, #f5e6c8 0%, #e6c88a 100%);
+  color: #8B4513;
+  border: none;
+  border-radius: 48rpx;
+  padding: 28rpx 0;
+  font-size: 32rpx;
+  font-weight: 700;
+  box-shadow: 0 8rpx 24rpx rgba(230,162,60,0.3);
+}
+
+.btn-gold:active {
+  transform: scale(0.98);
+}
+
+.float-service {
+  position: fixed;
+  right: 0;
+  bottom: 240rpx;
+  background: rgba(0,0,0,0.75);
+  border-radius: 16rpx 0 0 16rpx;
+  padding: 16rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  z-index: 999;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 8rpx;
+}
+
+.service-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.check-mark {
+  position: absolute;
+  top: -2rpx;
+  right: -2rpx;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 48rpx 48rpx 0;
+  border-color: transparent #e6a23c transparent transparent;
+  border-top-right-radius: 20rpx;
+}
+
+.check-mark::after {
+  content: '✓';
+  position: absolute;
+  top: 4rpx;
+  right: -40rpx;
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: bold;
+}

@@ -1,0 +1,115 @@
+<view class="price-trend-page">
+  <!-- 头部信息 -->
+  <view class="header-card" wx:if="{{trendData}}">
+    <view class="product-info">
+      <text class="product-brand">{{trendData.product && trendData.product.Brand ? trendData.product.Brand.name : ''}}</text>
+      <text class="product-model">{{trendData.product ? trendData.product.model : model}}</text>
+    </view>
+
+    <view class="price-summary">
+      <view class="summary-item">
+        <text class="summary-label">当前最高</text>
+        <text class="summary-value price-high">¥{{trendData.summary ? trendData.summary.maxPrice : 0}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">当前最低</text>
+        <text class="summary-value">¥{{trendData.summary ? trendData.summary.minPrice : 0}}</text>
+      </view>
+      <view class="summary-item change">
+        <text class="summary-label">较昨日</text>
+        <text class="summary-value {{trendData.summary && trendData.summary.priceChange >= 0 ? 'up' : 'down'}}">
+          {{trendData.summary && trendData.summary.priceChange >= 0 ? '+' : ''}}{{trendData.summary ? trendData.summary.priceChange : 0}}
+          ({{trendData.summary ? trendData.summary.priceChangePercent : 0}}%)
+        </text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 时间选择 -->
+  <view class="time-selector">
+    <view class="time-item {{days === 7 ? 'active' : ''}}" bindtap="selectDays" data-days="7">7天</view>
+    <view class="time-item {{days === 15 ? 'active' : ''}}" bindtap="selectDays" data-days="15">15天</view>
+    <view class="time-item {{days === 30 ? 'active' : ''}}" bindtap="selectDays" data-days="30">30天</view>
+  </view>
+
+  <!-- 趋势图区域 -->
+  <view class="chart-section" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
+    <view class="chart-title">价格趋势</view>
+    
+    <!-- 简单的折线图实现 -->
+    <view class="simple-chart">
+      <view class="chart-y-axis">
+        <text class="y-label" wx:for="{{yLabels}}" wx:key="index">{{item}}</text>
+      </view>
+      <view class="chart-content">
+        <view class="chart-grid">
+          <view class="grid-line" wx:for="{{5}}" wx:key="index"></view>
+        </view>
+        <view class="chart-lines">
+          <view class="chart-line" wx:for="{{trendData.trendData}}" wx:key="code" wx:if="{{item.data && item.data.length > 0}}">
+            <view class="line-label" style="color: {{lineColors[index % lineColors.length]}}">{{item.name}}</view>
+            <view class="line-path" style="border-color: {{lineColors[index % lineColors.length]}}">
+              <view class="line-point" wx:for="{{item.data}}" wx:for-item="point" wx:key="date" 
+                style="left: {{calculateX(point.date)}}%; top: {{calculateY(point.price)}}%; background: {{lineColors[index % lineColors.length]}}">
+                <view class="point-tooltip">
+                  <text class="tooltip-date">{{point.date}}</text>
+                  <text class="tooltip-price">¥{{point.price}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="chart-x-axis">
+          <text class="x-label" wx:for="{{xLabels}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 条件选择 -->
+  <view class="condition-selector" wx:if="{{trendData && trendData.currentPrices && trendData.currentPrices.length > 0}}">
+    <view class="selector-title">查看特定成色价格</view>
+    <scroll-view class="condition-scroll" scroll-x>
+      <view class="condition-item {{selectedCondition === null ? 'active' : ''}}" bindtap="selectCondition" data-condition="{{null}}">
+        全部
+      </view>
+      <view class="condition-item {{selectedCondition === item.id ? 'active' : ''}}" 
+        wx:for="{{trendData.currentPrices}}" 
+        wx:key="id"
+        bindtap="selectCondition" 
+        data-condition="{{item.id}}">
+        {{item.Condition ? item.Condition.name : '未命名'}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 详细价格列表 -->
+  <view class="price-list-section" wx:if="{{trendData && trendData.currentPrices && trendData.currentPrices.length > 0}}">
+    <view class="section-title">当前详细价格</view>
+    <view class="price-list">
+      <view class="price-item" wx:for="{{filteredPrices}}" wx:key="id">
+        <view class="price-info">
+          <text class="condition-name">{{item.Condition ? item.Condition.name : '未命名'}}</text>
+          <text class="condition-code">{{item.Condition ? item.Condition.code : ''}}</text>
+        </view>
+        <view class="price-value">{{item.price > 0 ? '¥' + item.price : '询价'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons" wx:if="{{trendData}}">
+    <button class="btn btn-outline" bindtap="addToStock">加入压货</button>
+    <button class="btn btn-primary" bindtap="goToOrder">立即回收</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <loading-skeleton></loading-skeleton>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{isLoading === false && !trendData}}">
+    <empty-state title="暂无价格数据" desc="该机型暂无价格历史数据"></empty-state>
+  </view>
+</view>

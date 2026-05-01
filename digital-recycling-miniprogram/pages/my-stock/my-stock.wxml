@@ -1,0 +1,103 @@
+<view class="my-stock-page">
+  <!-- 头部统计 -->
+  <view class="header-card">
+    <view class="stat-item">
+      <text class="stat-value">{{stockList.length}}</text>
+      <text class="stat-label">压货机型</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-value">{{totalQuantity}}</text>
+      <text class="stat-label">总数量</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-value">{{hasRise > 0 ? '+' : ''}}{{hasRise}}</text>
+      <text class="stat-label">上涨机型</text>
+    </view>
+  </view>
+
+  <!-- 操作栏 -->
+  <view class="action-bar">
+    <view class="sort-btn" bindtap="showSortMenu">
+      <text>排序：{{sortLabel}}</text>
+      <text class="sort-icon">↓</text>
+    </view>
+    <view class="filter-btn" bindtap="showFilterMenu">
+      <text>筛选</text>
+      <text class="filter-icon">⊞</text>
+    </view>
+  </view>
+
+  <!-- 压货列表 -->
+  <view class="stock-list">
+    <view class="stock-item" wx:for="{{sortedList}}" wx:key="id">
+      <view class="stock-header">
+        <view class="stock-info">
+          <text class="stock-brand">{{item.brandName}}</text>
+          <text class="stock-model">{{item.modelName}}</text>
+        </view>
+        <view class="stock-change {{item.priceChange >= 0 ? 'up' : 'down'}}">
+          {{item.priceChange >= 0 ? '+' : ''}}{{item.priceChange || 0}}
+        </view>
+      </view>
+
+      <view class="stock-details">
+        <view class="detail-item">
+          <text class="detail-label">数量</text>
+          <text class="detail-value">{{item.quantity || 0}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">购入价</text>
+          <text class="detail-value">¥{{item.purchasePrice || 0}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-label">当前价</text>
+          <text class="detail-value price-high">¥{{item.currentPrice || 0}}</text>
+        </view>
+      </view>
+
+      <view class="stock-actions">
+        <view class="stock-action secondary" bindtap="viewTrend" data-id="{{item.id}}">
+          查看趋势
+        </view>
+        <view class="stock-action primary" bindtap="sellStock" data-id="{{item.id}}">
+          卖出
+        </view>
+        <view class="stock-action delete" bindtap="removeStock" data-id="{{item.id}}">
+          删除
+        </view>
+      </view>
+
+      <view class="stock-note" wx:if="{{item.note}}">
+        {{item.note}}
+      </view>
+
+      <view class="stock-time">
+        {{item.createdAt || ''}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-container" wx:if="{{isLoading === false && stockList.length === 0}}">
+    <empty-state 
+      title="暂无压货" 
+      desc="快去添加你的压货机型吧，价格变动及时掌握"
+    ></empty-state>
+    <button class="add-stock-btn" bindtap="goAddStock">
+      添加压货
+    </button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{isLoading === true}}">
+    <loading-skeleton></loading-skeleton>
+  </view>
+
+  <!-- 浮动添加按钮 -->
+  <view class="float-add" wx:if="{{stockList.length > 0}}" bindtap="goAddStock">
+    <text class="add-icon">+</text>
+    <text>添加压货</text>
+  </view>
+</view>

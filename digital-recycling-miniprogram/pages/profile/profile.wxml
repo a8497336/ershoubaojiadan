@@ -1,0 +1,255 @@
+<view class="profile-page">
+  <!-- 顶部红色背景区 -->
+  <view class="header-bg">
+    <!-- 用户信息 -->
+    <view class="user-info">
+      <view class="avatar-wrap" bindtap="changeAvatar">
+        <view class="avatar">
+          <image src="{{userInfo.avatar}}" mode="aspectFit"/>
+        </view>
+        <view class="change-avatar">更换头像</view>
+      </view>
+      <view class="user-detail">
+        <view class="user-id">
+          用户编号：{{userInfo.userId}}
+          <view class="user-actions">
+            <image class="action-icon" src="/images/icons/edit.svg" mode="aspectFit" bindtap="editProfile"/>
+            <image class="action-icon" src="/images/icons/settings.svg" mode="aspectFit" bindtap="goToSettings"/>
+          </view>
+        </view>
+        <view class="user-phone">{{userInfo.phone}}</view>
+        <view class="user-points">
+          <text class="points-icon">💎</text>
+          <text>积分: {{userInfo.points}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 回收统计卡片 -->
+    <view class="stats-card">
+      <view class="stat-item" bindtap="goToOrderList">
+        <text class="stat-num">{{stats.totalRecycled}}</text>
+        <text class="stat-label">回收台数</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-num">¥{{stats.totalAmount}}</text>
+        <text class="stat-label">累计收益</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-num">{{stats.co2Saved}}kg</text>
+        <text class="stat-label">减碳排放</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-num">{{stats.treeEquivalent}}</text>
+        <text class="stat-label">相当于种树</text>
+      </view>
+    </view>
+
+    <!-- VIP卡片 -->
+    <view class="vip-card" bindtap="goToMembership">
+      <view class="vip-left">
+        <view class="vip-icon">👑</view>
+        <view class="vip-text">
+          <text class="vip-title">报价VIP</text>
+          <text class="vip-desc">开通VIP会员，享更多专属特权！</text>
+        </view>
+      </view>
+      <button class="vip-btn">立即开通 ></button>
+    </view>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="quick-entry">
+    <view class="entry-item" bindtap="goToWallet">
+      <view class="entry-icon orange">
+        <image src="/images/icons/wallet.svg" mode="aspectFit"/>
+      </view>
+      <text class="entry-text">我的钱包</text>
+    </view>
+    <view class="entry-item" bindtap="goToOrderList">
+      <view class="entry-icon blue">
+        <image src="/images/icons/recycle.svg" mode="aspectFit"/>
+        <view wx:if="{{badgeCounts.announcement > 0}}" class="badge">{{badgeCounts.announcement}}</view>
+      </view>
+      <text class="entry-text">我的订单</text>
+    </view>
+    <view class="entry-item" bindtap="goToMessageCenter">
+      <view class="entry-icon red">
+        <image src="/images/icons/message.svg" mode="aspectFit"/>
+        <view wx:if="{{badgeCounts.message > 0}}" class="badge">{{badgeCounts.message}}</view>
+      </view>
+      <text class="entry-text">消息中心</text>
+    </view>
+    <view class="entry-item" bindtap="handleEntryClick" data-type="announcement">
+      <view class="entry-icon yellow">
+        <image src="/images/icons/announcement.svg" mode="aspectFit"/>
+      </view>
+      <text class="entry-text">公告中心</text>
+    </view>
+  </view>
+
+  <!-- 积分活动 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">积分活动</text>
+    </view>
+    <view class="grid-4">
+      <view class="grid-item" bindtap="handlePointsActivity" data-type="my-points">
+        <view class="grid-icon">
+          <image src="/images/icons/points.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">我的积分</text>
+      </view>
+      <view class="grid-item" bindtap="handlePointsActivity" data-type="lottery">
+        <view class="grid-icon">
+          <image src="/images/icons/lottery.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">积分抽奖</text>
+      </view>
+      <view class="grid-item" bindtap="handlePointsActivity" data-type="points-mall">
+        <view class="grid-icon">
+          <image src="/images/icons/mall.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">积分商城</text>
+      </view>
+      <view class="grid-item" bindtap="handlePointsActivity" data-type="invite-friends">
+        <view class="grid-icon">
+          <image src="/images/icons/invite.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">邀请好友</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 常用功能 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">常用功能</text>
+    </view>
+    <view class="common-grid">
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="recycling-process">
+        <view class="grid-icon">
+          <image src="/images/icons/recycle.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">回收流程</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="purchase">
+        <view class="grid-icon">
+          <image src="/images/icons/purchase.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">我要采购</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="mailing-address">
+        <view class="grid-icon">
+          <image src="/images/icons/address.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">邮寄地址</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="feedback">
+        <view class="grid-icon">
+          <image src="/images/icons/feedback.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">问题反馈</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="faq">
+        <view class="grid-icon">
+          <image src="/images/icons/faq.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">常见问题</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="feedback-result">
+        <view class="grid-icon">
+          <image src="/images/icons/result.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">反馈结果</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="business-cooperation">
+        <view class="grid-icon">
+          <image src="/images/icons/cooperation.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">商务合作</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="complaint">
+        <view class="grid-icon">
+          <image src="/images/icons/complaint.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">投诉建议</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="ad-recording">
+        <view class="grid-icon">
+          <image src="/images/icons/mic.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">广告录音</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="market-trend">
+        <view class="grid-icon">
+          <image src="/images/icons/trend.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">行情走势</text>
+      </view>
+      <view class="grid-item" bindtap="handleCommonFeature" data-feature="recycling-video">
+        <view class="grid-icon">
+          <image src="/images/icons/video.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">回收教学视频</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 会员功能 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">会员功能</text>
+    </view>
+    <view class="grid-4">
+      <view class="grid-item" bindtap="handleVipFeature" data-feature="saved-quotes">
+        <view class="grid-icon">
+          <image src="/images/icons/star.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">收藏报价单</text>
+      </view>
+      <view class="grid-item" bindtap="handleVipFeature" data-feature="quote-changes">
+        <view class="grid-icon">
+          <image src="/images/icons/chart.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">报价变动</text>
+      </view>
+      <view class="grid-item" bindtap="handleVipFeature" data-feature="photo-check">
+        <view class="grid-icon">
+          <image src="/images/icons/camera.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">拍照查价</text>
+      </view>
+      <view class="grid-item" bindtap="handleVipFeature" data-feature="sms-notify">
+        <view class="grid-icon">
+          <image src="/images/icons/sms.svg" mode="aspectFit"/>
+        </view>
+        <text class="grid-text">报价短信通知</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部联系栏 -->
+  <view class="contact-bar">
+    <view class="contact-item" bindtap="copyWechat">
+      <image src="/images/icons/wechat.svg" mode="aspectFit"/>
+      <text>添加微信</text>
+    </view>
+    <view class="contact-item" bindtap="makePhoneCall" data-phone="15361862828">
+      <image src="/images/icons/phone.svg" mode="aspectFit"/>
+      <text>客服电话</text>
+    </view>
+    <view class="contact-item" bindtap="goToStoreList">
+      <image src="/images/icons/store.svg" mode="aspectFit"/>
+      <text>门店列表</text>
+    </view>
+  </view>
+
+  <view class="bottom-safe"></view>
+
+  <!-- 自定义TabBar -->
+  <custom-tabbar activeTab="profile" />
+</view>

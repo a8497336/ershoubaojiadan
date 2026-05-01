@@ -1,0 +1,54 @@
+@import '/styles/design-tokens.wxss';
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+}
+
+.empty-state.small {
+  padding: 60rpx 40rpx;
+}
+
+.empty-state.large {
+  padding: 200rpx 40rpx;
+}
+
+.empty-image {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 40rpx;
+}
+
+.empty-state.small .empty-image {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-state.large .empty-image {
+  width: 280rpx;
+  height: 280rpx;
+  margin-bottom: 48rpx;
+}
+
+.empty-title {
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: 16rpx;
+}
+
+.empty-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  line-height: var(--line-height-normal);
+}
+
+.empty-btn {
+  margin-top: 40rpx;
+  min-width: 240rpx;
+}

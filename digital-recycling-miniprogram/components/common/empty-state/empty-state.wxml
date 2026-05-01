@@ -1,0 +1,7 @@
+<view class="empty-state {{size}} {{type}}">
+  <image class="empty-image" src="{{imageUrl || defaultImage}}" mode="aspectFit"/>
+  <text class="empty-title">{{title}}</text>
+  <text wx:if="{{desc}}" class="empty-desc">{{desc}}</text>
+  <button wx:if="{{showBtn}}" class="btn-primary empty-btn" bindtap="onBtnTap">{{btnText}}</button>
+  <slot name="action"></slot>
+</view>

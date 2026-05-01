@@ -1,0 +1,86 @@
+<view class="price-quote-page">
+  <view class="header-section">
+    <view class="header-meta">
+      <text>浏览量：{{viewCount}}</text>
+      <text>更新时间：{{updateTime}}</text>
+    </view>
+    <view class="header-title">{{brand ? brand + '回收报价' : (category ? category + '回收报价' : '今日回收报价')}}</view>
+    <view class="header-info">
+      <text>收货地址：广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B</text>
+      <text>收件人：陈约</text>
+      <text>收款电话：15361862828（微信同号同步）</text>
+    </view>
+    <view class="header-rules">
+      <text class="rules-title">回收标准释义：</text>
+      <text>开机进系统/屏好/屏坏/不开机/废板 等机况定义说明...</text>
+      <text>具体以实际检测为准，价格仅供参考</text>
+    </view>
+  </view>
+
+  <view class="quick-actions">
+    <view class="action-item" bindtap="goToStock">
+      <text class="action-icon">📦</text>
+      <text class="action-text">我的压货</text>
+    </view>
+  </view>
+
+  <block wx:if="{{!isEmpty}}">
+    <view class="scroll-hint">← 左右滑动查看完整报价，点击机型查看价格趋势 →</view>
+    <scroll-view class="table-container" scroll-x>
+      <view class="price-table">
+        <view class="table-header">
+          <view class="th col-index">序号</view>
+          <view class="th col-series">折叠系列</view>
+          <view class="th col-model">网络型号</view>
+          <view class="th col-price">开机屏好</view>
+          <view class="th col-price">开机大屏好</view>
+          <view class="th col-price">开机小屏好</view>
+          <view class="th col-price">开机屏坏</view>
+          <view class="th col-price">不开机</view>
+          <view class="th col-price">废板整机</view>
+          <view class="th col-price">开机屏好外屏碎</view>
+          <view class="th col-price">开机坏未拆标</view>
+        </view>
+        <view class="table-body">
+          <block wx:for="{{seriesList}}" wx:for-item="series" wx:key="index">
+            <block wx:for="{{series.items}}" wx:for-item="item" wx:key="index">
+              <view class="tr {{index === 0 && series.index > 1 ? 'series-divider' : ''}}" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
+                <block wx:if="{{index === 0}}">
+                  <view class="td index-cell" style="height: {{series.items.length * 80}}rpx;">{{series.index}}</view>
+                  <view class="td series-cell" style="height: {{series.items.length * 80}}rpx;">{{series.name}}</view>
+                </block>
+                <view class="td model-cell">
+                  {{item.model}}
+                  <text class="trend-hint">📈</text>
+                </view>
+                <view class="td {{item.price1Class}}">{{item.price1}}</view>
+                <view class="td {{item.price2Class}}">{{item.price2}}</view>
+                <view class="td {{item.price3Class}}">{{item.price3}}</view>
+                <view class="td {{item.price4Class}}">{{item.price4}}</view>
+                <view class="td {{item.price5Class}}">{{item.price5}}</view>
+                <view class="td {{item.price6Class}}">{{item.price6}}</view>
+                <view class="td {{item.price7Class}}">{{item.price7}}</view>
+                <view class="td {{item.price8Class}}">{{item.price8}}</view>
+              </view>
+            </block>
+          </block>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+
+  <!-- 空状态 -->
+  <empty-state wx:else title="暂无报价数据" desc="该品牌暂无报价信息" />
+
+  <view class="footer-note">
+    <text class="note-title">备注说明：</text>
+    <text>1. 以上报价为当日回收参考价，实际价格以到货检测为准</text>
+    <text>2. 绿色价格为高价回收，蓝色为中价，紫色为低价</text>
+    <text>3. "/" 表示该机型此状态暂不回收或无报价</text>
+    <text>4. 废板整机指主板损坏无法开机的完整机器</text>
+    <text>5. 价格随市场行情波动，请以实际交易为准</text>
+  </view>
+
+  <!-- 自定义TabBar -->
+  <custom-tabbar activeTab="priceList" />
+</view>

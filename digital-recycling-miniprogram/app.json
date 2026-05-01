@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/brand-list/brand-list",
+    "pages/price-quote/price-quote",
+    "pages/price-trend/price-trend",
+    "pages/my-stock/my-stock",
+    "pages/membership/membership",
+    "pages/profile/profile",
+    "pages/shopping/shopping",
+    "pages/scan-price/scan-price",
+    "pages/order-list/order-list",
+    "pages/order-detail/order-detail",
+    "pages/message-center/message-center"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ff2d4a",
+    "navigationBarTitleText": "数码回收网",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "custom": true,
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/brand-list/brand-list", "text": "产品列表" },
+      { "pagePath": "pages/scan-price/scan-price", "text": "扫码报价" },
+      { "pagePath": "pages/shopping/shopping", "text": "回收车" },
+      { "pagePath": "pages/profile/profile", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

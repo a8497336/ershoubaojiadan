@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回收车</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+            background-color: #f5f5f5;
+            padding-bottom: 120px;
+        }
+
+        /* 顶部导航 */
+        .page-header {
+            background: #ffffff;
+            text-align: center;
+            padding: 18px 0;
+            font-size: 20px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            background: #fff;
+        }
+
+        /* 顶部统计栏 */
+        .top-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            background: #fff;
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+        .clear-all {
+            color: #ff3344;
+            font-weight: 500;
+        }
+
+        /* 商品分类标题 */
+        .category-title-wrap {
+            background: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .cat-tag {
+            background: #f3f3f3;
+            padding: 12px 20px;
+            font-size: 18px;
+            color: #999;
+            margin: 0 0 8px 0;
+        }
+
+        /* 商品条目 */
+        .product-item {
+            background: #fff;
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .checkbox-round {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #ff3344;
+            flex-shrink: 0;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+        }
+        .product-info {
+            flex: 1;
+        }
+        .product-name {
+            font-size: 19px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .product-price {
+            font-size: 17px;
+            color: #666;
+        }
+        .price-red {
+            color: #ff2222;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* 数量加减控件 */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .qty-btn {
+            width: 42px;
+            height: 42px;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .qty-minus {
+            background: #f5f5f5;
+            color: #333;
+            border-radius: 4px;
+        }
+        .qty-plus {
+            background: #ff3344;
+            color: #fff;
+            border-radius: 4px;
+        }
+        .qty-num {
+            font-size: 19px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* 删除图标 */
+        .delete-icon {
+            font-size: 26px;
+            color: #999;
+        }
+
+        /* 底部提示 */
+        .tip-text {
+            padding: 16px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        /* 底部固定结算栏 */
+        .bottom-settle-bar {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            gap: 12px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+        }
+        .settle-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ff3344;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        .total-text {
+            flex: 1;
+            font-size: 19px;
+        }
+        .total-price {
+            color: #ff4400;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .btn-add-more {
+            padding: 12px 26px;
+            border-radius: 30px;
+            border: none;
+            background: #ff9933;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 500;
+        }
+        .btn-submit {
+            padding: 12px 26px;
+            border-radius: 30px;
+            border: none;
+            background: #ff2b40;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eee;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #999;
+        }
+        .nav-item.active {
+            color: #000;
+        }
+        .nav-icon {
+            font-size: 26px;
+            margin-bottom: 4px;
+        }
+        .badge {
+            position: absolute;
+            background: #ff3344;
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            top: -4px;
+            right: -8px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 顶部标题 -->
+<div class="page-header">回收车</div>
+
+<!-- 顶部统计 -->
+<div class="top-stat">
+    <span>当前已添加1件商品，合计1台，已选1台</span>
+    <span class="clear-all">清空回收车</span>
+</div>
+
+<!-- 商品分类 -->
+<div class="category-title-wrap">
+    <span>二手手机</span>
+    <span>清空</span>
+</div>
+<div class="cat-tag">热门老年机</div>
+
+<!-- 商品列表 -->
+<div class="product-item">
+    <div class="checkbox-round">✓</div>
+    <div class="product-info">
+        <div class="product-name">功能机（老年机）有电池</div>
+        <div class="product-price">价格 <br>回收价：<span class="price-red">¥11</span></div>
+    </div>
+    <div class="delete-icon">🗑</div>
+</div>
+
+<div class="product-item">
+    <div class="qty-control">
+        <button class="qty-btn qty-minus">−</button>
+        <span class="qty-num">1</span>
+        <button class="qty-btn qty-plus">+</button>
+    </div>
+</div>
+
+<!-- 提示文字 -->
+<div class="tip-text">提示：左滑可删除产品</div>
+
+<!-- 底部结算栏 -->
+<div class="bottom-settle-bar">
+    <div class="settle-checkbox">✓</div>
+    <span>全选</span>
+    <div class="total-text">合计:<span class="total-price">¥11.00</span></div>
+    <button class="btn-add-more">继续添加</button>
+    <button class="btn-submit">提交订单</button>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+    <div class="nav-item">
+        <div class="nav-icon">🏠</div>
+        <span>首页</span>
+    </div>
+    <div class="nav-item">
+        <div class="nav-icon">🗑</div>
+        <span>去下单</span>
+    </div>
+    <div class="nav-item active">
+        <div class="nav-icon">🛒</div>
+        <span>回收车</span>
+    </div>
+    <div class="nav-item" style="position:relative">
+        <div class="nav-icon">👤</div>
+        <span>我的</span>
+        <span class="badge">47</span>
+    </div>
+</div>
+
+<script>
+    // 简单加减数量交互逻辑
+    let quantity = 1;
+    const numEl = document.querySelector('.qty-num');
+    const minusBtn = document.querySelector('.qty-minus');
+    const plusBtn = document.querySelector('.qty-plus');
+
+    minusBtn.addEventListener('click', () => {
+        if(quantity > 1) {
+            quantity--;
+            numEl.innerText = quantity;
+        }
+    })
+
+    plusBtn.addEventListener('click', () => {
+        quantity++;
+        numEl.innerText = quantity;
+    })
+</script>
+
+</body>
+</html>

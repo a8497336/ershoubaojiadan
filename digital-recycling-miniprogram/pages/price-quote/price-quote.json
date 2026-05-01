@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "数码回收网",
+  "navigationBarBackgroundColor": "#c0392b",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f5f5f5",
+  "usingComponents": {
+    "custom-tabbar": "/components/custom-tabbar/custom-tabbar",
+    "empty-state": "/components/common/empty-state/empty-state"
+  }
+}

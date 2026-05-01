@@ -1,0 +1,346 @@
+@import '/styles/design-tokens.wxss';
+
+.profile-page {
+  background: var(--color-background);
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+/* 顶部红色背景区 */
+.header-bg {
+  background: var(--color-primary-gradient);
+  padding: 20rpx 30rpx 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 用户信息区 */
+.user-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 24rpx;
+  position: relative;
+  z-index: 2;
+}
+
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2rpx solid rgba(255,255,255,0.3);
+}
+
+.avatar image {
+  width: 70rpx;
+  height: 70rpx;
+}
+
+.change-avatar {
+  position: absolute;
+  bottom: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: var(--color-primary);
+  font-size: 20rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  white-space: nowrap;
+  box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.user-detail {
+  flex: 1;
+  color: #fff;
+}
+
+.user-id {
+  font-size: 30rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.user-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.action-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.user-phone {
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-bottom: 8rpx;
+}
+
+.user-points {
+  font-size: 26rpx;
+  color: #ffeaa7;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.points-icon {
+  font-size: 24rpx;
+}
+
+/* 回收统计卡片 */
+.stats-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  color: #fff;
+}
+
+.stat-num {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 4rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  opacity: 0.9;
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 60rpx;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* VIP卡片 */
+.vip-card {
+  background: linear-gradient(90deg, #2d3436 0%, #636e72 100%);
+  border-radius: 24rpx;
+  padding: 24rpx 30rpx;
+  margin-top: 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.vip-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.vip-icon {
+  font-size: 48rpx;
+}
+
+.vip-title {
+  color: var(--color-accent);
+  font-size: 32rpx;
+  font-style: italic;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.vip-desc {
+  color: #ddd;
+  font-size: 22rpx;
+  display: block;
+}
+
+.vip-btn {
+  background: linear-gradient(90deg, var(--color-accent) 0%, #ffaa00 100%);
+  color: #333;
+  border: none;
+  padding: 12rpx 28rpx;
+  border-radius: 40rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  z-index: 2;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 功能入口区 */
+.quick-entry {
+  background: #fff;
+  display: flex;
+  justify-content: space-around;
+  padding: 30rpx 0;
+  margin-bottom: 20rpx;
+}
+
+.entry-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  position: relative;
+}
+
+.entry-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.entry-icon image {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.entry-icon.orange { background: #fff3e0; }
+.entry-icon.yellow { background: #fff8e1; }
+.entry-icon.red { background: #ffebee; }
+.entry-icon.blue { background: #e3f2fd; }
+
+.entry-icon .badge {
+  position: absolute;
+  top: -10rpx;
+  right: -16rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid #fff;
+}
+
+.entry-text {
+  font-size: 24rpx;
+  color: #333;
+}
+
+/* 模块卡片 */
+.section {
+  background: #fff;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 网格布局 */
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30rpx 0;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.grid-icon {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-icon image {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.grid-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 常用功能 - 2行4列 */
+.common-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40rpx 0;
+}
+
+/* 底部联系栏 */
+.contact-bar {
+  background: #fff;
+  display: flex;
+  justify-content: space-around;
+  padding: 30rpx 0;
+  margin-bottom: 20rpx;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 26rpx;
+  color: #666;
+  padding: 0 40rpx;
+  border-right: 1rpx solid #eee;
+}
+
+.contact-item:last-child {
+  border-right: none;
+}
+
+.contact-item image {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+/* 底部占位 */
+.bottom-safe {
+  height: 200rpx;
+}
+
+/* 装饰性波浪 */
+.wave-decoration {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80rpx;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f5f5f5' fill-opacity='1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+  background-size: cover;
+  opacity: 0.3;
+}

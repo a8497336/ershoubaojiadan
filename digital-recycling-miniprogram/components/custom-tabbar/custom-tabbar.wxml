@@ -1,0 +1,39 @@
+<view class="custom-tabbar-wrapper">
+  <view class="tabbar">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tabbar-item {{item.key === activeTab ? 'active' : ''}} {{item.isCenter ? 'center-tab' : ''}}"
+      data-tab="{{item}}"
+      bindtap="handleTabClick"
+    >
+      <!-- 普通Tab -->
+      <block wx:if="{{!item.isCenter}}">
+        <view class="tab-indicator"></view>
+        <view class="tabbar-icon">
+          <image src="/images/tabbar/{{item.icon}}{{item.key === activeTab ? '-active' : ''}}.png" mode="aspectFit" class="tab-icon-img"/>
+          <!-- 数字角标 -->
+          <view wx:if="{{item.key === 'shopping' && badgeCount > 0}}" class="tab-badge">{{badgeCount}}</view>
+          <!-- 小红点 -->
+          <view wx:if="{{item.key === 'profile' && showDotBadge}}" class="tab-badge dot"></view>
+        </view>
+        <text class="tab-text">{{item.text}}</text>
+      </block>
+
+      <!-- 中间突出Tab -->
+      <block wx:if="{{item.isCenter}}">
+        <view class="center-button-container">
+          <view class="center-button-outer"></view>
+          <view class="center-button-main {{item.key === activeTab ? 'active' : ''}}">
+            <view class="center-button-highlight"></view>
+            <view class="center-button-icon">
+              <image src="/images/tabbar/{{item.icon}}.png" mode="aspectFit" class="center-icon-img"/>
+            </view>
+          </view>
+          <view wx:if="{{showNewBadge}}" class="center-badge">NEW</view>
+        </view>
+        <text class="center-text {{item.key === activeTab ? 'active' : ''}}">{{item.text}}</text>
+      </block>
+    </view>
+  </view>
+</view>

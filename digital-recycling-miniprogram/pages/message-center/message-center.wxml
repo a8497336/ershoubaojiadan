@@ -1,0 +1,71 @@
+<view class="message-center-page">
+  <!-- 顶部操作栏 -->
+  <view class="header-bar">
+    <view class="unread-info">
+      <text wx:if="{{unreadCount > 0}}">{{unreadCount}} 条未读</text>
+      <text wx:else>全部已读</text>
+    </view>
+    <text class="mark-all-btn" bindtap="markAllAsRead" wx:if="{{unreadCount > 0}}">全部已读</text>
+  </view>
+
+  <!-- 分类Tab -->
+  <view class="type-tabs">
+    <view 
+      class="tab-item {{activeTab === item.key ? 'active' : ''}}"
+      wx:for="{{tabs}}"
+      wx:key="key"
+      bindtap="switchTab"
+      data-key="{{item.key}}"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <!-- 消息列表 -->
+  <view class="message-list">
+    <block wx:if="{{!isLoading && filteredMessages.length > 0}}">
+      <view 
+        class="message-item {{!item.isRead ? 'unread' : ''}}"
+        wx:for="{{filteredMessages}}"
+        wx:key="id"
+        bindtap="markAsRead"
+        data-id="{{item.id}}"
+      >
+        <view class="message-icon" style="background: {{item.typeInfo.color}}15">
+          <image src="{{item.icon}}" mode="aspectFit"/>
+        </view>
+        <view class="message-content">
+          <view class="message-header">
+            <view class="message-title-wrap">
+              <view class="dot" wx:if="{{!item.isRead}}"></view>
+              <text class="message-title">{{item.title}}</text>
+              <view class="type-tag" style="color: {{item.typeInfo.color}}; background: {{item.typeInfo.color}}15">
+                {{item.typeInfo.label}}
+              </view>
+            </view>
+            <text class="message-time">{{item.timeText}}</text>
+          </view>
+          <text class="message-desc">{{item.content}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 加载状态 -->
+    <view class="loading-state" wx:if="{{isLoading}}">
+      <view class="skeleton-item" wx:for="{{4}}" wx:key="index">
+        <view class="skeleton-avatar"></view>
+        <view class="skeleton-content">
+          <view class="skeleton-line title"></view>
+          <view class="skeleton-line"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <empty-state 
+      wx:if="{{!isLoading && filteredMessages.length === 0}}"
+      title="暂无消息"
+      desc="您还没有收到相关消息"
+    />
+  </view>
+</view>

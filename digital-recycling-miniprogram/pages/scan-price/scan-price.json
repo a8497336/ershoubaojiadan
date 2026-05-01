@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "拍照查价",
+  "navigationBarBackgroundColor": "#ff2b3b",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f8f9fa",
+  "usingComponents": {
+    "custom-tabbar": "/components/custom-tabbar/custom-tabbar"
+  }
+}

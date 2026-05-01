@@ -1,0 +1,134 @@
+<view class="shopping-page">
+
+  <!-- 有商品时显示的内容 -->
+  <block wx:if="{{!isEmpty}}">
+    <!-- 顶部统计 -->
+    <view class="top-stat">
+      <view class="stat-info">
+        <text class="stat-label">当前已添加</text>
+        <text class="stat-num">{{totalItems}}</text>
+        <text class="stat-label">件商品，合计</text>
+        <text class="stat-num">{{totalDevices}}</text>
+        <text class="stat-label">台，已选</text>
+        <text class="stat-num highlight">{{selectedCount}}</text>
+        <text class="stat-label">台</text>
+      </view>
+      <button class="clear-btn" bindtap="handleClearAll">清空</button>
+    </view>
+
+    <!-- 商品分类 -->
+    <view class="category-section">
+      <view class="category-title-wrap">
+        <view class="category-left">
+          <image class="category-icon-img" src="/images/icons/recycle.svg" mode="aspectFit"/>
+          <text class="category-title">二手手机</text>
+        </view>
+        <button class="clear-category-btn" bindtap="handleClearCategory">清空</button>
+      </view>
+      <view class="cat-tag">
+        <image class="tag-icon-img" src="/images/icons/star.svg" mode="aspectFit"/>
+        热门老年机
+      </view>
+    </view>
+
+    <!-- 商品列表 -->
+    <view class="product-list">
+      <view class="product-item {{item.isSelected ? 'is-selected' : ''}}" wx:for="{{cartItems}}" wx:key="id">
+        <view class="item-wrapper" bindtap="toggleItemSelection" data-index="{{index}}">
+          <view class="checkbox-round {{item.isSelected ? 'is-checked' : ''}}">
+            <text wx:if="{{item.isSelected}}">✓</text>
+          </view>
+          <view class="product-info">
+            <view class="product-name">{{item.productName}}</view>
+            <view class="product-meta">
+              <text class="product-brand">品牌：通用</text>
+              <text class="product-condition">成色：7成新</text>
+            </view>
+            <view class="product-price">
+              <text class="price-label">回收价：</text>
+              <text class="price-red">¥{{item.unitPrice}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="item-actions">
+          <view class="qty-control">
+            <button class="qty-btn" bindtap="decreaseQuantity" data-index="{{index}}" disabled="{{item.totalQuantity <= 1}}">
+              <text>−</text>
+            </button>
+            <input class="qty-input" type="number" value="{{item.totalQuantity}}" disabled/>
+            <button class="qty-btn" bindtap="increaseQuantity" data-index="{{index}}">
+              <text>+</text>
+            </button>
+          </view>
+          <button class="delete-btn" bindtap="handleDelete" data-index="{{index}}">
+            <image class="delete-icon" src="/images/icons/delete.svg" mode="aspectFit"/>
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 提示文字 -->
+    <view class="tip-text">
+      <image class="tip-icon-img" src="/images/icons/search.svg" mode="aspectFit"/>
+      提示：左滑可删除产品，点击商品可选择
+    </view>
+
+    <!-- 底部结算栏 -->
+    <view class="bottom-settle-bar">
+      <view class="select-all-wrapper" bindtap="toggleSelectAll">
+        <view class="settle-checkbox {{isAllSelected ? 'is-checked' : ''}}">
+          <text wx:if="{{isAllSelected}}">✓</text>
+        </view>
+        <text class="select-all-text">全选</text>
+      </view>
+      <view class="total-section">
+        <view class="total-text">
+          合计:
+          <text class="total-price">¥{{totalPrice}}</text>
+        </view>
+        <view class="total-hint" wx:if="{{selectedCount > 0}}">
+          已选 {{selectedCount}} 件商品
+        </view>
+      </view>
+      <button class="btn-add-more" bindtap="handleAddMore">
+        <image class="btn-icon" src="/images/icons/search.svg" mode="aspectFit"/> 继续添加
+      </button>
+      <button class="btn-submit" bindtap="handleSubmit" disabled="{{selectedCount === 0}}">
+        提交订单
+      </button>
+    </view>
+  </block>
+
+  <!-- 空购物车状态 -->
+  <empty-state wx:else title="购物车是空的" desc="快去添加您想要回收的商品吧" imageUrl="/images/icons/empty-cart.svg" showBtn="{{true}}" btnText="去逛逛" bind:btnTap="goHome" size="large" />
+
+  <!-- 删除确认弹窗 -->
+  <view wx:if="{{showDeleteConfirm}}" class="modal-overlay" bindtap="closeDeleteConfirm">
+    <view class="modal-content" catchtap="stopPropagation">
+      <image class="modal-icon-img" src="/images/icons/delete.svg" mode="aspectFit"/>
+      <view class="modal-title">确认删除</view>
+      <view class="modal-text">确定要删除这件商品吗？</view>
+      <view class="modal-actions">
+        <button class="modal-btn cancel" bindtap="closeDeleteConfirm">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmDelete">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 清空确认弹窗 -->
+  <view wx:if="{{showClearConfirm}}" class="modal-overlay" bindtap="closeClearConfirm">
+    <view class="modal-content" catchtap="stopPropagation">
+      <image class="modal-icon-img" src="/images/icons/warning.svg" mode="aspectFit"/>
+      <view class="modal-title">确认清空</view>
+      <view class="modal-text">确定要清空回收车吗？</view>
+      <view class="modal-actions">
+        <button class="modal-btn cancel" bindtap="closeClearConfirm">取消</button>
+        <button class="modal-btn confirm" bindtap="confirmClearAll">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自定义TabBar -->
+  <custom-tabbar activeTab="shopping" />
+</view>

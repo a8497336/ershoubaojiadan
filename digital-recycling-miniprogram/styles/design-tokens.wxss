@@ -1,0 +1,92 @@
+:root {
+  /* ========== 色彩系统 ========== */
+  /* 主色 */
+  --color-primary: #ff2d4a;
+  --color-primary-light: #fff0f0;
+  --color-primary-dark: #e62640;
+  --color-primary-gradient: linear-gradient(135deg, #ff2d4a, #ff6b6b);
+
+  /* 辅助色 */
+  --color-secondary: #ff6b6b;
+  --color-accent: #ffd700;
+
+  /* 功能色 */
+  --color-success: #28b940;
+  --color-success-light: #e8f9eb;
+  --color-warning: #ff9500;
+  --color-warning-light: #fff3e0;
+  --color-error: #ff2d4a;
+  --color-error-light: #ffeef0;
+  --color-info: #2980b9;
+
+  /* 中性色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-placeholder: #cccccc;
+  --color-border: #eeeeee;
+  --color-border-light: #f0f0f0;
+  --color-background: #f5f5f5;
+  --color-background-white: #ffffff;
+  --color-background-gray: #f8f8f8;
+
+  /* 价格颜色 */
+  --color-price-high: #27ae60;
+  --color-price-mid: #2980b9;
+  --color-price-low: #8e44ad;
+
+  /* ========== 字体系统 ========== */
+  /* 字号 */
+  --font-size-xs: 20rpx;
+  --font-size-sm: 24rpx;
+  --font-size-base: 28rpx;
+  --font-size-md: 32rpx;
+  --font-size-lg: 36rpx;
+  --font-size-xl: 40rpx;
+  --font-size-2xl: 48rpx;
+  --font-size-3xl: 56rpx;
+  --font-size-4xl: 64rpx;
+
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 行高 */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ========== 间距系统 ========== */
+  --space-1: 8rpx;
+  --space-2: 16rpx;
+  --space-3: 24rpx;
+  --space-4: 32rpx;
+  --space-5: 40rpx;
+  --space-6: 48rpx;
+  --space-8: 64rpx;
+  --space-10: 80rpx;
+  --space-12: 96rpx;
+
+  /* ========== 圆角系统 ========== */
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-xl: 32rpx;
+  --radius-2xl: 48rpx;
+  --radius-full: 9999rpx;
+
+  /* ========== 阴影系统 ========== */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16rpx 64rpx rgba(0, 0, 0, 0.16);
+  --shadow-primary: 0 8rpx 24rpx rgba(255, 45, 74, 0.3);
+
+  /* ========== 动画 ========== */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+  --transition-bounce: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

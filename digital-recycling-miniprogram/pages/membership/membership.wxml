@@ -1,0 +1,111 @@
+<view class="membership">
+  <!-- 主内容 -->
+  <view class="main-content">
+    <!-- 用户信息卡片 -->
+    <view class="user-card">
+      <view class="user-info">
+        <view class="user-avatar">
+          <image src="/images/icons/avatar.svg" mode="aspectFit"/>
+        </view>
+        <view class="user-detail">
+          <view class="user-name">
+            微信用户
+            <view class="wechat-icon">微</view>
+          </view>
+          <view class="user-status">暂未开通报价会员，开通立享更多特权！</view>
+        </view>
+      </view>
+      <view class="income-bar">
+        <image class="income-icon-img" src="/images/icons/wallet.svg" mode="aspectFit"/>
+        <text>李明开通月度报价会员 累计获得收益</text>
+        <text class="income-num">10157</text>
+        <text>元</text>
+      </view>
+    </view>
+
+    <!-- 会员专属特权 -->
+    <view class="privilege-section">
+      <view class="section-title">会员专属特权</view>
+      <view class="privilege-grid">
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/search.svg" mode="aspectFit"/>
+          <view class="privilege-text">免费查看报价</view>
+        </view>
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/chart.svg" mode="aspectFit"/>
+          <view class="privilege-text">行情抢先知道</view>
+        </view>
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/camera.svg" mode="aspectFit"/>
+          <view class="privilege-text">拍照查价不限次</view>
+        </view>
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/star.svg" mode="aspectFit"/>
+          <view class="privilege-text">专属收藏报价单</view>
+        </view>
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/sms.svg" mode="aspectFit"/>
+          <view class="privilege-text">报价短信通知</view>
+        </view>
+        <view class="privilege-item">
+          <image class="privilege-icon-img" src="/images/icons/shield.svg" mode="aspectFit"/>
+          <view class="privilege-text">专属VIP服务</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 选择会员套餐 -->
+    <view class="plan-section">
+      <view class="section-title">选择会员套餐</view>
+      <view class="plan-list">
+        <view class="plan-card {{selectedPlan.key === item.key ? 'active' : ''}}" 
+              wx:for="{{plans}}" 
+              wx:key="key"
+              bindtap="selectPlan"
+              data-plan="{{item}}">
+          <view wx:if="{{selectedPlan.key === item.key}}" class="check-mark"></view>
+          <view class="plan-info">
+            <view class="plan-name">{{item.name}}</view>
+            <view class="plan-original">¥{{item.original}}</view>
+          </view>
+          <view class="plan-price-box">
+            <view class="plan-price"><text class="plan-price-symbol">¥</text>{{item.price}}</view>
+            <view class="plan-count">{{item.count}}人开通</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 规则说明 -->
+    <view class="rules-section">
+      <view class="rules-header">规则说明</view>
+      <view class="rules-subtitle">{{selectedPlan.name}}</view>
+      <view class="rule-item">1、会员免费无限次查看报价</view>
+      <view class="rule-item">2、价格更新更及时、精准、更权威</view>
+      <view class="rule-item">3、开通会员一手行情信息抢先知道</view>
+      <view class="rule-item">4、拍照查价功能会员每日不限次数查询</view>
+      <view class="rule-item">5、会员专属收藏报价单，常见机型添加到一起，收货更高效</view>
+      <view class="rule-item">6、会员专属权益，报价变动功能，行情涨跌一目了然，更高价出货，赚的更多</view>
+      <view class="rule-item">7、<text class="highlight">开通会员后不支持退款</text>，超多会员权益等你体验</view>
+      <view class="rule-item">8、任何会员相关问题请联系: <text class="contact-num">16618180111</text>（微信同号）</view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <view class="btn-text" bindtap="scrollToRules">会员说明</view>
+    <button class="btn-gold" bindtap="buyNow">立即购买</button>
+  </view>
+
+  <!-- 右侧悬浮客服 -->
+  <view class="float-service">
+    <view class="service-item" bindtap="makePhoneCall">
+      <image class="service-icon" src="/images/icons/phone-white.svg" mode="aspectFit"/>
+      <text>电话</text>
+    </view>
+    <view class="service-item" bindtap="contactService">
+      <image class="service-icon" src="/images/icons/message.svg" mode="aspectFit"/>
+      <text>客服</text>
+    </view>
+  </view>
+</view>

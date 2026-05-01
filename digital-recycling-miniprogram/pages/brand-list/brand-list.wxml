@@ -1,0 +1,161 @@
+<view class="brand-list-container">
+  <!-- 搜索区域 -->
+  <view class="search-section">
+    <view class="back-btn" bindtap="goBack">
+      <text class="back-arrow">‹</text>
+    </view>
+    <text class="search-label">选择机型</text>
+    <view class="search-box">
+      <image class="search-icon" src="/images/icons/search-gray.svg" mode="aspectFit"/>
+      <input type="text" placeholder="搜索品牌/型号" confirm-type="search" value="{{searchKeyword}}" bindinput="onSearchInput" bindconfirm="onSearchConfirm"/>
+    </view>
+  </view>
+
+  <!-- 分类Tab -->
+  <scroll-view class="category-tabs" scroll-x>
+    <view class="category-tab {{activeCategory === index ? 'active' : ''}}" 
+          wx:for="{{categoryTabs}}" 
+          wx:key="index"
+          bindtap="switchCategory"
+          data-index="{{index}}">
+      {{item}}
+    </view>
+  </scroll-view>
+
+  <!-- 主体内容 -->
+  <view class="main-content">
+    <!-- 左侧品牌导航 -->
+    <scroll-view class="brand-sidebar" scroll-y>
+      <view class="brand-item {{activeBrand === index ? 'active' : ''}}" 
+            wx:for="{{brands}}" 
+            wx:key="index"
+            bindtap="switchBrand"
+            data-index="{{index}}">
+        {{item.name}}
+      </view>
+    </scroll-view>
+
+    <!-- 右侧产品列表 -->
+    <scroll-view class="product-list" scroll-y>
+      <!-- 加载状态 -->
+      <view wx:if="{{loading}}" class="loading-state">
+        <text>加载中...</text>
+      </view>
+
+      <block wx:elif="{{!isEmpty}}">
+        <!-- 快速下单提示 -->
+        <view class="quick-order-banner">
+          <text class="quick-order-text">懒得选机器？想要卖多台？</text>
+          <view class="quick-order-btn" bindtap="goToQuickOrder">
+            <text>快速下单</text>
+            <text class="btn-arrow">▶</text>
+          </view>
+        </view>
+
+        <!-- 产品分组 -->
+        <block wx:for="{{productGroups}}" wx:for-item="group" wx:key="title">
+          <view class="group-section">
+            <view class="group-title">{{group.title}}</view>
+
+            <view class="product-item"
+                  wx:for="{{group.products}}"
+                  wx:for-item="product"
+                  wx:key="id"
+                  bindtap="openModal"
+                  data-product="{{product}}"
+                  data-productid="{{product.id}}">
+              <view class="product-info">
+                <view class="product-dot"></view>
+                <text class="product-name">{{product.name}}</text>
+              </view>
+              <view class="product-price-section">
+                <text class="product-price {{product.price === '询价' ? 'price-inquiry' : ''}}">{{product.price}}</text>
+                <text class="product-price-tag">预计可卖</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </block>
+
+      <!-- 空状态 -->
+      <view wx:else class="empty-state">
+        <text class="empty-title">暂无产品数据</text>
+        <text class="empty-desc">该品牌暂无报价信息</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 底部悬浮回收车 -->
+  <view class="floating-cart" bindtap="showCartToast">
+    <view class="cart-icon">
+      <image src="/images/icons/cart.svg" mode="aspectFit"/>
+      <view wx:if="{{cartBadgeCount > 0}}" class="cart-badge">{{cartBadgeCount}}</view>
+    </view>
+  </view>
+
+  <!-- 产品详情弹窗 -->
+  <view class="modal-overlay {{isModalOpen ? 'show' : ''}}" bindtap="closeModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <!-- 弹窗头部 -->
+      <view class="modal-header">
+        <text class="modal-title">{{modalProduct.name || '产品详情'}}</text>
+        <view class="modal-close" bindtap="closeModal"></view>
+      </view>
+
+      <!-- 弹窗内容 -->
+      <scroll-view class="modal-body" scroll-y>
+        <!-- 产品图片 -->
+        <view class="modal-image-placeholder">
+          <text>产品图片</text>
+        </view>
+
+        <!-- 等级说明栏 -->
+        <view class="grade-bar">
+          <view class="grade-label">
+            等级说明
+            <view class="grade-info-icon">?</view>
+          </view>
+          <view class="history-price" bindtap="showPriceHistory">查看历史价格</view>
+        </view>
+
+        <!-- 数量输入区域 -->
+        <view class="quantity-section">
+          <view class="quantity-section-title">输入数量</view>
+          <view class="quantity-item" wx:for="{{quantityConditions}}" wx:key="index">
+            <view class="quantity-info">
+              <view class="quantity-name">
+                {{item.name}}
+                <view class="quantity-help">?</view>
+              </view>
+              <view class="quantity-price">回收价: <text class="price-highlight">¥{{item.price}} / 台</text></view>
+            </view>
+            <view class="qty-control">
+              <button class="qty-btn"
+                      style="color: {{quantities[index] > 0 ? '#333' : '#ccc'}}"
+                      bindtap="changeQuantity"
+                      data-index="{{index}}"
+                      data-delta="-1">−</button>
+              <input type="number" class="qty-input" value="{{quantities[index]}}" disabled/>
+              <button class="qty-btn"
+                      bindtap="changeQuantity"
+                      data-index="{{index}}"
+                      data-delta="1">+</button>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 弹窗底部 -->
+      <view class="modal-footer">
+        <button class="modal-btn modal-btn-outline" bindtap="closeModal">关闭</button>
+        <button class="modal-btn modal-btn-outline btn-cart-count">
+          {{cartBadgeCount > 0 ? '回收车 ' + cartBadgeCount : '回收车'}}
+        </button>
+        <button class="modal-btn modal-btn-primary" bindtap="addToCart">加入回收车</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Toast 提示 -->
+  <view wx:if="{{toastVisible}}" class="toast">{{toastMessage}}</view>
+</view>

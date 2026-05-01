@@ -1,0 +1,45 @@
+{
+  "name": "digital-recycling-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "db:sync": "node -e \"require('./src/models').sequelize.sync({alter:true}).then(()=>process.exit())\"",
+    "db:seed": "node -e \"const s=require('./src/seeders/init_data');require('./src/models').sequelize.authenticate().then(()=>s.up(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
+    "db:seed:test": "node -e \"const s=require('./src/seeders/test_data');require('./src/models').sequelize.authenticate().then(()=>s.up(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
+    "db:seed:rollback": "node -e \"const s=require('./src/seeders/test_data');require('./src/models').sequelize.authenticate().then(()=>s.down(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
+    "test": "jest --forceExit --detectOpenHandles"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.15.2",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "mysql2": "^3.22.3",
+    "node-cron": "^4.2.1",
+    "sequelize": "^6.37.8",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
+  }
+}

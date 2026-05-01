@@ -1,0 +1,79 @@
+<view class="page-container">
+  <!-- 主要内容区 -->
+  <view class="main-red-section">
+    <text class="main-title">拍照片 查价格</text>
+
+    <view class="count-bar">
+      <view class="count-item">
+        <text class="num">{{points}} 分</text>
+        <text class="label">拥有积分</text>
+      </view>
+      <view class="count-divider"></view>
+      <view class="count-item">
+        <text class="num">{{remainingTimes}} 次</text>
+        <text class="label">剩余次数</text>
+      </view>
+    </view>
+
+    <!-- 拍照按钮区域 -->
+    <view class="click-wrap" bindtap="handleTakePhoto">
+      <view class="corner-mark corner-tl"></view>
+      <view class="corner-mark corner-tr"></view>
+      <view class="corner-mark corner-bl"></view>
+      <view class="corner-mark corner-br"></view>
+
+      <view class="click-circle">
+        <image class="camera-icon-img" src="/images/icons/camera.svg" mode="aspectFit"/>
+        <text class="click-text">点击\n拍照查价</text>
+      </view>
+      <image class="hand-icon" src="/images/icons/hand.svg" mode="aspectFit"/>
+    </view>
+
+    <view class="digital-tag">数码</view>
+  </view>
+
+  <!-- 提示文字 -->
+  <view class="tip-text">
+    请尽量拍摄<text class="highlight">手机背面</text>，特征明显的一面
+  </view>
+
+  <!-- 示例对比 -->
+  <view class="compare-section">
+    <text class="compare-title">拍摄示例</text>
+    <view class="compare-row">
+      <view class="compare-card card-correct">
+        <view class="card-image-wrapper">
+          <image class="phone-preview" src="/images/examples/correct.svg" mode="aspectFill"/>
+          <view class="overlay-correct"></view>
+        </view>
+        <view class="card-bottom correct-bottom">
+          <text class="check-circle">✓</text>
+          <text class="card-text">正确（更快识别）</text>
+        </view>
+      </view>
+      <view class="compare-card card-wrong">
+        <view class="card-image-wrapper">
+          <image class="phone-preview" src="/images/examples/wrong.svg" mode="aspectFill"/>
+          <view class="overlay-wrong"></view>
+        </view>
+        <view class="card-bottom wrong-bottom">
+          <text class="check-circle">×</text>
+          <text class="card-text">错误（不易识别）</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部功能按钮 -->
+  <!-- <view class="bottom-actions">
+    <button class="action-btn secondary-btn">
+      <image class="btn-icon-img" src="/images/icons/search.svg" mode="aspectFit"/> 查看历史
+    </button>
+    <button class="action-btn primary-btn">
+      <image class="btn-icon-img" src="/images/icons/faq.svg" mode="aspectFit"/> 帮助中心
+    </button>
+  </view> -->
+
+  <!-- 自定义TabBar -->
+  <custom-tabbar activeTab="scanPrice" />
+</view>

@@ -1,0 +1,236 @@
+@import '/styles/design-tokens.wxss';
+
+.custom-tabbar-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.tabbar {
+  position: relative;
+  width: 100%;
+  height: 170rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -16rpx 60rpx rgba(0, 0, 0, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 普通Tab项 */
+.tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+.tabbar-item.active {
+  color: var(--color-primary);
+}
+
+.tabbar-item:not(.active) {
+  color: var(--color-text-tertiary);
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64rpx;
+  height: 8rpx;
+  background-color: var(--color-primary);
+  border-radius: 0 0 4rpx 4rpx;
+  opacity: 0;
+}
+
+.tabbar-item.active:not(.center-tab) .tab-indicator {
+  opacity: 1;
+}
+
+.tabbar-icon {
+  margin-bottom: 10rpx;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.tab-text {
+  font-size: 22rpx;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 中间突出Tab */
+.center-tab {
+  margin-top: -60rpx;
+}
+
+.center-button-container {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 10rpx;
+}
+
+.center-button-outer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(230, 67, 64, 0.15) 0%, transparent 70%);
+  animation: tabbarPulse 2s infinite ease-in-out;
+}
+
+.center-button-main {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: var(--color-primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 20rpx 50rpx rgba(230, 67, 64, 0.4),
+    0 10rpx 20rpx rgba(230, 67, 64, 0.3),
+    inset 0 4rpx 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+}
+
+.center-button-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 50% 50% 0 0;
+}
+
+.center-button-icon {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.center-tab.active .center-button-main {
+  transform: translateY(-16rpx) scale(1.1);
+  box-shadow: 
+    0 30rpx 70rpx rgba(230, 67, 64, 0.5),
+    0 16rpx 40rpx rgba(230, 67, 64, 0.4),
+    inset 0 4rpx 0 rgba(255, 255, 255, 0.3);
+}
+
+.center-text {
+  margin-top: 16rpx;
+  font-weight: 600;
+  font-size: 24rpx;
+  color: var(--color-primary);
+  position: relative;
+}
+
+.center-text::before {
+  content: '';
+  position: absolute;
+  bottom: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 4rpx;
+  background: var(--color-primary-gradient);
+  border-radius: 2rpx;
+  transition: width 0.3s ease;
+}
+
+.center-tab.active .center-text::before {
+  width: 100%;
+}
+
+/* 脉冲动画 */
+@keyframes tabbarPulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* 角标 */
+.center-badge {
+  position: absolute;
+  top: -4rpx;
+  right: -8rpx;
+  background: var(--color-primary-gradient);
+  color: white;
+  font-size: 18rpx;
+  font-weight: bold;
+  padding: 2rpx 10rpx;
+  border-radius: 16rpx;
+  z-index: 10;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 50%;
+  transform: translateX(40rpx);
+  background: var(--color-primary-gradient);
+  color: white;
+  font-size: 20rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8rpx;
+  border: 4rpx solid #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 12rpx rgba(230, 67, 64, 0.3);
+  z-index: 10;
+}
+
+.tab-badge.dot {
+  min-width: 20rpx;
+  width: 20rpx;
+  height: 20rpx;
+  padding: 0;
+}
+
+/* 点击效果 */
+.tabbar-item:active {
+  opacity: 0.7;
+}
+
+.center-button-main:active {
+  transform: scale(0.95);
+}
+
+.center-tab.active .center-button-main:active {
+  transform: translateY(-16rpx) scale(1.05);
+}

@@ -1,0 +1,313 @@
+<view class="page-container">
+  <!-- Banner轮播 -->
+  <swiper class="banner" indicator-dots autoplay interval="3000" duration="500" circular>
+    <block wx:if="{{banners.length > 0}}">
+      <swiper-item wx:for="{{banners}}" wx:key="id">
+        <image class="banner-image" src="{{item.image}}" mode="aspectFill" />
+      </swiper-item>
+    </block>
+    <block wx:else>
+      <swiper-item>
+        <view class="banner-content">
+          <text class="banner-subtitle">BUSINESS PARTNER</text>
+          <text class="banner-search">SEARCH</text>
+          <text class="banner-title">寻找城市合伙人</text>
+        </view>
+      </swiper-item>
+      <swiper-item>
+        <view class="banner-content">
+          <text class="banner-subtitle">DIGITAL RECYCLING</text>
+          <text class="banner-search">PRICE</text>
+          <text class="banner-title">专业数码回收报价</text>
+        </view>
+      </swiper-item>
+      <swiper-item>
+        <view class="banner-content">
+          <text class="banner-subtitle">TRUSTED SERVICE</text>
+          <text class="banner-search">QUALITY</text>
+          <text class="banner-title">诚信服务每一位客户</text>
+        </view>
+      </swiper-item>
+    </block>
+  </swiper>
+
+  <!-- 功能入口网格 -->
+  <view class="func-grid">
+    <view class="func-item" bindtap="goToBrandList">
+      <view class="func-text">
+        <text class="func-title">快速查价</text>
+        <text class="func-desc">先估价 再下单</text>
+      </view>
+      <view class="func-go">GO ></view>
+      <view class="func-icon search-icon">
+        <image src="/images/icons/search.svg" mode="aspectFit"/>
+      </view>
+    </view>
+    <view class="func-item" bindtap="goToScanPrice">
+      <view class="func-text">
+        <text class="func-title">拍照查价</text>
+        <text class="func-desc">拍照片 查价格</text>
+      </view>
+      <view class="func-go">GO ></view>
+      <view class="func-icon camera-icon">
+        <image src="/images/icons/camera.svg" mode="aspectFit"/>
+      </view>
+    </view>
+    <view class="func-item" bindtap="goToInvite">
+      <view class="func-text">
+        <text class="func-title">邀请好友</text>
+        <text class="func-desc">邀好友 分佣金</text>
+      </view>
+      <view class="func-go">GO ></view>
+      <view class="func-icon invite-icon">
+        <image src="/images/icons/invite.svg" mode="aspectFit"/>
+      </view>
+    </view>
+  </view>
+
+  <!-- 公告栏 -->
+  <view class="notice-bar" wx:if="{{announcements.length > 0}}">
+    <view class="notice-tag">公告</view>
+    <swiper class="notice-swiper" vertical autoplay interval="3000" circular>
+      <swiper-item wx:for="{{announcements}}" wx:key="index">
+        <text class="notice-text">{{item}}</text>
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 附近门店 -->
+  <view class="store-card" wx:if="{{storeInfo}}">
+    <view class="store-header">
+      <text class="store-tag">附近门店</text>
+      <text class="store-name">{{storeInfo.name}}</text>
+    </view>
+    <view class="store-info-row" wx:if="{{storeInfo.contact}}">
+      <text class="store-label">{{storeInfo.contact}} {{storeInfo.phone}}</text>
+      <text class="store-action" bindtap="makePhoneCall" data-phone="{{storeInfo.phone}}">拨打 ></text>
+    </view>
+    <view class="store-info-row" wx:if="{{storeInfo.phone}}">
+      <text class="store-label">{{storeInfo.phone}}</text>
+      <text class="store-action" bindtap="copyPhone" data-phone="{{storeInfo.phone}}">复制 ></text>
+    </view>
+    <view class="store-address" wx:if="{{storeInfo.address}}">
+      <text class="store-label">{{storeInfo.address}}</text>
+      <text class="store-action" bindtap="openLocation">导航 ></text>
+    </view>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input">
+      <image class="search-icon-img" src="/images/icons/search-gray.svg" mode="aspectFit"/>
+      <input type="text" placeholder="查找您想要看的机型报价" confirm-type="search" bindconfirm="onSearch"/>
+    </view>
+  </view>
+
+  <!-- 分类Tab -->
+  <view class="category-tabs">
+    <view class="tab-item {{activeCategory === 0 ? 'active' : ''}}" bindtap="switchCategory" data-index="0">环保手机报价</view>
+    <view class="tab-item {{activeCategory === 1 ? 'active' : ''}}" bindtap="switchCategory" data-index="1">数码相机报价</view>
+    <view class="tab-item {{activeCategory === 2 ? 'active' : ''}}" bindtap="switchCategory" data-index="2">新机靓机报价</view>
+  </view>
+
+  <!-- 常用报价 -->
+  <view class="common-quote">
+    <view class="common-quote-header">
+      <text class="active">常用报价</text>
+      <text class="more" bindtap="goToPriceQuote">查看全部 ></text>
+    </view>
+
+    <!-- 报价预览列表 -->
+    <block wx:if="{{hotPriceList.length > 0}}">
+      <scroll-view class="hot-price-list" scroll-x>
+        <view class="hot-price-item" wx:for="{{hotPriceList}}" wx:key="id"
+              bindtap="goToPriceDetail" data-id="{{item.id}}">
+          <view class="price-model">{{item.model}}</view>
+          <view class="price-brand">{{item.brand}}</view>
+          <view class="price-value {{item.maxPrice === '询价' ? 'price-inquiry' : ''}}">{{item.maxPrice}}</view>
+        </view>
+      </scroll-view>
+    </block>
+
+    <!-- 加载中 -->
+    <view wx:elif="{{priceLoading}}" class="loading-placeholder">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:else class="empty-placeholder">
+      <text>暂无常用报价</text>
+    </view>
+  </view>
+
+  <!-- 废旧手机回收报价 -->
+  <view class="section-title">废旧手机回收报价</view>
+  <view class="brand-grid">
+    <view class="brand-item" wx:for="{{phoneBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'phone'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 废旧手机内配回收报价 -->
+  <view class="section-title">废旧手机内配回收报价</view>
+  <view class="brand-grid">
+    <view class="brand-item" wx:for="{{internalBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'internal'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 电子产品杂货铺报价 -->
+  <view class="section-title">电子产品杂货铺报价</view>
+  <view class="brand-grid">
+    <view class="brand-item" wx:for="{{electronicsBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'electronics'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 疑难机型查看 -->
+  <view class="section-title">疑难机型查看</view>
+  <view class="brand-grid difficult-grid">
+    <view class="brand-item" wx:for="{{difficultBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'difficult'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 靓机回收报价 -->
+  <view class="section-title">靓机回收报价</view>
+  <view class="brand-grid">
+    <view class="brand-item" wx:for="{{goodPhoneBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'goodPhone'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 名酒回收报价 -->
+  <view class="section-title">名酒回收报价</view>
+  <view class="brand-grid">
+    <view class="brand-item" wx:for="{{liquorBrands}}" wx:key="index" bindtap="goToBrandList" data-id="{{item.id}}" data-name="{{item.name}}" data-category="{{item.categoryId || 'liquor'}}">
+      <view wx:if="{{item.hasTodayPrice}}" class="update-tag">今日更新</view>
+      <view wx:elif="{{item.priceRange}}" class="price-range-tag">{{item.priceRange}}</view>
+      <view class="brand-icon {{item.bg}}" style="{{item.iconStyle}}">
+        <image wx:if="{{item.icon.indexOf('/') === 0 || item.icon.indexOf('http') === 0}}" src="{{item.icon}}" mode="aspectFit"/>
+        <text wx:else>{{item.icon}}</text>
+      </view>
+      <text class="brand-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 手机回收教程 -->
+  <view class="video-section">
+    <view class="video-header">
+      <text class="video-title">手机回收教程</text>
+      <text class="video-more" bindtap="goToVideoList">全部视频 ></text>
+    </view>
+    <view class="video-tabs">
+      <view class="video-tab {{activeVideoTab === 0 ? 'active' : ''}}" bindtap="switchVideoTab" data-index="0">查看报价</view>
+      <view class="video-tab {{activeVideoTab === 1 ? 'active' : ''}}" bindtap="switchVideoTab" data-index="1">实用功能</view>
+      <view class="video-tab {{activeVideoTab === 2 ? 'active' : ''}}" bindtap="switchVideoTab" data-index="2">下单相关</view>
+      <view class="video-tab {{activeVideoTab === 3 ? 'active' : ''}}" bindtap="switchVideoTab" data-index="3">收入相关</view>
+    </view>
+    <scroll-view class="video-list" scroll-x>
+      <view class="video-card" wx:for="{{videos}}" wx:key="index">
+        <view class="video-thumb">
+          <image class="video-icon-img" src="{{item.icon}}" mode="aspectFit"/>
+          <view class="video-play">▶</view>
+        </view>
+        <text class="video-name">{{item.title}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 服务流程 -->
+  <view class="service-flow">
+    <text class="flow-title">发货下单 → 到货验机 → 确认报价 → 成交收款</text>
+    <view class="flow-steps">
+      <view class="flow-step">
+        <view class="flow-icon">
+          <image src="/images/icons/shield.svg" mode="aspectFit"/>
+        </view>
+        <text>报价精准</text>
+      </view>
+      <view class="flow-step">
+        <view class="flow-icon">
+          <image src="/images/icons/search.svg" mode="aspectFit"/>
+        </view>
+        <text>专业质检</text>
+      </view>
+      <view class="flow-step">
+        <view class="flow-icon">
+          <image src="/images/icons/card.svg" mode="aspectFit"/>
+        </view>
+        <text>快速提现</text>
+      </view>
+      <view class="flow-step">
+        <view class="flow-icon">
+          <image src="/images/icons/star.svg" mode="aspectFit"/>
+        </view>
+        <text>高质服务</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- CTA按钮 -->
+  <view class="cta-btn">
+    <button class="btn-primary" bindtap="goToBrandList">回收下单</button>
+  </view>
+
+  <!-- 底部信息 -->
+  <view class="footer-info">
+    <text class="footer-title">数码网·真诚服务好每一位客户</text>
+    <text class="footer-desc">耕耘十余年始终为您提供最新最可靠的回收报价</text>
+    <view class="footer-actions">
+      <view class="footer-action" bindtap="copyWechat">
+        <image src="/images/icons/wechat.svg" mode="aspectFit"/>
+        <text>添加微信</text>
+      </view>
+      <view class="footer-action" bindtap="makePhoneCall" data-phone="15361862828">
+        <image src="/images/icons/phone.svg" mode="aspectFit"/>
+        <text>客服电话</text>
+      </view>
+      <view class="footer-action" bindtap="goToStoreList">
+        <image src="/images/icons/store.svg" mode="aspectFit"/>
+        <text>门店列表</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 返回顶部 -->
+  <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">
+    <image src="/images/icons/top.svg" mode="aspectFit"/>
+  </view>
+
+  <!-- 自定义TabBar -->
+  <custom-tabbar activeTab="home" />
+</view>
