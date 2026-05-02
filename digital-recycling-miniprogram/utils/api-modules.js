@@ -13,7 +13,10 @@ const userApi = {
   getAddresses: () => request({ url: '/user/addresses' }),
   createAddress: (data) => request({ url: '/user/addresses', method: 'POST', data }),
   updateAddress: (id, data) => request({ url: `/user/addresses/${id}`, method: 'PUT', data }),
-  deleteAddress: (id) => request({ url: `/user/addresses/${id}`, method: 'DELETE' })
+  deleteAddress: (id) => request({ url: `/user/addresses/${id}`, method: 'DELETE' }),
+  getWallet: () => request({ url: '/wallet/info' }),
+  getPoints: () => request({ url: '/points/balance' }),
+  uploadAvatar: (filePath) => uploadFile(filePath, '/user/avatar')
 }
 
 const categoryApi = {
@@ -28,7 +31,8 @@ const brandApi = {
 
 const productApi = {
   getProducts: (data) => request({ url: '/products', data }),
-  getProductDetail: (id) => request({ url: `/products/${id}` })
+  getProductDetail: (id) => request({ url: `/products/${id}` }),
+  getProductsByBrand: (brandId) => request({ url: `/brands/${brandId}/products` })
 }
 
 const priceApi = {
@@ -40,11 +44,16 @@ const priceApi = {
 
 const cartApi = {
   getCart: () => request({ url: '/cart' }),
+  getList: () => request({ url: '/cart' }),
   addToCart: (data) => request({ url: '/cart', method: 'POST', data }),
+  add: (data) => request({ url: '/cart', method: 'POST', data }),
   updateCartItem: (id, data) => request({ url: `/cart/${id}`, method: 'PUT', data }),
+  update: (id, data) => request({ url: `/cart/${id}`, method: 'PUT', data }),
   deleteCartItem: (id) => request({ url: `/cart/${id}`, method: 'DELETE' }),
+  remove: (id) => request({ url: `/cart/${id}`, method: 'DELETE' }),
   selectAll: (isSelected) => request({ url: '/cart/select-all', method: 'PUT', data: { is_selected: isSelected } }),
-  clearCart: () => request({ url: '/cart/clear', method: 'DELETE' })
+  clearCart: () => request({ url: '/cart/clear', method: 'DELETE' }),
+  clear: () => request({ url: '/cart/clear', method: 'DELETE' })
 }
 
 const orderApi = {
@@ -77,14 +86,17 @@ const messageApi = {
   getMessages: (data) => request({ url: '/messages', data }),
   markRead: (id) => request({ url: `/messages/${id}/read`, method: 'PUT' }),
   markAllRead: () => request({ url: '/messages/read-all', method: 'PUT' }),
-  getUnreadCount: () => request({ url: '/messages/unread-count' })
+  getUnreadCount: () => request({ url: '/messages/unread-count' }),
+  submitFeedback: (data) => request({ url: '/messages/feedback', method: 'POST', data })
 }
 
 const contentApi = {
   getBanners: () => request({ url: '/banners' }),
   getAnnouncements: (data) => request({ url: '/announcements', data }),
   getStores: () => request({ url: '/stores' }),
-  getVideos: (category) => request({ url: '/videos', data: { category } })
+  getVideos: (category) => request({ url: '/videos', data: { category } }),
+  getHotPrices: () => request({ url: '/prices/hot' }),
+  getBrandsByCategory: (id) => request({ url: `/categories/${id}/brands` })
 }
 
 const searchApi = {
@@ -99,6 +111,11 @@ const userStockApi = {
   deleteStock: (id) => request({ url: `/user-stock/${id}`, method: 'DELETE' }),
   sellStock: (id, data) => request({ url: `/user-stock/${id}/sell`, method: 'POST', data }),
   getStats: () => request({ url: '/user-stock/stats' })
+}
+
+const settingsApi = {
+  getQuoteConfig: () => request({ url: '/settings/quote-config' }),
+  getContactInfo: () => request({ url: '/settings/contact' })
 }
 
 module.exports = {
@@ -117,5 +134,6 @@ module.exports = {
   contentApi,
   searchApi,
   userStockApi,
+  settingsApi,
   uploadFile
 }

@@ -1267,6 +1267,9 @@ function onSearchInput() {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  .action {
+    color: #ff2d4a; font-size: 12px;
+  }
 }
 
 /* ===== 搜索栏 ===== */

@@ -7,6 +7,32 @@
   padding-bottom: 200rpx;
 }
 
+.search-section {
+  padding: 16rpx 24rpx;
+  background: var(--color-background-white);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: var(--color-background);
+  border-radius: var(--radius-full);
+  padding: 12rpx 24rpx;
+  gap: 12rpx;
+}
+
+.search-icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  height: 48rpx;
+}
+
 .header-section {
   background: var(--color-primary-gradient);
   color: #fff;

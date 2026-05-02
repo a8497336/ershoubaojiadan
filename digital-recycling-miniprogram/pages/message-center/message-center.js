@@ -39,7 +39,7 @@ Page({
 
   loadUnreadCount() {
     messageApi.getUnreadCount().then((res) => {
-      this.setData({ unreadCount: res.data || 0 })
+      this.setData({ unreadCount: res.data?.count || res.data || 0 })
     }).catch(() => {})
   },
 
@@ -75,7 +75,7 @@ Page({
       page: this.data.page,
       pageSize: 20
     }).then((res) => {
-      const data = res.data || {}
+      const data = res.data || res || {}
       const rawList = data.list || []
       const newMessages = rawList.map(m => this.formatMessage(m))
       this.setData({

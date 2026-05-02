@@ -1,4 +1,12 @@
 <view class="price-quote-page">
+  <!-- 搜索栏 -->
+  <view class="search-section">
+    <view class="search-bar">
+      <image class="search-icon" src="/images/icons/search-gray.svg" mode="aspectFit"/>
+      <input type="text" placeholder="搜索品牌或型号" confirm-type="search" value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch"/>
+    </view>
+  </view>
+
   <view class="header-section">
     <view class="header-meta">
       <text>浏览量：{{viewCount}}</text>
@@ -21,6 +29,10 @@
     <view class="action-item" bindtap="goToStock">
       <text class="action-icon">📦</text>
       <text class="action-text">我的压货</text>
+    </view>
+    <view class="action-item" bindtap="goToMailingAddress">
+      <text class="action-icon">📮</text>
+      <text class="action-text">邮寄地址</text>
     </view>
   </view>
 

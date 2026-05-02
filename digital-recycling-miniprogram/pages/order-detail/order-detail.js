@@ -62,7 +62,7 @@ Page({
   loadOrderDetail(id) {
     this.setData({ isLoading: true })
     orderApi.getOrderDetail(id).then((res) => {
-      const raw = res.data
+      const raw = res.data || res
       const order = this.formatOrder(raw)
       const processTimeline = this.generateOrderProcessTimeline(order)
       this.setData({

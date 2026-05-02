@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "邮寄地址",
+  "navigationBarBackgroundColor": "#ff2d4a",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f5f5f5",
+  "usingComponents": {
+    "empty-state": "/components/common/empty-state/empty-state",
+    "loading-skeleton": "/components/common/loading-skeleton/loading-skeleton",
+    "loading-spinner": "/components/common/loading-spinner/loading-spinner"
+  }
+}

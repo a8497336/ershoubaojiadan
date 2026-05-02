@@ -24,11 +24,11 @@ Page({
 
   loadMemberStatus() {
     membershipApi.getStatus().then((res) => {
-      this.setData({ memberStatus: res.data })
+      this.setData({ memberStatus: res.data || res })
     }).catch(() => {})
 
     userApi.getProfile().then((res) => {
-      this.setData({ userInfo: res.data })
+      this.setData({ userInfo: res.data || res })
     }).catch(() => {})
   },
 

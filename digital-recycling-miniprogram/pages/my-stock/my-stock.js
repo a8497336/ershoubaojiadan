@@ -48,7 +48,7 @@ Page({
   loadStockList() {
     this.setData({ isLoading: true })
     userStockApi.getList({ is_sold: false, page: 1, page_size: 100 }).then((res) => {
-      const data = res.data || {}
+      const data = res.data || res || {}
       const rawList = data.list || []
       const stockList = rawList.map(item => this.formatStockItem(item))
 

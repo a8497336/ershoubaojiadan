@@ -1,0 +1,29 @@
+<view class="page-container">
+  <view class="process-header">
+    <view class="header-title">发货下单 → 到货验机 → 确认报价 → 成交收款</view>
+  </view>
+
+  <view class="steps-list">
+    <view wx:for="{{steps}}" wx:key="index" class="step-item">
+      <view class="step-left">
+        <view class="step-number">{{index + 1}}</view>
+        <view wx:if="{{index < steps.length - 1}}" class="step-line"></view>
+      </view>
+      <view class="step-content">
+        <view class="step-icon">{{item.icon}}</view>
+        <view class="step-info">
+          <view class="step-title">{{item.title}}</view>
+          <view class="step-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tips-section">
+    <view class="tips-title">温馨提示</view>
+    <view class="tip-item">• 请确保手机已退出账号并解除锁屏密码</view>
+    <view class="tip-item">• 请将手机恢复出厂设置，清除个人数据</view>
+    <view class="tip-item">• 邮寄时请使用防震包装，避免运输损坏</view>
+    <view class="tip-item">• 如有疑问请联系客服：16618180111</view>
+  </view>
+</view>

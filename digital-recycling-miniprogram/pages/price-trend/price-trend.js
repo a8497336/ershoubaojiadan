@@ -36,7 +36,7 @@ Page({
     
     priceApi.getPriceTrend(productId, { days })
       .then(res => {
-        const trendData = res.data
+        const trendData = res.data || res
         
         this.calculateChartData(trendData)
         

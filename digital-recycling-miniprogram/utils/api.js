@@ -75,11 +75,12 @@ const checkApiHealth = () => {
   })
 }
 
-const uploadFile = (filePath) => {
+const uploadFile = (filePath, customUrl) => {
   return new Promise((resolve, reject) => {
     const token = wx.getStorageSync('token')
+    const uploadUrl = customUrl ? (BASE_URL + customUrl) : (BASE_URL + '/upload')
     wx.uploadFile({
-      url: BASE_URL + '/upload',
+      url: uploadUrl,
       filePath,
       name: 'file',
       header: token ? { 'Authorization': `Bearer ${token}` } : {},

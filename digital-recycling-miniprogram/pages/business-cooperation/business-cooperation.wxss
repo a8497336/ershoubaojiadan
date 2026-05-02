@@ -1,0 +1,113 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.banner-section {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  padding: 60rpx 32rpx;
+  text-align: center;
+}
+
+.banner-title {
+  font-size: 44rpx;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.banner-desc {
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.coop-list {
+  padding: 24rpx;
+}
+
+.coop-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  background: var(--color-background-white);
+  border-radius: var(--radius-md);
+  padding: 32rpx;
+  margin-bottom: 16rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+.coop-icon {
+  font-size: 48rpx;
+  flex-shrink: 0;
+}
+
+.coop-info {
+  flex: 1;
+}
+
+.coop-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.coop-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.contact-section {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  margin: 0 24rpx 24rpx;
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 24rpx;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.contact-icon {
+  font-size: 36rpx;
+  flex-shrink: 0;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: 4rpx;
+}
+
+.contact-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.contact-action {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  padding: 8rpx 24rpx;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}

@@ -1,0 +1,36 @@
+<view class="page-container">
+  <view class="points-header">
+    <view class="points-card">
+      <view class="points-label">当前积分</view>
+      <view class="points-value">{{points}}</view>
+      <view class="sign-btn {{isSigned ? 'signed' : ''}}" bindtap="handleSignIn">
+        {{isSigned ? '已签到' : '每日签到'}}
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">积分明细</view>
+
+  <view wx:if="{{logs.length > 0}}" class="log-list">
+    <view wx:for="{{logs}}" wx:key="id" class="log-item">
+      <view class="log-info">
+        <view class="log-title">{{item.description || item.type_name || '积分变动'}}</view>
+        <view class="log-time">{{item.created_at}}</view>
+      </view>
+      <view class="log-amount {{item.amount > 0 ? 'plus' : 'minus'}}">
+        {{item.amount > 0 ? '+' : ''}}{{item.amount}}
+      </view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:if="{{!loading && logs.length === 0}}"
+    icon="💰"
+    title="暂无积分记录"
+    description="签到或完成任务可获得积分"
+  />
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-text">加载中...</view>
+  </view>
+</view>

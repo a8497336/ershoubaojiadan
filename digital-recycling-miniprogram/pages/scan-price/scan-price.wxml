@@ -37,6 +37,71 @@
     请尽量拍摄<text class="highlight">手机背面</text>，特征明显的一面
   </view>
 
+  <!-- 识别结果 -->
+  <view wx:if="{{showResult}}" class="result-section">
+    <view class="result-header">
+      <text class="result-title">识别结果</text>
+      <text class="result-close" bindtap="closeResult">关闭</text>
+    </view>
+
+    <view wx:if="{{scanResult}}" class="result-image-wrap">
+      <image class="result-image" src="{{scanResult.filePath || scanResult.image}}" mode="aspectFit" />
+    </view>
+
+    <view wx:if="{{matchedProducts.length > 0}}" class="matched-list">
+      <view
+        wx:for="{{matchedProducts}}"
+        wx:key="id"
+        class="matched-item"
+        data-id="{{item.id}}"
+        bindtap="goToProductDetail"
+      >
+        <view class="matched-info">
+          <view class="matched-name">{{item.model || item.name}}</view>
+          <view class="matched-brand" wx:if="{{item.Brand && item.Brand.name}}">{{item.Brand.name}}</view>
+        </view>
+        <view class="matched-price" wx:if="{{item.Prices && item.Prices.length > 0}}">
+          ¥{{item.Prices[0].price}}
+        </view>
+        <view class="matched-arrow">></view>
+      </view>
+    </view>
+
+    <view wx:else class="no-match">
+      <view class="no-match-icon">🔍</view>
+      <view class="no-match-text">未识别到匹配产品</view>
+      <view class="no-match-action" bindtap="goToSearch">手动搜索</view>
+    </view>
+  </view>
+
+  <!-- 扫描历史 -->
+  <view wx:if="{{scanHistory.length > 0 && !showResult}}" class="history-section">
+    <view class="history-title">最近扫描</view>
+    <view class="history-list">
+      <view
+        wx:for="{{scanHistory}}"
+        wx:key="time"
+        class="history-item"
+        data-id="{{item.id}}"
+        bindtap="goToProductDetail"
+      >
+        <view class="history-info">
+          <view class="history-name">{{item.name}}</view>
+          <view class="history-brand" wx:if="{{item.brand}}">{{item.brand}}</view>
+        </view>
+        <view class="history-price" wx:if="{{item.price}}">¥{{item.price}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载遮罩 -->
+  <view wx:if="{{loading}}" class="loading-overlay">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">正在识别中...</text>
+    </view>
+  </view>
+
   <!-- 示例对比 -->
   <view class="compare-section">
     <text class="compare-title">拍摄示例</text>

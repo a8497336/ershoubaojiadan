@@ -1,0 +1,122 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding: 24rpx;
+  padding-bottom: 200rpx;
+}
+
+.faq-list {
+  margin-bottom: 32rpx;
+}
+
+.faq-item {
+  background: var(--color-background-white);
+  border-radius: var(--radius-md);
+  margin-bottom: 16rpx;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.faq-question {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 24rpx;
+  gap: 16rpx;
+}
+
+.q-icon {
+  width: 44rpx;
+  height: 44rpx;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.q-text {
+  flex: 1;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.q-arrow {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.q-arrow.up {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  display: flex;
+  padding: 0 24rpx 28rpx;
+  gap: 16rpx;
+}
+
+.a-icon {
+  width: 44rpx;
+  height: 44rpx;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.a-text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-loose);
+}
+
+.contact-card {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 40rpx 32rpx;
+  text-align: center;
+}
+
+.contact-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.contact-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: 32rpx;
+}
+
+.contact-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.contact-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}

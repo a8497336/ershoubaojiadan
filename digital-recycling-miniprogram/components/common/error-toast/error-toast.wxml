@@ -1,0 +1,5 @@
+<view wx:if="{{show}}" class="error-toast type-{{type}} toast-animate">
+  <text class="toast-icon">{{icon}}</text>
+  <text class="toast-message">{{message}}</text>
+  <view class="toast-close" bindtap="onClose">×</view>
+</view>

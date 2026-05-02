@@ -1,377 +1,197 @@
-const { brandApi, productApi, priceApi, cartApi, searchApi, categoryApi } = require('../../utils/api-modules')
+const app = getApp()
+const contentApi = require('../../utils/api-modules').contentApi
+const categoryApi = require('../../utils/api-modules').categoryApi
+const productApi = require('../../utils/api-modules').productApi
+const cartApi = require('../../utils/api-modules').cartApi
 
 Page({
   data: {
-    activeBrand: 0,
-    activeCategory: 0,
-    isModalOpen: false,
-    modalProduct: null,
-    quantities: [0, 0, 0, 0, 0, 0, 0, 0],
-    cartBadgeCount: 0,
-    toastVisible: false,
-    toastMessage: '',
-    categoryTabs: [],
-    categories: [],
-    brands: [],
-    brandsMap: {},
-    productGroups: [],
-    quantityConditions: [],
+    loading: true,
     searchKeyword: '',
-    isEmpty: false,
-    loading: false,
-    brandId: null,
-    categoryId: null
+    categories: [],
+    currentCategoryIndex: 0,
+    brands: [],
+    selectedBrandId: null,
+    products: [],
+    productGroups: [],
+    productsLoading: false,
+    showModal: false,
+    selectedProduct: {},
+    selectedGradeIndex: 0,
+    grades: ['全新', '靓机', '小花', '大花', '爆屏', '不开机'],
+    quantity: 1,
+    cartCount: 0
   },
 
   onLoad(options) {
-    const app = getApp()
-    this.setData({ cartBadgeCount: app.globalData.cartCount || 0 })
-
-    if (options.brandId) {
-      this.setData({ brandId: parseInt(options.brandId) })
-    }
-
-    if (options.category) {
-      const category = decodeURIComponent(options.category)
-      this.setData({ categoryId: category, categoryParam: category })
-    }
-
     if (options.keyword) {
-      const keyword = decodeURIComponent(options.keyword)
-      this.setData({ searchKeyword: keyword })
-      this.doSearch(keyword)
+      this.setData({ searchKeyword: decodeURIComponent(options.keyword || '') })
     }
-
-    this.loadCategories()
-    this.loadConditions()
+    if (options.categoryId) {
+      this.setData({ currentCategoryIndex: parseInt(options.categoryId) || 0 })
+    }
+    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.loadData()
   },
 
-  loadCategories() {
-    categoryApi.getCategories().then((res) => {
-      const categories = res.data || []
-      const tabs = categories.map(c => c.name)
-      this.setData({
-        categoryTabs: tabs,
-        categories: categories
-      })
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 })
+    }
+    this.updateCartCount()
+  },
 
-      if (categories.length > 0) {
-        let targetIndex = 0
-
-        if (this.data.categoryParam) {
-          const foundIndex = categories.findIndex(
-            c => c.name === this.data.categoryParam || c.code === this.data.categoryParam
-          )
-          if (foundIndex >= 0) {
-            targetIndex = foundIndex
-            this.setData({ activeCategory: targetIndex })
-          }
-        }
-
-        this.loadBrandsByCategory(categories[targetIndex].id)
-      }
-    }).catch((err) => {
-      console.error('加载分类失败:', err)
-      wx.showToast({ title: '加载失败', icon: 'none' })
+  loadData() {
+    this.setData({ loading: true })
+    this.fetchCategories().then(() => {
+      this.setData({ loading: false })
+      this.fetchBrands()
+    }).catch(() => {
+      this.setData({ loading: false })
     })
   },
 
-  loadBrandsByCategory(categoryId) {
-    brandApi.getBrands(categoryId).then((res) => {
-      const brandsData = res.data || []
-      const brands = brandsData.map(b => ({
-        id: b.id,
-        name: b.name
-      }))
+  fetchCategories() {
+    return new Promise((resolve) => {
+      categoryApi.getCategories().then(res => {
+        const cats = res.data || res || []
+        this.setData({ categories: Array.isArray(cats) ? cats : [] })
+        resolve()
+      }).catch(() => resolve())
+    })
+  },
 
-      const brandsMap = {}
-      brandsData.forEach(b => { brandsMap[b.id] = b.name })
-
-      this.setData({
-        brands: brands,
-        brandsMap: brandsMap,
-        isEmpty: brands.length === 0
-      })
-
+  fetchBrands() {
+    const cats = this.data.categories
+    if (cats.length === 0) return
+    const cat = cats[this.data.currentCategoryIndex] || cats[0]
+    if (!cat) return
+    contentApi.getBrandsByCategory(cat.id).then(res => {
+      const brands = res.data || res || []
+      this.setData({ brands: Array.isArray(brands) ? brands : [] })
       if (brands.length > 0) {
-        this.setData({ activeBrand: 0 })
-        this.loadProductsByBrand(brandsData[0].id)
-      } else {
-        this.setData({ productGroups: [], isEmpty: true })
+        this.selectBrand({ currentTarget: { dataset: { id: brands[0].id } } })
       }
-    }).catch((err) => {
-      console.error('加载品牌列表失败:', err)
-      this.setData({ brands: [], isEmpty: true })
+    }).catch(() => {
+      this.setData({ brands: [] })
     })
   },
 
-  loadProductsByBrand(brandId) {
-    this.setData({ loading: true, isEmpty: false })
+  switchCategory(e) {
+    const index = e.currentTarget.dataset.index
+    this.setData({ currentCategoryIndex: index, brands: [], productGroups: [], selectedBrandId: null })
+    this.fetchBrands()
+  },
 
-    productApi.getProducts({
-      brand_id: brandId,
-      pageSize: 100
-    }).then((res) => {
+  selectBrand(e) {
+    const id = e.currentTarget.dataset.id
+    this.setData({ selectedBrandId: id, productsLoading: true })
+
+    productApi.getProducts({ brand_id: id }).then(res => {
       const data = res.data || {}
-      const products = data.list || []
-
-      if (products.length === 0) {
-        this.setData({
-          productGroups: [],
-          isEmpty: true,
-          loading: false
-        })
-        return
-      }
-
-      const seriesMap = {}
-
-      products.forEach(p => {
-        const seriesName = p.series_name || p.Category?.name || '其他'
-        const prices = p.Prices || []
-
-        const validPrices = prices
-          .map(pr => parseFloat(pr.price))
-          .filter(price => !isNaN(price) && price > 0)
-        const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : 0
-
-        const productItem = {
+      const prods = data.list || data || []
+      const seriesMap = new Map()
+      ;(Array.isArray(prods) ? prods : []).forEach(p => {
+        const seriesName = p.series_name || (p.Brand && p.Brand.name) || '其他'
+        if (!seriesMap.has(seriesName)) {
+          seriesMap.set(seriesName, [])
+        }
+        seriesMap.get(seriesName).push({
           id: p.id,
-          name: p.name || p.model_code || '',
-          model: p.model_code || '',
-          price: maxPrice > 0 ? `¥${maxPrice}` : '询价',
-          priceValue: maxPrice,
-          prices: prices.map(pr => ({
-            conditionName: pr.Condition?.name || '',
-            conditionCode: pr.Condition?.code || '',
-            price: pr.price
-          }))
-        }
-
-        if (!seriesMap[seriesName]) {
-          seriesMap[seriesName] = {
-            title: seriesName,
-            products: []
-          }
-        }
-
-        seriesMap[seriesName].products.push(productItem)
+          name: p.name,
+          model: p.model || p.name,
+          price: (p.Prices && p.Prices.length > 0) ? p.Prices[0].price : (p.highest_price || p.price || 0),
+          priceText: (p.Prices && p.Prices.length > 0) ? ('¥' + p.Prices[0].price) : '询价',
+          series: p.series_name || '',
+          brand: (p.Brand && p.Brand.name) || '',
+          image: p.image || '',
+          productId: p.id
+        })
       })
-
-      const productGroups = Object.values(seriesMap).map(group => ({
-        ...group,
-        products: group.products.sort((a, b) => (b.priceValue || 0) - (a.priceValue || 0))
-      }))
-
-      this.setData({
-        productGroups: productGroups,
-        isEmpty: productGroups.length === 0,
-        loading: false
+      const productGroups = []
+      seriesMap.forEach((products, title) => {
+        productGroups.push({ title, products })
       })
-    }).catch((err) => {
-      console.error('加载产品列表失败:', err)
-      this.setData({
-        productGroups: [],
-        isEmpty: true,
-        loading: false
-      })
-      wx.showToast({ title: '加载失败', icon: 'none' })
+      this.setData({ productGroups, productsLoading: false })
+    }).catch(() => {
+      this.setData({ productGroups: [], productsLoading: false })
     })
-  },
-
-  doSearch(keyword) {
-    if (!keyword) return
-    searchApi.search(keyword).then((res) => {
-      const products = res.data ? res.data.list || res.data : []
-      const groups = products.map(p => ({
-        title: p.name,
-        productId: p.id,
-        products: [{ name: p.name, price: '查看详情' }]
-      }))
-      this.setData({
-        productGroups: groups,
-        isEmpty: groups.length === 0
-      })
-    }).catch((err) => {
-      console.error('搜索失败:', err)
-      this.setData({ productGroups: [], isEmpty: true })
-    })
-  },
-
-  loadConditions() {
-    priceApi.getConditions().then((res) => {
-      const conditions = (res.data || []).map(c => ({
-        id: c.id,
-        name: c.name,
-        price: '0'
-      }))
-      this.setData({ 
-        quantityConditions: conditions.length > 0 ? conditions : this.getDefaultConditions(),
-        quantities: conditions.map(() => 0) 
-      })
-    }).catch((err) => {
-      console.error('加载条件列表失败:', err)
-      this.setData({
-        quantityConditions: this.getDefaultConditions(),
-        quantities: [0, 0, 0, 0, 0, 0]
-      })
-    })
-  },
-  
-  getDefaultConditions() {
-    return [
-      { name: '开机屏好', price: '0' },
-      { name: '开机大屏好', price: '0' },
-      { name: '开机小屏好', price: '0' },
-      { name: '开机屏坏', price: '0' },
-      { name: '不开机', price: '0' },
-      { name: '废板-整机', price: '0' }
-    ]
   },
 
   onSearchInput(e) {
     this.setData({ searchKeyword: e.detail.value })
   },
 
-  onSearchConfirm(e) {
-    const keyword = e.detail.value
-    if (keyword) {
-      this.doSearch(keyword)
-    } else {
-      this.setData({ isEmpty: false })
-    }
+  doSearch() {
+    const kw = (this.data.searchKeyword || '').trim()
+    if (!kw) return
+    wx.navigateTo({ url: '/pages/brand-list/brand-list?keyword=' + encodeURIComponent(kw) })
   },
 
-  switchCategory(e) {
-    const index = parseInt(e.currentTarget.dataset.index)
+  openProductDetail(e) {
+    const product = e.currentTarget.dataset.item
     this.setData({
-      activeCategory: index,
-      activeBrand: 0,
-      productGroups: [],
-      isEmpty: false
+      selectedProduct: product,
+      showModal: true,
+      selectedGradeIndex: 0,
+      quantity: 1
     })
-
-    if (this.data.categories && this.data.categories[index]) {
-      this.loadBrandsByCategory(this.data.categories[index].id)
-    }
-  },
-
-  switchBrand(e) {
-    const index = parseInt(e.currentTarget.dataset.index)
-    this.setData({ activeBrand: index })
-    const brand = this.data.brands[index]
-    if (brand && brand.id) {
-      this.loadProductsByBrand(brand.id)
-    }
-  },
-
-  openModal(e) {
-    const product = e.currentTarget.dataset.product
-    const productId = e.currentTarget.dataset.productid
-
-    this.setData({
-      modalProduct: {
-        id: productId,
-        name: product.name || product.model || '产品详情',
-        ...product
-      },
-      isModalOpen: true,
-      quantities: this.data.quantityConditions.map(() => 0)
-    })
-
-    if (productId) {
-      productApi.getProductDetail(productId).then((res) => {
-        const detail = res.data
-        if (detail && detail.prices) {
-          const conditions = detail.prices.map(p => ({
-            id: p.Condition?.id || p.condition_id,
-            name: p.Condition?.name || '未知成色',
-            code: p.Condition?.code || '',
-            price: String(p.price || 0)
-          })).sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
-
-          this.setData({
-            quantityConditions: conditions.length > 0 ? conditions : this.getDefaultConditions(),
-            quantities: conditions.map(() => 0)
-          })
-        }
-      }).catch((err) => {
-        console.error('获取产品详情失败:', err)
-      })
-    }
   },
 
   closeModal() {
-    this.setData({ isModalOpen: false })
+    this.setData({ showModal: false })
   },
 
-  stopPropagation() {},
+  nop() {},
 
-  changeQuantity(e) {
-    const index = parseInt(e.currentTarget.dataset.index)
-    const delta = parseInt(e.currentTarget.dataset.delta)
-    const quantities = this.data.quantities
-    quantities[index] = Math.max(0, (quantities[index] || 0) + delta)
-    this.setData({ quantities })
+  selectGrade(e) {
+    this.setData({ selectedGradeIndex: e.currentTarget.dataset.index })
+  },
+
+  decreaseQty() {
+    if (this.data.quantity > 1) {
+      this.setData({ quantity: this.data.quantity - 1 })
+    }
+  },
+
+  increaseQty() {
+    this.setData({ quantity: this.data.quantity + 1 })
   },
 
   addToCart() {
-    let total = 0
-    const promises = []
-    this.data.quantities.forEach((q, idx) => {
-      if (q > 0 && this.data.quantityConditions[idx]) {
-        total += q
-        const condition = this.data.quantityConditions[idx]
-        promises.push(cartApi.addToCart({
-          product_id: this.data.modalProduct.id,
-          condition_id: condition.id,
-          quantity: q
-        }))
-      }
+    const product = this.data.selectedProduct
+    const grade = this.data.grades[this.data.selectedGradeIndex]
+    cartApi.add({
+      productId: product.productId || product.id,
+      product_name: product.model || product.name,
+      condition: grade,
+      quantity: this.data.quantity,
+      price: product.price
+    }).then(() => {
+      wx.showToast({ title: '已加入回收车', icon: 'success' })
+      this.closeModal()
+      this.updateCartCount()
+    }).catch(() => {
+      wx.showToast({ title: '添加失败', icon: 'error' })
     })
-
-    if (total > 0 && promises.length > 0) {
-      Promise.all(promises).then(() => {
-        const app = getApp()
-        app.refreshCart()
-        this.setData({ cartBadgeCount: app.globalData.cartCount + total })
-        this.showToast(`已添加 ${total} 台到回收车`)
-        this.closeModal()
-      }).catch(() => {
-        this.showToast('添加失败，请重试')
-      })
-    } else {
-      this.showToast('请选择数量')
-    }
   },
 
-  goToQuickOrder() {
-    wx.navigateTo({ url: '/pages/shopping/shopping' })
+  updateCartCount() {
+    cartApi.getList().then(res => {
+      const items = res.data || res || []
+      const total = items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+      this.setData({ cartCount: total })
+      app.globalData.cartCount = total
+    }).catch(() => {})
   },
 
-  showPriceHistory() {
-    wx.showToast({ title: '历史价格功能开发中', icon: 'none' })
-  },
-
-  showCartToast() {
-    wx.navigateTo({ url: '/pages/shopping/shopping' })
-  },
-
-  showToast(message) {
-    this.setData({ toastMessage: message, toastVisible: true })
-    setTimeout(() => { this.setData({ toastVisible: false }) }, 2000)
-  },
-
-  onShareAppMessage() {
-    return { title: '数码回收网 - 品牌列表', path: '/pages/brand-list/brand-list' }
+  goToCart() {
+    wx.switchTab({ url: '/pages/shopping/shopping' })
   },
 
   goBack() {
-    const pages = getCurrentPages()
-    if (pages.length > 1) {
-      wx.navigateBack({ delta: 1 })
-    } else {
-      wx.switchTab({ url: '/pages/index/index' })
-    }
-  }
+    wx.navigateBack({ delta: 1 })
+  },
+
+  loadMoreProducts() {}
 })

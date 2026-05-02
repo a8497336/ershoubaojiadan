@@ -1,0 +1,124 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.invite-header {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  padding: 60rpx 32rpx 80rpx;
+  text-align: center;
+}
+
+.invite-title {
+  font-size: 48rpx;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  margin-bottom: 16rpx;
+}
+
+.invite-desc {
+  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-card {
+  display: flex;
+  align-items: center;
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 40rpx 32rpx;
+  margin: -40rpx 24rpx 24rpx;
+  box-shadow: var(--shadow-md);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 40rpx;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: var(--color-border);
+}
+
+.invite-code-section {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 40rpx 32rpx;
+  margin: 0 24rpx 24rpx;
+  text-align: center;
+}
+
+.code-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: 16rpx;
+}
+
+.code-value {
+  font-size: 48rpx;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  letter-spacing: 8rpx;
+  margin-bottom: 32rpx;
+}
+
+.code-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+
+.copy-btn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+  color: #8B4513;
+}
+
+.rules-section {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  margin: 0 24rpx;
+}
+
+.rules-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 24rpx;
+}
+
+.rule-item {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-loose);
+  padding: 8rpx 0;
+}

@@ -1,0 +1,24 @@
+{
+  "name": "digital-recycling",
+  "version": "1.0.0",
+  "description": "数码回收平台 - 一键启动前后端服务",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,admin,app -c blue,green,yellow \"npm run dev:server\" \"npm run dev:admin\" \"npm run dev:app\"",
+    "dev:server": "cd digital-recycling-server && npm run dev",
+    "dev:admin": "cd digital-recycling-admin && npm run dev",
+    "dev:app": "cd digital-recycling-app && npm run dev",
+    "build:admin": "cd digital-recycling-admin && npm run build && node ../scripts/copy-admin.js",
+    "build:app": "cd digital-recycling-app && npm run build",
+    "build": "npm run build:admin && npm run build:app",
+    "start": "npm run build:admin && node digital-recycling-server/src/app.js",
+    "db:sync": "cd digital-recycling-server && npm run db:sync",
+    "db:seed": "cd digital-recycling-server && npm run db:seed",
+    "db:seed:test": "cd digital-recycling-server && npm run db:seed:test",
+    "db:seed:rollback": "cd digital-recycling-server && npm run db:seed:rollback",
+    "test": "cd digital-recycling-server && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

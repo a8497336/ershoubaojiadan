@@ -1,0 +1,33 @@
+<view class="page-container">
+  <view wx:if="{{announcements.length > 0}}" class="announcement-list">
+    <view
+      wx:for="{{announcements}}"
+      wx:key="id"
+      class="announcement-item"
+      data-index="{{index}}"
+      bindtap="onAnnouncementTap"
+    >
+      <view class="announcement-header">
+        <view class="announcement-tag">📢 公告</view>
+        <view class="announcement-time">{{item.created_at || item.time}}</view>
+      </view>
+      <view class="announcement-title">{{item.title}}</view>
+      <view class="announcement-summary" wx:if="{{item.summary || item.content}}">{{item.summary || item.content}}</view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:if="{{!loading && announcements.length === 0}}"
+    icon="📢"
+    title="暂无公告"
+    description="暂无新的公告信息"
+  />
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <view wx:if="{{!hasMore && announcements.length > 0}}" class="no-more">
+    <text>没有更多了</text>
+  </view>
+</view>

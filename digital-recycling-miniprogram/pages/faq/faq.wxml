@@ -1,0 +1,30 @@
+<view class="page-container">
+  <view class="faq-list">
+    <view
+      wx:for="{{faqList}}"
+      wx:key="index"
+      class="faq-item {{activeIndex === index ? 'active' : ''}}"
+      data-index="{{index}}"
+      bindtap="onItemTap"
+    >
+      <view class="faq-question">
+        <view class="q-icon">Q</view>
+        <view class="q-text">{{item.q}}</view>
+        <view class="q-arrow {{activeIndex === index ? 'up' : ''}}">▾</view>
+      </view>
+      <view wx:if="{{activeIndex === index}}" class="faq-answer">
+        <view class="a-icon">A</view>
+        <view class="a-text">{{item.a}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="contact-card">
+    <view class="contact-title">没有找到答案？</view>
+    <view class="contact-desc">联系客服获取帮助</view>
+    <view class="contact-actions">
+      <view class="contact-btn" bindtap="callPhone">📞 拨打客服电话</view>
+      <view class="contact-btn" bindtap="goFeedback">📝 提交问题反馈</view>
+    </view>
+  </view>
+</view>

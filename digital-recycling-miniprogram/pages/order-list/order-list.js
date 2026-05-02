@@ -72,7 +72,7 @@ Page({
       page: this.data.page,
       pageSize: 10
     }).then((res) => {
-      const data = res.data || {}
+      const data = res.data || res || {}
       const rawList = data.list || []
       const newOrders = rawList.map(o => this.formatOrder(o))
       this.setData({

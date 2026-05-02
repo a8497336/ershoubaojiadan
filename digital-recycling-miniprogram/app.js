@@ -123,6 +123,14 @@ App({
     this.loadCartData()
   },
 
+  getNetworkStatus() {
+    return this.globalData.isConnected
+  },
+
+  isOnline() {
+    return this.globalData.isConnected && this.globalData.apiStatus === 'online'
+  },
+
   globalData: {
     userInfo: null,
     token: null,

@@ -1,0 +1,121 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding: 24rpx;
+}
+
+.address-card,
+.tips-card,
+.contact-card {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+
+.card-icon {
+  font-size: 36rpx;
+}
+
+.card-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.address-info {
+  padding: 24rpx;
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  margin-bottom: 24rpx;
+}
+
+.info-row {
+  display: flex;
+  padding: 12rpx 0;
+  font-size: var(--font-size-base);
+}
+
+.info-label {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  min-width: 160rpx;
+}
+
+.info-value {
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.card-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+
+.action-btn:active {
+  opacity: 0.8;
+}
+
+.tip-list {
+  padding: 0;
+}
+
+.tip-item {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-loose);
+  padding: 8rpx 0;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.contact-row:last-child {
+  border-bottom: none;
+}
+
+.contact-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.contact-value {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.contact-action {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  padding: 8rpx 24rpx;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}

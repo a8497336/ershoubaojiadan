@@ -1,0 +1,29 @@
+<view class="page-container">
+  <view wx:if="{{video}}" class="video-section">
+    <video
+      wx:if="{{videoUrl}}"
+      src="{{videoUrl}}"
+      class="video-player"
+      controls
+      autoplay
+      show-center-play-btn
+      enable-progress-gesture
+      binderror="onVideoError"
+    />
+    <view wx:else class="video-placeholder">
+      <view class="placeholder-icon">🎬</view>
+      <view class="placeholder-text">视频暂无法播放</view>
+    </view>
+
+    <view class="video-detail">
+      <view class="video-title">{{video.title || video.name}}</view>
+      <view class="video-meta" wx:if="{{video.category}}">
+        <text class="meta-tag">{{video.category}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-text">加载中...</view>
+  </view>
+</view>

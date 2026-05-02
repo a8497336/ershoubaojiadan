@@ -229,7 +229,7 @@ module.exports = {
           product_id: product.id,
           condition_id: i + 1,
           price: priceList[i],
-          price_date: today,
+          effective_date: today,
           created_at: now,
           updated_at: now
         })
@@ -272,16 +272,16 @@ module.exports = {
     ], {})
 
     await queryInterface.bulkInsert('videos', [
-      { title: '华为手机查询报价教程', category: '查看报价', cover_url: null, video_url: null, description: '教您如何快速查询华为手机回收报价', sort_order: 1, status: 1, created_at: now, updated_at: now },
-      { title: '报价单查看教程', category: '实用功能', cover_url: null, video_url: null, description: '教您如何查看和使用报价单功能', sort_order: 2, status: 1, created_at: now, updated_at: now },
-      { title: '如何下单回收手机', category: '下单相关', cover_url: null, video_url: null, description: '教您如何快速下单回收手机', sort_order: 3, status: 1, created_at: now, updated_at: now },
-      { title: '回收收入提现指南', category: '收入相关', cover_url: null, video_url: null, description: '教您如何提现回收收入到微信钱包', sort_order: 4, status: 1, created_at: now, updated_at: now }
+      { title: '华为手机查询报价教程', category: '查看报价', cover_image: null, video_url: null, description: '教您如何快速查询华为手机回收报价', sort_order: 1, status: 1, created_at: now, updated_at: now },
+      { title: '报价单查看教程', category: '实用功能', cover_image: null, video_url: null, description: '教您如何查看和使用报价单功能', sort_order: 2, status: 1, created_at: now, updated_at: now },
+      { title: '如何下单回收手机', category: '下单相关', cover_image: null, video_url: null, description: '教您如何快速下单回收手机', sort_order: 3, status: 1, created_at: now, updated_at: now },
+      { title: '回收收入提现指南', category: '收入相关', cover_image: null, video_url: null, description: '教您如何提现回收收入到微信钱包', sort_order: 4, status: 1, created_at: now, updated_at: now }
     ], {})
 
     await queryInterface.bulkInsert('announcements', [
-      { title: '数码回收网春节放假通知', content: '尊敬的用户，春节期间（1月28日-2月4日）暂停回收服务，2月5日恢复正常。期间仍可在线提交订单，节后统一处理。祝您新春快乐！', is_top: 1, status: 1, published_at: now, created_at: now, updated_at: now },
-      { title: '新版报价系统上线公告', content: '尊敬的用户，我们已全面升级报价系统，新增实时报价更新、历史价格对比等功能，为您提供更精准的回收报价服务。', is_top: 0, status: 1, published_at: now, created_at: now, updated_at: now },
-      { title: '会员权益升级通知', content: '尊敬的用户，即日起会员权益全面升级！月度会员可享受无限次拍照查价、专属客服通道等特权，欢迎开通体验。', is_top: 0, status: 1, published_at: now, created_at: now, updated_at: now }
+      { title: '数码回收网春节放假通知', content: '尊敬的用户，春节期间（1月28日-2月4日）暂停回收服务，2月5日恢复正常。期间仍可在线提交订单，节后统一处理。祝您新春快乐！', is_top: 1, status: 1, publish_at: now, created_at: now, updated_at: now },
+      { title: '新版报价系统上线公告', content: '尊敬的用户，我们已全面升级报价系统，新增实时报价更新、历史价格对比等功能，为您提供更精准的回收报价服务。', is_top: 0, status: 1, publish_at: now, created_at: now, updated_at: now },
+      { title: '会员权益升级通知', content: '尊敬的用户，即日起会员权益全面升级！月度会员可享受无限次拍照查价、专属客服通道等特权，欢迎开通体验。', is_top: 0, status: 1, publish_at: now, created_at: now, updated_at: now }
     ], {})
 
     await queryInterface.bulkInsert('settings', [

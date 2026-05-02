@@ -1,213 +1,198 @@
-const { userApi, walletApi, messageApi, pointsApi } = require('../../utils/api-modules')
+const app = getApp()
+const userApi = require('../../utils/api-modules').userApi
+const messageApi = require('../../utils/api-modules').messageApi
 
 Page({
   data: {
-    userInfo: {
-      avatar: '',
-      userId: '',
-      phone: '',
-      points: 0
-    },
-    stats: {
-      totalRecycled: 0,
-      totalAmount: '0.00',
-      co2Saved: '0.00',
-      treeEquivalent: 0
-    },
-    walletInfo: null,
-    unreadCount: 0,
-    badgeCounts: {
-      message: 0,
-      announcement: 0
-    }
+    userInfo: {},
+    walletInfo: { balance: '0.00' },
+    pointsInfo: { points: 0 },
+
+    quickEntries: [
+      { icon: '💳', label: '我的钱包', badge: 0 },
+      { icon: '🎫', label: '我的卡券', badge: 0 },
+      { icon: '🧧', label: '我的红包', badge: 0 },
+      { icon: '📢', label: '公告中心', badge: 0 }
+    ],
+
+    pointActivities: [
+      { icon: '⭐', label: '我的积分' },
+      { icon: '🎁', label: '积分抽奖' },
+      { icon: '🛒', label: '积分商城' },
+      { icon: '👥', label: '邀请好友' }
+    ],
+
+    commonFuncs: [
+      { icon: '🔄', label: '回收流程' },
+      { icon: '🛒', label: '我要采购' },
+      { icon: '📍', label: '邮寄地址' },
+      { icon: '💬', label: '问题反馈' },
+      { icon: '❓', label: '常见问题' },
+      { icon: '📋', label: '反馈结果' },
+      { icon: '🤝', label: '商务合作' },
+      { icon: '⚠️', label: '投诉建议', badge: '' },
+      { icon: '🎬', label: '广告录音', badge: '' },
+      { icon: '📊', label: '行情走势' },
+      { icon: '🎥', label: '回收教学视频' }
+    ],
+
+    vipFeatList: [
+      { icon: '⭐', label: '收藏报价单' },
+      { icon: '📈', label: '报价变动' },
+      { icon: '📷', label: '拍照查价' },
+      { icon: '📩', label: '报价短信通知' }
+    ],
+
+    contactItems: [
+      { icon: '💬', label: '添加微信' },
+      { icon: '📞', label: '客服电话' },
+      { icon: '🏪', label: '门店列表' }
+    ],
+
+    _phoneTimer: null
   },
 
   onLoad() {
-    this.loadUserData()
+    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.loadData()
   },
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 })
+      this.getTabBar().setData({ selected: 4 })
     }
-    this.loadUserData()
+    this.loadData()
   },
 
-  loadUserData() {
-    userApi.getProfile().then((res) => {
-      const user = res.data || {}
-      this.setData({
-        userInfo: {
-          avatar: user.avatar || '/images/icons/avatar.svg',
-          userId: user.user_no || user.id || '',
-          phone: user.phone || '未绑定',
-          points: user.points || 0
-        },
-        stats: {
-          totalRecycled: user.total_recycled || 0,
-          totalAmount: (user.total_amount || 0).toFixed(2),
-          co2Saved: (user.co2_saved || 0).toFixed(2),
-          treeEquivalent: Math.round((user.co2_saved || 0) / 18.3)
-        }
-      })
+  onPullDownRefresh() {
+    this.loadData()
+  },
+
+  loadData() {
+    this.loadUserInfo()
+    this.loadWalletAndPoints()
+    this.loadUnreadCount()
+    wx.stopPullDownRefresh()
+  },
+
+  loadUserInfo() {
+    const user = app.globalData.userInfo || {}
+    userApi.getProfile().then(res => {
+      const data = (res.data || res || {})
+      app.globalData.userInfo = data
+      this.setData({ userInfo: data })
+    }).catch(() => {
+      this.setData({ userInfo: user })
+    })
+  },
+
+  loadWalletAndPoints() {
+    userApi.getWallet().then(res => {
+      this.setData({ walletInfo: (res.data || res || { balance: '0.00' }) })
     }).catch(() => {})
 
-    walletApi.getInfo().then((res) => {
-      this.setData({ walletInfo: res.data })
+    userApi.getPoints().then(res => {
+      this.setData({ pointsInfo: (res.data || res || { points: 0 }) })
     }).catch(() => {})
+  },
 
-    messageApi.getUnreadCount().then((res) => {
-      const count = res.data || 0
-      this.setData({
-        unreadCount: count,
-        'badgeCounts.message': count
-      })
+  loadUnreadCount() {
+    messageApi.getUnreadCount().then(res => {
+      const count = res.data?.count || res.count || 0
+      const entries = this.data.quickEntries
+      if (entries.length > 3) entries[3].badge = count
+      this.setData({ quickEntries: entries })
     }).catch(() => {})
+  },
+
+  onQuickEntryTap(e) {
+    const index = e.currentTarget.dataset.index
+    switch (index) {
+      case 0: wx.navigateTo({ url: '/pages/wallet/wallet' }); break
+      case 1: wx.navigateTo({ url: '/pages/coupons/coupons' }); break
+      case 2: wx.navigateTo({ url: '/pages/red-packet/red-packet' }); break
+      case 3: wx.navigateTo({ url: '/pages/announcement/announcement' }); break
+    }
+  },
+
+  onPointActivityTap(e) {
+    const index = e.currentTarget.dataset.index
+    switch (index) {
+      case 0: wx.navigateTo({ url: '/pages/my-points/my-points' }); break
+      case 1: wx.navigateTo({ url: '/pages/points-lottery/points-lottery' }); break
+      case 2: wx.navigateTo({ url: '/pages/points-mall/points-mall' }); break
+      case 3: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
+    }
+  },
+
+  onCommonFuncTap(e) {
+    const index = e.currentTarget.dataset.index
+    const routes = [
+      '/pages/recycling-process/recycling-process',
+      '/pages/my-stock/my-stock',
+      '/pages/mailing-address/mailing-address',
+      '/pages/feedback/feedback',
+      '/pages/faq/faq',
+      '/pages/feedback-result/feedback-result',
+      '/pages/business-cooperation/business-cooperation',
+      '/pages/feedback/feedback',
+      '/pages/ad-recording/ad-recording',
+      '/pages/price-trend/price-trend',
+      '/pages/video-list/video-list'
+    ]
+    if (routes[index]) wx.navigateTo({ url: routes[index] })
+  },
+
+  onVipFeatTap(e) {
+    const index = e.currentTarget.dataset.index
+    const routes = [
+      '/pages/my-favorites/my-favorites',
+      '/pages/price-changes/price-changes',
+      '/pages/scan-price/scan-price',
+      '/pages/sms-notify/sms-notify'
+    ]
+    if (routes[index]) wx.navigateTo({ url: routes[index] })
+  },
+
+  onContactTap(e) {
+    const index = e.currentTarget.dataset.index
+    switch (index) {
+      case 0:
+        wx.setClipboardData({
+          data: '15361862828',
+          success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
+        })
+        break
+      case 1:
+        wx.makePhoneCall({ phoneNumber: '15361862828' })
+        break
+      case 2:
+        wx.switchTab({ url: '/pages/index/index' })
+        break
+    }
   },
 
   changeAvatar() {
-    wx.chooseMedia({
+    wx.chooseImage({
       count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
       success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
-        const { uploadFile } = require('../../utils/api-modules')
-        uploadFile(tempFilePath).then((uploadRes) => {
-          const avatar = uploadRes.data.url
-          userApi.updateProfile({ avatar }).then(() => {
-            this.setData({ 'userInfo.avatar': avatar })
-            wx.showToast({ title: '头像已更新', icon: 'success' })
-          })
+        const tempPath = res.tempFilePaths[0]
+        userApi.uploadAvatar(tempPath).then(uploadRes => {
+          const url = uploadRes.data.url || tempPath
+          const info = this.data.userInfo
+          info.avatar = url
+          this.setData({ userInfo: info })
+          app.globalData.userInfo = info
+          wx.showToast({ title: '头像更新成功', icon: 'success' })
         }).catch(() => {
-          wx.showToast({ title: '上传失败', icon: 'none' })
+          wx.showToast({ title: '上传失败', icon: 'error' })
         })
       }
     })
   },
 
-  editProfile() {
-    wx.showModal({
-      title: '修改昵称',
-      editable: true,
-      placeholderText: '请输入新昵称',
-      success: (res) => {
-        if (res.confirm && res.content) {
-          userApi.updateProfile({ nickname: res.content }).then(() => {
-            wx.showToast({ title: '修改成功', icon: 'success' })
-          })
-        }
-      }
-    })
-  },
+  goToMyPoints() { wx.navigateTo({ url: '/pages/my-points/my-points' }) },
 
-  goToSettings() {
-    wx.showToast({ title: '设置功能开发中', icon: 'none' })
-  },
-
-  goToOrderList(e) {
-    const status = e.currentTarget.dataset.status || 'all'
-    wx.navigateTo({ url: `/pages/order-list/order-list?status=${status}` })
-  },
-
-  goToWallet() {
-    wx.showToast({ title: '钱包功能开发中', icon: 'none' })
-  },
-
-  goToMessageCenter() {
-    wx.navigateTo({ url: '/pages/message-center/message-center' })
-  },
-
-  goToMembership() {
-    wx.navigateTo({ url: '/pages/membership/membership' })
-  },
-
-  goToAddress() {
-    wx.showToast({ title: '地址管理开发中', icon: 'none' })
-  },
-
-  goToAbout() {
-    wx.showToast({ title: '关于我们开发中', icon: 'none' })
-  },
-
-  handleEntryClick(e) {
-    const type = e.currentTarget.dataset.type
-    if (type === 'announcement') {
-      wx.navigateTo({ url: '/pages/message-center/message-center' })
-    }
-  },
-
-  handlePointsActivity(e) {
-    const type = e.currentTarget.dataset.type
-    switch (type) {
-      case 'my-points':
-        wx.showToast({ title: '积分详情开发中', icon: 'none' })
-        break
-      case 'lottery':
-        wx.showToast({ title: '积分抽奖开发中', icon: 'none' })
-        break
-      case 'points-mall':
-        wx.showToast({ title: '积分商城开发中', icon: 'none' })
-        break
-      case 'invite-friends':
-        wx.showToast({ title: '邀请好友开发中', icon: 'none' })
-        break
-    }
-  },
-
-  handleCommonFeature(e) {
-    const feature = e.currentTarget.dataset.feature
-    const featureMap = {
-      'recycling-process': '回收流程说明开发中',
-      'purchase': '我要采购开发中',
-      'mailing-address': '邮寄地址开发中',
-      'feedback': '问题反馈开发中',
-      'faq': '常见问题开发中',
-      'feedback-result': '反馈结果开发中',
-      'business-cooperation': '商务合作开发中',
-      'complaint': '投诉建议开发中',
-      'ad-recording': '广告录音开发中',
-      'market-trend': '行情走势开发中',
-      'recycling-video': '回收教学视频开发中'
-    }
-    wx.showToast({ title: featureMap[feature] || '功能开发中', icon: 'none' })
-  },
-
-  handleVipFeature(e) {
-    const feature = e.currentTarget.dataset.feature
-    const featureMap = {
-      'saved-quotes': '收藏报价单开发中',
-      'quote-changes': '报价变动开发中',
-      'photo-check': '/pages/scan-price/scan-price',
-      'sms-notify': '报价短信通知开发中'
-    }
-    const target = featureMap[feature]
-    if (target && target.startsWith('/')) {
-      wx.switchTab({ url: target })
-    } else {
-      wx.showToast({ title: target || '功能开发中', icon: 'none' })
-    }
-  },
-
-  copyWechat() {
-    wx.setClipboardData({
-      data: 'smhsw_kefu',
-      success: () => {
-        wx.showToast({ title: '微信号已复制', icon: 'success' })
-      }
-    })
-  },
-
-  makePhoneCall(e) {
-    const phone = e.currentTarget.dataset.phone || '15361862828'
-    wx.makePhoneCall({ phoneNumber: phone })
-  },
-
-  goToStoreList() {
-    wx.switchTab({ url: '/pages/index/index' })
-  },
-
-  onShareAppMessage() {
-    return { title: '数码回收网 - 个人中心', path: '/pages/profile/profile' }
-  }
+  goToMembership() { wx.navigateTo({ url: '/pages/membership/membership' }) }
 })

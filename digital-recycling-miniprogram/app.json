@@ -12,7 +12,17 @@
     "pages/scan-price/scan-price",
     "pages/order-list/order-list",
     "pages/order-detail/order-detail",
-    "pages/message-center/message-center"
+    "pages/message-center/message-center",
+    "pages/announcement/announcement",
+    "pages/my-points/my-points",
+    "pages/invite-friends/invite-friends",
+    "pages/recycling-process/recycling-process",
+    "pages/mailing-address/mailing-address",
+    "pages/feedback/feedback",
+    "pages/faq/faq",
+    "pages/business-cooperation/business-cooperation",
+    "pages/video-list/video-list",
+    "pages/video-play/video-play"
   ],
   "window": {
     "backgroundTextStyle": "light",

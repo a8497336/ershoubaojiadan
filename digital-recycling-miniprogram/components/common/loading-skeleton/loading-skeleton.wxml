@@ -26,4 +26,14 @@
       <view class="skeleton-line short"></view>
     </view>
   </block>
+  <block wx:if="{{type === 'table'}}">
+    <view class="skeleton-table">
+      <view class="skeleton-row header">
+        <view class="skeleton-cell" wx:for="{{colCount}}" wx:key="index"></view>
+      </view>
+      <view class="skeleton-row" wx:for="{{rowCount}}" wx:key="index">
+        <view class="skeleton-cell" wx:for="{{colCount}}" wx:for-item="cell" wx:for-index="ci" wx:key="ci"></view>
+      </view>
+    </view>
+  </block>
 </view>

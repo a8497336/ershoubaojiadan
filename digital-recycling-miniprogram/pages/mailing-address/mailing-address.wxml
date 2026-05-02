@@ -1,0 +1,59 @@
+<view class="page-container">
+  <view class="address-card">
+    <view class="card-header">
+      <view class="card-icon">📮</view>
+      <view class="card-title">收货地址</view>
+    </view>
+    <view class="address-info">
+      <view class="info-row">
+        <text class="info-label">收件人：</text>
+        <text class="info-value">{{address.name}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">联系电话：</text>
+        <text class="info-value">{{address.phone}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">详细地址：</text>
+        <text class="info-value">{{address.detail}}</text>
+      </view>
+    </view>
+    <view class="card-actions">
+      <view class="action-btn" bindtap="handleCopyAddress">复制地址</view>
+      <view class="action-btn" bindtap="handleCall">拨打电话</view>
+    </view>
+  </view>
+
+  <view class="tips-card">
+    <view class="card-header">
+      <view class="card-icon">💡</view>
+      <view class="card-title">邮寄须知</view>
+    </view>
+    <view class="tip-list">
+      <view class="tip-item">1、请在包裹上备注您的订单号或手机号</view>
+      <view class="tip-item">2、建议使用顺丰快递寄送，更安全快捷</view>
+      <view class="tip-item">3、请确保手机已退出账号并清除数据</view>
+      <view class="tip-item">4、请使用防震包装，避免运输途中损坏</view>
+      <view class="tip-item">5、收到包裹后1-2个工作日内完成质检</view>
+    </view>
+  </view>
+
+  <view class="contact-card">
+    <view class="card-header">
+      <view class="card-icon">💬</view>
+      <view class="card-title">联系客服</view>
+    </view>
+    <view class="contact-info">
+      <view class="contact-row" bindtap="handleCopyWechat">
+        <text class="contact-label">微信号：</text>
+        <text class="contact-value">{{wechat}}</text>
+        <text class="contact-action">复制</text>
+      </view>
+      <view class="contact-row" bindtap="handleCall">
+        <text class="contact-label">客服电话：</text>
+        <text class="contact-value">{{address.phone}}</text>
+        <text class="contact-action">拨打</text>
+      </view>
+    </view>
+  </view>
+</view>

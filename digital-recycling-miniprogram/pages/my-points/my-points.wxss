@@ -1,0 +1,107 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.points-header {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  padding: 40rpx 32rpx 60rpx;
+}
+
+.points-card {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 40rpx 32rpx;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.points-label {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16rpx;
+}
+
+.points-value {
+  font-size: 72rpx;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  margin-bottom: 24rpx;
+}
+
+.sign-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 64rpx;
+  background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+  color: #8B4513;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.sign-btn.signed {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding: 32rpx 32rpx 16rpx;
+}
+
+.log-list {
+  padding: 0 24rpx;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-background-white);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.log-info {
+  flex: 1;
+}
+
+.log-title {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.log-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.log-amount {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.log-amount.plus {
+  color: var(--color-success);
+}
+
+.log-amount.minus {
+  color: var(--color-text-tertiary);
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.loading-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}

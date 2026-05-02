@@ -1,0 +1,44 @@
+<view class="page-container">
+  <view class="video-tabs">
+    <view
+      wx:for="{{videoTabs}}"
+      wx:key="index"
+      class="tab-item {{activeTab === index ? 'active' : ''}}"
+      data-index="{{index}}"
+      bindtap="onTabTap"
+    >
+      {{item}}
+    </view>
+  </view>
+
+  <view wx:if="{{videos.length > 0}}" class="video-list">
+    <view
+      wx:for="{{videos}}"
+      wx:key="id"
+      class="video-card"
+      data-index="{{index}}"
+      bindtap="onVideoTap"
+    >
+      <view class="video-thumb">
+        <image wx:if="{{item.cover_image}}" src="{{item.cover_image}}" class="video-cover" mode="aspectFill" />
+        <view wx:else class="video-default-icon">📱</view>
+        <view class="video-play-btn">▶</view>
+      </view>
+      <view class="video-info">
+        <view class="video-title">{{item.title || item.name}}</view>
+        <view class="video-meta" wx:if="{{item.category}}">{{item.category}}</view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:if="{{!loading && videos.length === 0}}"
+    icon="🎬"
+    title="暂无视频"
+    description="该分类暂无视频教程"
+  />
+
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <view class="loading-text">加载中...</view>
+  </view>
+</view>

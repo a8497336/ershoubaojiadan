@@ -1,4 +1,4 @@
-const { priceApi } = require('../../utils/api-modules')
+const { priceApi, cartApi, searchApi } = require('../../utils/api-modules')
 
 Page({
   data: {
@@ -12,7 +12,9 @@ Page({
     brandId: null,
     brand: '',
     category: '',
-    productId: null
+    productId: null,
+    keyword: '',
+    showSearch: false
   },
 
   onLoad(options) {
@@ -53,7 +55,7 @@ Page({
     if (options.product_id) apiData.product_id = options.product_id
 
     priceApi.getTodayPrices(apiData).then((res) => {
-      const data = res.data || {}
+      const data = res.data || res || {}
       const rawList = data.list || []
 
       const processedList = rawList.map(item => {
@@ -156,6 +158,22 @@ Page({
     return 'price-low'
   },
 
+  toggleSearch() {
+    this.setData({ showSearch: !this.data.showSearch })
+  },
+
+  onSearchInput(e) {
+    this.setData({ keyword: e.detail.value })
+  },
+
+  onSearch() {
+    const keyword = this.data.keyword.trim()
+    if (!keyword) return
+    wx.navigateTo({
+      url: `/pages/brand-list/brand-list?keyword=${encodeURIComponent(keyword)}`
+    })
+  },
+
   goToPriceTrend(e) {
     const productId = e.currentTarget.dataset.productId
     const model = e.currentTarget.dataset.model
@@ -169,6 +187,12 @@ Page({
   goToStock() {
     wx.navigateTo({
       url: '/pages/my-stock/my-stock'
+    })
+  },
+
+  goToMailingAddress() {
+    wx.navigateTo({
+      url: '/pages/mailing-address/mailing-address'
     })
   },
 

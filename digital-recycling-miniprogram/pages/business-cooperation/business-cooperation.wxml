@@ -1,0 +1,36 @@
+<view class="page-container">
+  <view class="banner-section">
+    <view class="banner-title">商务合作</view>
+    <view class="banner-desc">携手共赢，共创数码回收新生态</view>
+  </view>
+
+  <view class="coop-list">
+    <view wx:for="{{cooperations}}" wx:key="index" class="coop-item">
+      <view class="coop-icon">{{item.icon}}</view>
+      <view class="coop-info">
+        <view class="coop-title">{{item.title}}</view>
+        <view class="coop-desc">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="contact-section">
+    <view class="section-title">联系我们</view>
+    <view class="contact-item" bindtap="handleCall">
+      <view class="contact-icon">📞</view>
+      <view class="contact-info">
+        <view class="contact-label">客服电话</view>
+        <view class="contact-value">{{contactPhone}}</view>
+      </view>
+      <view class="contact-action">拨打</view>
+    </view>
+    <view class="contact-item" bindtap="handleCopyWechat">
+      <view class="contact-icon">💬</view>
+      <view class="contact-info">
+        <view class="contact-label">微信号</view>
+        <view class="contact-value">{{contactWechat}}</view>
+      </view>
+      <view class="contact-action">复制</view>
+    </view>
+  </view>
+</view>

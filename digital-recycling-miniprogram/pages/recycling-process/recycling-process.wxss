@@ -1,0 +1,112 @@
+.page-container {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding-bottom: 60rpx;
+}
+
+.process-header {
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+  padding: 40rpx 32rpx;
+  text-align: center;
+}
+
+.header-title {
+  font-size: var(--font-size-sm);
+  color: #fff;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 2rpx;
+}
+
+.steps-list {
+  padding: 32rpx 24rpx;
+}
+
+.step-item {
+  display: flex;
+  min-height: 160rpx;
+}
+
+.step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 60rpx;
+  flex-shrink: 0;
+}
+
+.step-number {
+  width: 48rpx;
+  height: 48rpx;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.step-line {
+  width: 4rpx;
+  flex: 1;
+  background: var(--color-border);
+  margin: 8rpx 0;
+}
+
+.step-content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  background: var(--color-background-white);
+  border-radius: var(--radius-md);
+  padding: 24rpx;
+  margin-left: 16rpx;
+  margin-bottom: 16rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+.step-icon {
+  font-size: 40rpx;
+  flex-shrink: 0;
+}
+
+.step-info {
+  flex: 1;
+}
+
+.step-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 8rpx;
+}
+
+.step-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.tips-section {
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  margin: 0 24rpx;
+}
+
+.tips-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 20rpx;
+}
+
+.tip-item {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-loose);
+  padding: 8rpx 0;
+}

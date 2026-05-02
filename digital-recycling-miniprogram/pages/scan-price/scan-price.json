@@ -1,9 +1,12 @@
 {
   "navigationBarTitleText": "拍照查价",
-  "navigationBarBackgroundColor": "#ff2b3b",
+  "navigationBarBackgroundColor": "#ff2d4a",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#f8f9fa",
+  "backgroundColor": "#f5f5f5",
   "usingComponents": {
-    "custom-tabbar": "/components/custom-tabbar/custom-tabbar"
+    "empty-state": "/components/common/empty-state/empty-state",
+    "loading-skeleton": "/components/common/loading-skeleton/loading-skeleton",
+    "loading-spinner": "/components/common/loading-spinner/loading-spinner",
+    "error-toast": "/components/common/error-toast/error-toast"
   }
 }

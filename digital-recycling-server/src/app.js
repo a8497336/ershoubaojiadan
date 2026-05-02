@@ -23,18 +23,19 @@ app.use(morgan('dev'))
 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
+app.use('/admin', express.static(path.join(__dirname, '..', 'public', 'admin')))
+app.get('/admin/{*splat}', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin', 'index.html'))
+})
+
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 app.use('/api', require('./routes/api'))
 app.use('/api/admin', require('./routes/admin'))
 
-app.get('/', (req, res) => {
-  res.json({
-    name: '数码回收网 API',
-    version: '1.0.0',
-    status: 'running',
-    timestamp: Date.now()
-  })
+app.use(express.static(path.join(__dirname, '..', 'public', 'app')))
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'app', 'index.html'))
 })
 
 app.use(errorHandler)
@@ -60,6 +61,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       logger.info(`服务器运行在 http://localhost:${PORT}`)
       logger.info(`API文档: http://localhost:${PORT}/api/docs`)
+      logger.info(`后台管理: http://localhost:${PORT}/admin`)
     })
   } catch (err) {
     logger.error('服务器启动失败:', err)

@@ -8,6 +8,7 @@ Page({
     selectedCount: 0,
     totalPrice: '0.00',
     isAllSelected: false,
+    allSelected: false,
     isEmpty: true,
     loading: true,
     showDeleteConfirm: false,
@@ -31,24 +32,26 @@ Page({
       productName: raw.Product ? raw.Product.name : '未知产品',
       productImage: raw.Product && raw.Product.image ? raw.Product.image : '',
       conditionName: raw.Condition ? raw.Condition.name : '',
-      unitPrice: raw.unit_price || 0,
+      price: raw.unit_price || 0,
       totalQuantity: raw.quantity || 1,
-      isSelected: !!raw.is_selected
+      selected: !!raw.is_selected
     }
   },
 
   loadCart() {
     this.setData({ loading: true })
-    cartApi.getCart().then((res) => {
-      const cart = res.data || {}
+    cartApi.getList().then((res) => {
+      const cart = res.data || res || {}
       const cartItems = (cart.list || []).map(item => this.formatCartItem(item))
+      const allSelected = cartItems.length > 0 && cartItems.every(item => item.selected)
       this.setData({
         cartItems,
-        totalItems: cart.totalItems || 0,
-        totalDevices: cart.totalDevices || 0,
-        selectedCount: cart.selectedCount || 0,
+        totalItems: cart.totalItems || cartItems.length,
+        totalDevices: cart.totalDevices || cartItems.length,
+        selectedCount: cart.selectedCount || cartItems.filter(i => i.selected).length,
         totalPrice: cart.totalPrice || '0.00',
-        isAllSelected: cart.isAllSelected || false,
+        isAllSelected: allSelected,
+        allSelected: allSelected,
         isEmpty: cartItems.length === 0,
         loading: false
       })
@@ -61,9 +64,13 @@ Page({
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item) return
-    cartApi.updateCartItem(item.id, { is_selected: !item.isSelected }).then(() => {
+    cartApi.update(item.id, { is_selected: !item.selected }).then(() => {
       this.loadCart()
     }).catch(() => {})
+  },
+
+  toggleSelect(e) {
+    this.toggleItemSelection(e)
   },
 
   toggleSelectAll() {
@@ -77,18 +84,26 @@ Page({
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item || item.totalQuantity <= 1) return
-    cartApi.updateCartItem(item.id, { quantity: item.totalQuantity - 1 }).then(() => {
+    cartApi.update(item.id, { quantity: item.totalQuantity - 1 }).then(() => {
       this.loadCart()
     }).catch(() => {})
+  },
+
+  decreaseQty(e) {
+    this.decreaseQuantity(e)
   },
 
   increaseQuantity(e) {
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item) return
-    cartApi.updateCartItem(item.id, { quantity: item.totalQuantity + 1 }).then(() => {
+    cartApi.update(item.id, { quantity: item.totalQuantity + 1 }).then(() => {
       this.loadCart()
     }).catch(() => {})
+  },
+
+  increaseQty(e) {
+    this.increaseQuantity(e)
   },
 
   handleDelete(e) {
@@ -98,16 +113,28 @@ Page({
     this.setData({ showDeleteConfirm: true, deleteTargetId: item.id })
   },
 
+  showDeleteModal(e) {
+    this.handleDelete(e)
+  },
+
   closeDeleteConfirm() {
     this.setData({ showDeleteConfirm: false, deleteTargetId: null })
   },
 
+  hideDeleteModal() {
+    this.closeDeleteConfirm()
+  },
+
   stopPropagation() {},
+
+  nop() {
+    this.stopPropagation()
+  },
 
   confirmDelete() {
     const id = this.data.deleteTargetId
     if (!id) return
-    cartApi.deleteCartItem(id).then(() => {
+    cartApi.remove(id).then(() => {
       this.setData({ showDeleteConfirm: false, deleteTargetId: null })
       this.loadCart()
     }).catch(() => {
@@ -119,6 +146,10 @@ Page({
     this.setData({ showClearConfirm: true })
   },
 
+  showClearModal() {
+    this.handleClearAll()
+  },
+
   handleClearCategory() {
     this.setData({ showClearConfirm: true })
   },
@@ -127,8 +158,12 @@ Page({
     this.setData({ showClearConfirm: false })
   },
 
+  hideClearModal() {
+    this.closeClearConfirm()
+  },
+
   confirmClearAll() {
-    cartApi.clearCart().then(() => {
+    cartApi.clear().then(() => {
       this.setData({ showClearConfirm: false })
       this.loadCart()
     }).catch(() => {
@@ -136,13 +171,20 @@ Page({
     })
   },
 
+  confirmClear() {
+    this.confirmClearAll()
+  },
+
   handleAddMore() {
+    wx.switchTab({ url: '/pages/brand-list/brand-list' })
+  },
+
+  goToBrandList() {
     wx.switchTab({ url: '/pages/brand-list/brand-list' })
   },
 
   handleSubmit() {
     if (this.data.selectedCount <= 0) {
-      wx.showToast({ title: '请选择要回收的商品', icon: 'none' })
       return
     }
     wx.showModal({
@@ -161,6 +203,10 @@ Page({
         }
       }
     })
+  },
+
+  submitOrder() {
+    this.handleSubmit()
   },
 
   goHome() {
