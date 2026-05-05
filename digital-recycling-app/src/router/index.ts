@@ -20,6 +20,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/price-trend/:productId',
+    name: 'PriceTrend',
+    component: () => import('../views/PriceTrend.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/price-quote/:brandId',
     name: 'PriceQuote',
     component: () => import('../views/PriceQuote.vue'),

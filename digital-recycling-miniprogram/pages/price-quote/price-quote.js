@@ -7,6 +7,7 @@ Page({
     viewCount: 0,
     priceList: [],
     seriesList: [],
+    conditions: [],
     isEmpty: false,
     loading: true,
     brandId: null,
@@ -54,26 +55,38 @@ Page({
     if (options.category) apiData.category = options.category
     if (options.product_id) apiData.product_id = options.product_id
 
-    priceApi.getTodayPrices(apiData).then((res) => {
-      const data = res.data || res || {}
+    const conditionsPromise = this.data.conditions.length > 0
+      ? Promise.resolve(this.data.conditions)
+      : priceApi.getConditions().then(res => {
+          const conditions = (res.data || res || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          this.setData({ conditions })
+          return conditions
+        })
+
+    Promise.all([
+      priceApi.getTodayPrices(apiData),
+      conditionsPromise
+    ]).then(([priceRes, conditions]) => {
+      const data = priceRes.data || priceRes || {}
       const rawList = data.list || []
 
       const processedList = rawList.map(item => {
-        const prices = {}
+        const priceMap = {}
 
         ;(item.Prices || []).forEach(priceItem => {
-          const code = priceItem.Condition ? priceItem.Condition.code : priceItem.condition_code
-          if (code && priceItem.price !== undefined && priceItem.price !== null) {
-            prices[code] = parseFloat(priceItem.price)
+          const conditionId = priceItem.condition_id || (priceItem.Condition ? priceItem.Condition.id : null)
+          if (conditionId !== null && priceItem.price !== undefined && priceItem.price !== null) {
+            priceMap[conditionId] = parseFloat(priceItem.price)
           }
         })
 
         return {
+          ...item,
           id: item.id,
           model: item.model || item.name || '',
           series: item.series || (item.Category ? item.Category.name : '其他'),
           brand: item.Brand ? item.Brand.name : '',
-          ...prices,
+          priceMap,
           _rawPrices: item.Prices || []
         }
       })
@@ -96,27 +109,15 @@ Page({
         seriesMap[seriesName].items.push({
           productId: item.id,
           model: item.model,
-          price1: this.formatPrice(item.screen_good || item.price1),
-          price1Class: this.getPriceClass(item.screen_good || item.price1),
-          price2: this.formatPrice(item.screen_good_large || item.price2),
-          price2Class: this.getPriceClass(item.screen_good_large || item.price2),
-          price3: this.formatPrice(item.screen_good_small || item.price3),
-          price3Class: this.getPriceClass(item.screen_good_small || item.price3),
-          price4: this.formatPrice(item.screen_bad || item.price4),
-          price4Class: this.getPriceClass(item.screen_bad || item.price4),
-          price5: this.formatPrice(item.no_power || item.price5),
-          price5Class: this.getPriceClass(item.no_power || item.price5),
-          price6: this.formatPrice(item.board_bad || item.price6),
-          price6Class: this.getPriceClass(item.board_bad || item.price6),
-          price7: this.formatPrice(item.screen_good_broken || item.price7),
-          price7Class: this.getPriceClass(item.screen_good_broken || item.price7),
-          price8: this.formatPrice(item.bad_no_tag || item.price8),
-          price8Class: this.getPriceClass(item.bad_no_tag || item.price8)
+          ...item,
+          prices: conditions.map(c => ({
+            val: this.formatPrice(item.priceMap[c.id]),
+            cls: this.getPriceClass(item.priceMap[c.id])
+          }))
         })
       })
 
       const seriesList = Object.values(seriesMap)
-
       this.setData({
         priceDate: data.date || new Date().toISOString().split('T')[0],
         updateTime: data.updateTime ?
@@ -133,6 +134,7 @@ Page({
         isEmpty: seriesList.length === 0,
         loading: false
       })
+      console.log(this.data.seriesList)
     }).catch(() => {
       this.setData({
         loading: false,

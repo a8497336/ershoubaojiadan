@@ -31,8 +31,9 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleViewTrend(row)">查看趋势</el-button>
             <el-button type="danger" link size="small" @click="handleDeletePrice(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -92,12 +93,26 @@
         </template>
       </el-dialog>
     </el-dialog>
+
+    <el-dialog v-model="trendVisible" :title="trendProduct.name + ' - 价格趋势'" width="700px" destroy-on-close>
+      <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
+        <span style="font-size: 14px; color: #666;">时间范围：</span>
+        <el-radio-group v-model="trendDays" @change="loadTrendData">
+          <el-radio-button :value="7">7天</el-radio-button>
+          <el-radio-button :value="15">15天</el-radio-button>
+          <el-radio-button :value="30">30天</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div ref="trendChartRef" style="width: 100%; height: 400px;"></div>
+      <div v-if="trendLoading" v-loading="true" style="height: 400px;"></div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { getPrices, batchUpdatePrices, getConditions, getBrands, createPrice, deletePrice, createCondition, updateCondition, deleteCondition, getProducts } from '@/api'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import * as echarts from 'echarts'
+import { getPrices, batchUpdatePrices, getConditions, getBrands, createPrice, deletePrice, createCondition, updateCondition, deleteCondition, getProducts, getPriceTrend } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
@@ -348,6 +363,61 @@ const handleSaveCondition = async () => {
         ElMessage.error(error.message || '操作失败')
       }
     }
+  })
+}
+
+const trendVisible = ref(false)
+const trendProduct = ref({ name: '' })
+const trendDays = ref(15)
+const trendLoading = ref(false)
+const trendChartRef = ref(null)
+let trendChartInstance = null
+
+const handleViewTrend = (row) => {
+  trendProduct.value = row
+  trendDays.value = 15
+  trendVisible.value = true
+  nextTick(() => {
+    loadTrendData()
+  })
+}
+
+const loadTrendData = async () => {
+  if (!trendProduct.value.id) return
+  trendLoading.value = true
+  try {
+    const res = await getPriceTrend(trendProduct.value.id, { days: trendDays.value })
+    const data = res.data
+    renderTrendChart(data)
+  } catch (error) {
+    ElMessage.error('加载趋势数据失败')
+  } finally {
+    trendLoading.value = false
+  }
+}
+
+const renderTrendChart = (data) => {
+  if (!trendChartRef.value) return
+  if (trendChartInstance) {
+    trendChartInstance.dispose()
+  }
+  trendChartInstance = echarts.init(trendChartRef.value)
+  const colors = ['#ff2d4a', '#1890ff', '#52c41a', '#faad14', '#722ed1', '#13c2c2']
+  const series = (data.trendData || []).map((item, index) => ({
+    name: item.name,
+    type: 'line',
+    data: (item.data || []).map(d => [d.date, d.price]),
+    smooth: true,
+    lineStyle: { width: 2, color: colors[index % colors.length] },
+    itemStyle: { color: colors[index % colors.length] }
+  }))
+  trendChartInstance.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    grid: { left: 60, right: 20, top: 20, bottom: 50 },
+    xAxis: { type: 'category', boundaryGap: false },
+    yAxis: { type: 'value', axisLabel: { formatter: '¥{value}' } },
+    series
   })
 }
 

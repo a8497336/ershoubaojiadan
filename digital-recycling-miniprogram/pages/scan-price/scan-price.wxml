@@ -1,7 +1,8 @@
 <view class="page-container">
+
   <!-- 主要内容区 -->
   <view class="main-red-section">
-    <text class="main-title">拍照片 查价格</text>
+    <view class="main-title">拍照片 查价格</view>
 
     <view class="count-bar">
       <view class="count-item">
@@ -23,6 +24,7 @@
       <view class="corner-mark corner-br"></view>
 
       <view class="click-circle">
+        <view class="dashed-ring"></view>
         <image class="camera-icon-img" src="/images/icons/camera.svg" mode="aspectFit"/>
         <text class="click-text">点击\n拍照查价</text>
       </view>
@@ -70,14 +72,21 @@
     <view wx:else class="no-match">
       <view class="no-match-icon">🔍</view>
       <view class="no-match-text">未识别到匹配产品</view>
-      <view class="no-match-action" bindtap="goToSearch">手动搜索</view>
+      <view class="no-match-actions">
+        <view class="no-match-action secondary" bindtap="goToSearch">手动搜索</view>
+        <view class="no-match-action" bindtap="retakePhoto">重新拍照</view>
+      </view>
     </view>
   </view>
 
   <!-- 扫描历史 -->
-  <view wx:if="{{scanHistory.length > 0 && !showResult}}" class="history-section">
-    <view class="history-title">最近扫描</view>
-    <view class="history-list">
+  <view wx:if="{{!showResult}}" class="history-section">
+    <view class="history-header">
+      <text class="history-title">最近扫描</text>
+      <text class="history-clear-btn" wx:if="{{scanHistory.length > 0}}" bindtap="clearHistory">清空</text>
+    </view>
+
+    <view wx:if="{{scanHistory.length > 0}}" class="history-list">
       <view
         wx:for="{{scanHistory}}"
         wx:key="time"
@@ -85,12 +94,26 @@
         data-id="{{item.id}}"
         bindtap="goToProductDetail"
       >
+        <image class="history-thumb" src="{{item.image || '/images/icons/empty.svg'}}" mode="aspectFill" />
         <view class="history-info">
           <view class="history-name">{{item.name}}</view>
           <view class="history-brand" wx:if="{{item.brand}}">{{item.brand}}</view>
+          <view class="history-time" wx:if="{{item.displayTime}}">{{item.displayTime}}</view>
         </view>
-        <view class="history-price" wx:if="{{item.price}}">¥{{item.price}}</view>
+        <view class="history-right">
+          <view class="history-price" wx:if="{{item.price}}">¥{{item.price}}</view>
+          <text class="history-delete" data-index="{{index}}" catchtap="deleteHistoryItem">×</text>
+        </view>
       </view>
+      <view class="history-view-all" bindtap="viewAllHistory">
+        <text>查看全部</text>
+        <text class="history-view-all-arrow">></text>
+      </view>
+    </view>
+
+    <view wx:else class="history-empty">
+      <image class="history-empty-icon" src="/images/icons/empty.svg" mode="aspectFit" />
+      <text class="history-empty-text">暂无扫描记录</text>
     </view>
   </view>
 
@@ -130,14 +153,14 @@
   </view>
 
   <!-- 底部功能按钮 -->
-  <!-- <view class="bottom-actions">
-    <button class="action-btn secondary-btn">
+  <view class="bottom-actions">
+    <button class="action-btn secondary-btn" bindtap="viewAllHistory">
       <image class="btn-icon-img" src="/images/icons/search.svg" mode="aspectFit"/> 查看历史
     </button>
-    <button class="action-btn primary-btn">
+    <button class="action-btn primary-btn" bindtap="goToFaq">
       <image class="btn-icon-img" src="/images/icons/faq.svg" mode="aspectFit"/> 帮助中心
     </button>
-  </view> -->
+  </view>
 
   <!-- 自定义TabBar -->
   <custom-tabbar activeTab="scanPrice" />

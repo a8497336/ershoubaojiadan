@@ -9,11 +9,10 @@
 }
 
 .points-card {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-lg);
   padding: 40rpx 32rpx;
   text-align: center;
-  backdrop-filter: blur(10px);
 }
 
 .points-label {

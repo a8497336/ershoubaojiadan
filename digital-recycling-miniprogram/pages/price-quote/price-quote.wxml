@@ -1,11 +1,11 @@
 <view class="price-quote-page">
   <!-- 搜索栏 -->
-  <view class="search-section">
+  <!-- <view class="search-section">
     <view class="search-bar">
       <image class="search-icon" src="/images/icons/search-gray.svg" mode="aspectFit"/>
       <input type="text" placeholder="搜索品牌或型号" confirm-type="search" value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch"/>
     </view>
-  </view>
+  </view> -->
 
   <view class="header-section">
     <view class="header-meta">
@@ -25,7 +25,7 @@
     </view>
   </view>
 
-  <view class="quick-actions">
+  <!-- <view class="quick-actions">
     <view class="action-item" bindtap="goToStock">
       <text class="action-icon">📦</text>
       <text class="action-text">我的压货</text>
@@ -34,45 +34,29 @@
       <text class="action-icon">📮</text>
       <text class="action-text">邮寄地址</text>
     </view>
-  </view>
+  </view> -->
 
   <block wx:if="{{!isEmpty}}">
     <view class="scroll-hint">← 左右滑动查看完整报价，点击机型查看价格趋势 →</view>
     <scroll-view class="table-container" scroll-x>
-      <view class="price-table">
+      <view class="price-table" style="min-width: {{conditions.length * 110 + 360}}rpx;">
         <view class="table-header">
           <view class="th col-index">序号</view>
-          <view class="th col-series">折叠系列</view>
-          <view class="th col-model">网络型号</view>
-          <view class="th col-price">开机屏好</view>
-          <view class="th col-price">开机大屏好</view>
-          <view class="th col-price">开机小屏好</view>
-          <view class="th col-price">开机屏坏</view>
-          <view class="th col-price">不开机</view>
-          <view class="th col-price">废板整机</view>
-          <view class="th col-price">开机屏好外屏碎</view>
-          <view class="th col-price">开机坏未拆标</view>
+          <view class="th col-series">系列</view>
+          <view class="th col-model">型号</view>
+          <view class="th col-price" wx:for="{{conditions}}" wx:key="id">{{item.name}}</view>
         </view>
         <view class="table-body">
           <block wx:for="{{seriesList}}" wx:for-item="series" wx:key="index">
             <block wx:for="{{series.items}}" wx:for-item="item" wx:key="index">
               <view class="tr {{index === 0 && series.index > 1 ? 'series-divider' : ''}}" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
-                <block wx:if="{{index === 0}}">
-                  <view class="td index-cell" style="height: {{series.items.length * 80}}rpx;">{{series.index}}</view>
-                  <view class="td series-cell" style="height: {{series.items.length * 80}}rpx;">{{series.name}}</view>
-                </block>
+                <view class="td index-cell" >{{index}}</view>
+                <view class="td series-cell" >{{item.series_name}}</view>
                 <view class="td model-cell">
                   {{item.model}}
                   <text class="trend-hint">📈</text>
                 </view>
-                <view class="td {{item.price1Class}}">{{item.price1}}</view>
-                <view class="td {{item.price2Class}}">{{item.price2}}</view>
-                <view class="td {{item.price3Class}}">{{item.price3}}</view>
-                <view class="td {{item.price4Class}}">{{item.price4}}</view>
-                <view class="td {{item.price5Class}}">{{item.price5}}</view>
-                <view class="td {{item.price6Class}}">{{item.price6}}</view>
-                <view class="td {{item.price7Class}}">{{item.price7}}</view>
-                <view class="td {{item.price8Class}}">{{item.price8}}</view>
+                <view class="td {{price.cls}}" wx:for="{{item.prices}}" wx:for-item="price" wx:key="index">{{price.val}}</view>
               </view>
             </block>
           </block>

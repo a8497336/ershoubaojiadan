@@ -88,15 +88,10 @@
   color: #8B4513;
 }
 
-.income-icon {
+.income-icon-img {
   width: 40rpx;
   height: 40rpx;
-  background: var(--color-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
+  flex-shrink: 0;
 }
 
 .income-num {
@@ -117,6 +112,8 @@
 }
 
 .privilege-grid {
+  display: flex;
+  flex-wrap: wrap;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32rpx;
@@ -129,16 +126,10 @@
   gap: 16rpx;
 }
 
-.privilege-icon {
+.privilege-icon-img {
   width: 96rpx;
   height: 96rpx;
   border-radius: 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
-  background: linear-gradient(135deg, #ffe4b5 0%, var(--color-accent) 100%);
-  box-shadow: 0 4rpx 16rpx rgba(255,215,0,0.3);
 }
 
 .privilege-text {

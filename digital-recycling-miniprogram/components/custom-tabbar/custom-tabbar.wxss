@@ -11,7 +11,7 @@
 .tabbar {
   position: relative;
   width: 100%;
-  height: 170rpx;
+  height: 150rpx;
   background: #fff;
   display: flex;
   align-items: center;
@@ -99,20 +99,17 @@
 
 .center-button-main {
   position: absolute;
-  top: 20rpx;
-  left: 20rpx;
-  width: 120rpx;
-  height: 120rpx;
+  top: 10px;
+  left: 10px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: var(--color-primary-gradient);
+  background: linear-gradient(135deg, #e64340, #ff4757);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
-    0 20rpx 50rpx rgba(230, 67, 64, 0.4),
-    0 10rpx 20rpx rgba(230, 67, 64, 0.3),
-    inset 0 4rpx 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 25px rgba(230, 67, 64, 0.4), 0 5px 10px rgba(230, 67, 64, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.2);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;
 }
@@ -154,6 +151,7 @@
   font-size: 24rpx;
   color: var(--color-primary);
   position: relative;
+  top: 10px;
 }
 
 .center-text::before {
@@ -183,14 +181,14 @@
 /* 角标 */
 .center-badge {
   position: absolute;
-  top: -4rpx;
-  right: -8rpx;
-  background: var(--color-primary-gradient);
+  top: -2px;
+  right: -4px;
+  background: linear-gradient(135deg, #e64340, #ff4757);
   color: white;
-  font-size: 18rpx;
+  font-size: 9px;
   font-weight: bold;
-  padding: 2rpx 10rpx;
-  border-radius: 16rpx;
+  padding: 1px 5px;
+  border-radius: 8px;
   z-index: 10;
 }
 

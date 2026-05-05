@@ -19,7 +19,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
+      this.getTabBar().setData({ activeTab: 'scanPrice' })
     }
   },
 
@@ -40,8 +40,37 @@ Page({
   loadScanHistory() {
     try {
       const history = wx.getStorageSync('scanHistory') || []
-      this.setData({ scanHistory: history.slice(0, 5) })
+      const formatted = history.slice(0, 5).map(item => ({
+        ...item,
+        displayTime: this.formatTime(item.time)
+      }))
+      this.setData({ scanHistory: formatted })
     } catch (e) {}
+  },
+
+  formatTime(isoTime) {
+    const now = new Date()
+    const date = new Date(isoTime)
+    const diff = now - date
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+
+    if (minutes < 1) return '刚刚'
+    if (hours < 1) return `${minutes}分钟前`
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const yesterday = new Date(today - 86400000)
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+    const pad = n => String(n).padStart(2, '0')
+    const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+
+    if (dateDay.getTime() === today.getTime()) return `今天 ${time}`
+    if (dateDay.getTime() === yesterday.getTime()) return `昨天 ${time}`
+    if (date.getFullYear() === now.getFullYear()) {
+      return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`
+    }
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
   },
 
   handleTakePhoto() {
@@ -148,11 +177,16 @@ Page({
         name: product.model || product.name,
         brand: product.Brand?.name || '',
         price: product.Prices?.[0]?.price || '',
+        image: this.data.scanResult?.filePath || '',
         time: new Date().toISOString()
       })
-      history = history.slice(0, 20)
+      history = history.slice(0, 50)
       wx.setStorageSync('scanHistory', history)
-      this.setData({ scanHistory: history.slice(0, 5) })
+      const formatted = history.slice(0, 5).map(item => ({
+        ...item,
+        displayTime: this.formatTime(item.time)
+      }))
+      this.setData({ scanHistory: formatted })
     } catch (e) {}
   },
 
@@ -161,6 +195,48 @@ Page({
     if (id) {
       wx.navigateTo({ url: `/pages/brand-list/brand-list?productId=${id}` })
     }
+  },
+
+  clearHistory() {
+    wx.showModal({
+      title: '确认清空',
+      content: '确定要清空所有扫描历史吗？',
+      confirmColor: '#ff2b3b',
+      success: (res) => {
+        if (res.confirm) {
+          wx.removeStorageSync('scanHistory')
+          this.setData({ scanHistory: [] })
+          wx.showToast({ title: '已清空', icon: 'success' })
+        }
+      }
+    })
+  },
+
+  deleteHistoryItem(e) {
+    const { index } = e.currentTarget.dataset
+    try {
+      let history = wx.getStorageSync('scanHistory') || []
+      history.splice(index, 1)
+      wx.setStorageSync('scanHistory', history)
+      const formatted = history.slice(0, 5).map(item => ({
+        ...item,
+        displayTime: this.formatTime(item.time)
+      }))
+      this.setData({ scanHistory: formatted })
+      wx.showToast({ title: '已删除', icon: 'success' })
+    } catch (err) {}
+  },
+
+  viewAllHistory() {
+    wx.navigateTo({ url: '/pages/brand-list/brand-list' })
+  },
+
+  retakePhoto() {
+    this.handleTakePhoto()
+  },
+
+  goToFaq() {
+    wx.navigateTo({ url: '/pages/faq/faq' })
   },
 
   goToSearch() {

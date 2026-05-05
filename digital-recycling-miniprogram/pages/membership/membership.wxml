@@ -31,22 +31,22 @@
           <image class="privilege-icon-img" src="/images/icons/search.svg" mode="aspectFit"/>
           <view class="privilege-text">免费查看报价</view>
         </view>
-        <view class="privilege-item">
+        <!-- <view class="privilege-item">
           <image class="privilege-icon-img" src="/images/icons/chart.svg" mode="aspectFit"/>
           <view class="privilege-text">行情抢先知道</view>
-        </view>
+        </view> -->
         <view class="privilege-item">
           <image class="privilege-icon-img" src="/images/icons/camera.svg" mode="aspectFit"/>
           <view class="privilege-text">拍照查价不限次</view>
         </view>
-        <view class="privilege-item">
+        <!-- <view class="privilege-item">
           <image class="privilege-icon-img" src="/images/icons/star.svg" mode="aspectFit"/>
           <view class="privilege-text">专属收藏报价单</view>
-        </view>
-        <view class="privilege-item">
+        </view> -->
+        <!-- <view class="privilege-item">
           <image class="privilege-icon-img" src="/images/icons/sms.svg" mode="aspectFit"/>
           <view class="privilege-text">报价短信通知</view>
-        </view>
+        </view> -->
         <view class="privilege-item">
           <image class="privilege-icon-img" src="/images/icons/shield.svg" mode="aspectFit"/>
           <view class="privilege-text">专属VIP服务</view>

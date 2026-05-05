@@ -40,7 +40,7 @@
           <thead>
             <tr>
               <th class="col-index">序号</th>
-              <th class="col-series">折叠系列</th>
+              <th class="col-series">系列</th>
               <th class="col-model">网络型号</th>
               <th v-for="(cond, cIdx) in conditionHeaders" :key="cIdx" class="col-price">{{ cond.name }}</th>
             </tr>
@@ -51,11 +51,11 @@
                 <tr v-if="iIndex === 0" :class="{ 'series-divider': sIndex > 0 }">
                   <td class="index-cell" :rowspan="series.items.length">{{ series.index }}</td>
                   <td class="series-cell" :rowspan="series.items.length">{{ series.name }}</td>
-                  <td class="model-cell">{{ item.model }}</td>
+                  <td class="model-cell" @click="goToPriceTrend(item)" :class="{ 'model-clickable': item.productId }">{{ item.model }}<span v-if="item.productId" class="trend-icon">📈</span></td>
                   <td v-for="(pv, pIdx) in item.prices" :key="pIdx" :class="pv.cls">{{ pv.val }}</td>
                 </tr>
                 <tr v-else>
-                  <td class="model-cell">{{ item.model }}</td>
+                  <td class="model-cell" @click="goToPriceTrend(item)" :class="{ 'model-clickable': item.productId }">{{ item.model }}<span v-if="item.productId" class="trend-icon">📈</span></td>
                   <td v-for="(pv, pIdx) in item.prices" :key="pIdx" :class="pv.cls">{{ pv.val }}</td>
                 </tr>
               </template>
@@ -110,6 +110,7 @@ interface PriceVal {
 }
 
 interface PriceItem {
+  productId: number | null
   model: string
   prices: PriceVal[]
 }
@@ -172,7 +173,18 @@ async function fetchPriceData() {
 
     const conditionsRes: any = await priceApi.getConditions()
     const conditions = conditionsRes.data || []
-    conditionHeaders.value = conditions
+
+    const usedConditionIds = new Set()
+    products.forEach((p: any) => {
+      if (p.Prices) {
+        p.Prices.forEach((pr: any) => {
+          if (parseFloat(pr.price) > 0) {
+            usedConditionIds.add(pr.condition_id)
+          }
+        })
+      }
+    })
+    conditionHeaders.value = conditions.filter((c: any) => usedConditionIds.has(c.id))
 
     const grouped: Record<string, any[]> = {}
     products.forEach((p: any) => {
@@ -199,6 +211,7 @@ async function fetchPriceData() {
         })
 
         items.push({
+          productId: prod.id || null,
           model: prod.model_code || prod.name,
           prices
         })
@@ -211,6 +224,11 @@ async function fetchPriceData() {
   } finally {
     loading.value = false
   }
+}
+
+function goToPriceTrend(item: PriceItem) {
+  if (!item.productId) return
+  router.push(`/price-trend/${item.productId}?model=${encodeURIComponent(item.model)}`)
 }
 
 onMounted(() => {
@@ -389,6 +407,21 @@ onMounted(() => {
   font-weight: 500;
   color: #333;
   font-size: 10px;
+}
+
+.model-clickable {
+  cursor: pointer;
+  color: #c0392b;
+}
+
+.model-clickable:hover {
+  text-decoration: underline;
+}
+
+.trend-icon {
+  font-size: 10px;
+  margin-left: 2px;
+  vertical-align: middle;
 }
 
 .price-high {

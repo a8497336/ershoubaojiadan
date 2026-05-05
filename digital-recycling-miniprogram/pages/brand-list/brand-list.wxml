@@ -39,7 +39,7 @@
               <view class="product-info">
                 <view class="p-name">{{product.model || product.name}}</view>
               </view>
-              <view class="product-price">{{product.priceText}}</view>
+              <view class="product-price">{{product.highestPriceText}}</view>
             </view>
           </block>
           <empty-state wx:if="{{productGroups.length === 0 && !productsLoading}}" text="暂无产品，请先选择品牌" />
@@ -65,24 +65,29 @@
           <image wx:if="{{selectedProduct.image}}" src="{{selectedProduct.image}}" mode="aspectFit" />
           <text wx:else>📱</text>
         </view>
-        <view class="grade-bar">
-          <view class="grade-label">选择成色</view>
-          <view class="grade-options">
-            <view class="grade-item {{index === selectedGradeIndex ? 'selected' : ''}}" wx:for="{{grades}}" wx:key="index" bindtap="selectGrade" data-index="{{index}}">{{item}}</view>
-          </view>
-        </view>
-        <view class="qty-row">
-          <text class="qty-label">数量</text>
-          <view class="qty-ctrl">
-            <view class="qty-btn {{quantity <= 1 ? 'disabled' : ''}}" bindtap="decreaseQty">−</view>
-            <text class="qty-num">{{quantity}}</text>
-            <view class="qty-btn" bindtap="increaseQty">+</view>
-          </view>
+        <view class="trend-btn" bindtap="goToPriceTrend">📈 价格趋势</view>
+        <view class="condition-section">
+          <view class="condition-label">成色价格</view>
+          <loading-spinner wx:if="{{conditionsLoading}}" size="small" color="gray" />
+          <block wx:elif="{{conditions.length > 0}}">
+            <view class="condition-list">
+              <view class="condition-price-row" wx:for="{{conditions}}" wx:key="conditionId">
+                <view class="condition-name">{{item.conditionName}}</view>
+                <view class="condition-price {{item.price > 0 ? '' : 'zero'}}">{{item.priceText}}</view>
+                <view class="condition-qty-ctrl">
+                  <view class="qty-btn {{item.quantity <= 1 ? 'disabled' : ''}}" bindtap="decreaseConditionQty" data-index="{{index}}">−</view>
+                  <text class="qty-num">{{item.quantity}}</text>
+                  <view class="qty-btn" bindtap="increaseConditionQty" data-index="{{index}}">+</view>
+                </view>
+              </view>
+            </view>
+          </block>
+          <view class="condition-empty" wx:else>暂无成色信息</view>
         </view>
         <button class="add-cart-btn" bindtap="addToCart">加入回收车</button>
       </view>
     </view>
   </block>
 
-  <custom-tabbar activeTab="brand-list" />
+  <custom-tabbar activeTab="priceList" />
 </view>

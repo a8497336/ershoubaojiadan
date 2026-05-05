@@ -36,33 +36,26 @@
   <view class="chart-section" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
     <view class="chart-title">价格趋势</view>
     
-    <!-- 简单的折线图实现 -->
-    <view class="simple-chart">
-      <view class="chart-y-axis">
-        <text class="y-label" wx:for="{{yLabels}}" wx:key="index">{{item}}</text>
+    <!-- 折线图画布 -->
+    <canvas class="trend-canvas" canvas-id="trendChart" bindtouchstart="onChartTap" bindtouchend="onChartTouchEnd"
+      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"></canvas>
+    
+    <!-- 图例 -->
+    <view class="chart-legend">
+      <view class="legend-item" wx:for="{{trendData.trendData}}" wx:key="code" wx:if="{{item.data && item.data.length > 0}}">
+        <view class="legend-dot" style="background: {{lineColors[index % lineColors.length]}}"></view>
+        <text class="legend-text">{{item.name}}</text>
       </view>
-      <view class="chart-content">
-        <view class="chart-grid">
-          <view class="grid-line" wx:for="{{5}}" wx:key="index"></view>
-        </view>
-        <view class="chart-lines">
-          <view class="chart-line" wx:for="{{trendData.trendData}}" wx:key="code" wx:if="{{item.data && item.data.length > 0}}">
-            <view class="line-label" style="color: {{lineColors[index % lineColors.length]}}">{{item.name}}</view>
-            <view class="line-path" style="border-color: {{lineColors[index % lineColors.length]}}">
-              <view class="line-point" wx:for="{{item.data}}" wx:for-item="point" wx:key="date" 
-                style="left: {{calculateX(point.date)}}%; top: {{calculateY(point.price)}}%; background: {{lineColors[index % lineColors.length]}}">
-                <view class="point-tooltip">
-                  <text class="tooltip-date">{{point.date}}</text>
-                  <text class="tooltip-price">¥{{point.price}}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-        <view class="chart-x-axis">
-          <text class="x-label" wx:for="{{xLabels}}" wx:key="index">{{item}}</text>
-        </view>
+    </view>
+    
+    <!-- 数据点详情弹窗 -->
+    <view class="point-detail {{showDetail ? 'show' : ''}}" style="left: {{detailX}}px; top: {{detailY}}px">
+      <view class="detail-content">
+        <text class="detail-condition">{{detailData.condition}}</text>
+        <text class="detail-date">{{detailData.date}}</text>
+        <text class="detail-price">¥{{detailData.price}}</text>
       </view>
+      <view class="detail-arrow"></view>
     </view>
   </view>
 

@@ -304,6 +304,106 @@ router.delete('/conditions/:id', adminAuth, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+/**
+ * @openapi
+ * /api/admin/prices/trend/{productId}:
+ *   get:
+ *     tags: [管理端-报价管理]
+ *     summary: 获取产品价格趋势
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: days
+ *         schema: { type: integer, default: 15 }
+ *         description: 查询天数
+ *     responses:
+ *       200:
+ *         description: 成功
+ */
+
+router.get('/trend/:productId', adminAuth, async (req, res, next) => {
+  try {
+    const { days = 15 } = req.query
+    const productId = req.params.productId
+
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - parseInt(days))
+
+    const product = await db.Product.findByPk(productId, {
+      include: [
+        { model: db.Brand, as: 'Brand' },
+        { model: db.Category, as: 'Category' }
+      ]
+    })
+
+    const priceHistories = await db.PriceHistory.findAll({
+      where: {
+        product_id: productId,
+        change_date: { [Op.gte]: startDate.toISOString().split('T')[0] }
+      },
+      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
+      order: [['change_date', 'ASC']]
+    })
+
+    const currentPrices = await db.Price.findAll({
+      where: { product_id: productId },
+      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }]
+    })
+
+    const trendData = {}
+    priceHistories.forEach(h => {
+      const conditionCode = h.Condition?.code || `condition_${h.condition_id}`
+      if (!trendData[conditionCode]) {
+        trendData[conditionCode] = {
+          name: h.Condition?.name || '未知',
+          code: conditionCode,
+          data: []
+        }
+      }
+      trendData[conditionCode].data.push({
+        date: h.change_date,
+        price: h.new_price
+      })
+    })
+
+    let maxPrice = 0, minPrice = Infinity, latestPrice = 0
+    currentPrices.forEach(p => {
+      const price = parseFloat(p.price) || 0
+      if (price > maxPrice) maxPrice = price
+      if (price < minPrice) minPrice = price
+      if (price > latestPrice) latestPrice = price
+    })
+
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+    const yesterdayPriceHist = priceHistories.find(h => h.change_date === yesterdayStr)
+    const yesterdayPrice = yesterdayPriceHist ? parseFloat(yesterdayPriceHist.new_price) : latestPrice
+
+    const priceChange = latestPrice - yesterdayPrice
+    const priceChangePercent = yesterdayPrice > 0 ? ((priceChange / yesterdayPrice) * 100).toFixed(2) : 0
+
+    return success(res, {
+      product,
+      currentPrices,
+      trendData: Object.values(trendData),
+      summary: {
+        maxPrice,
+        minPrice,
+        latestPrice,
+        priceChange,
+        priceChangePercent
+      }
+    })
+  } catch (err) { next(err) }
+})
+
 router.delete('/:id', adminAuth, async (req, res, next) => {
   try {
     const price = await db.Price.findByPk(req.params.id)

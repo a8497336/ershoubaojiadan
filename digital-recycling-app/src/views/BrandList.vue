@@ -78,7 +78,7 @@
               </div>
               <div class="product-price-section">
                 <div class="product-price">{{ product.price }}</div>
-                <div class="product-price-tag">预计可卖</div>
+                <div class="product-price-tag">最高回收价</div>
               </div>
             </div>
           </template>
@@ -133,7 +133,7 @@
               等级说明
               <div class="grade-info-icon">?</div>
             </div>
-            <div class="history-price">查看历史价格</div>
+            <div class="history-price" @click="goToPriceTrend">查看历史价格</div>
           </div>
 
           <!-- 数量输入区域 -->
@@ -277,11 +277,13 @@ async function fetchProducts(brandId: number) {
         if (!seriesMap.has(seriesName)) {
           seriesMap.set(seriesName, [])
         }
+        const prices = (p.Prices || []).map(pr => parseFloat(pr.price) || 0).filter(v => v > 0)
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
         seriesMap.get(seriesName)!.push({
           id: p.id,
           name: p.name,
-          price: p.Prices && p.Prices.length > 0 ? `¥${p.Prices[0].price}` : '询价',
-          rawPrice: p.Prices && p.Prices.length > 0 ? p.Prices[0].price : 0,
+          price: maxPrice > 0 ? `¥${maxPrice}` : '询价',
+          rawPrice: maxPrice,
           productId: p.id
         })
       })
@@ -382,6 +384,15 @@ function showCartToast() {
   router.push('/shopping')
 }
 
+function goToPriceTrend() {
+  if (!modalProduct.value?.productId) {
+    showToast('产品信息不完整')
+    return
+  }
+  closeModal()
+  router.push(`/price-trend/${modalProduct.value.productId}?model=${encodeURIComponent(modalProduct.value.name || '')}`)
+}
+
 function focusSearch() {
   const input = document.querySelector('.search-input') as HTMLInputElement
   input?.focus()
@@ -406,11 +417,13 @@ async function handleSearch() {
         if (!seriesMap.has(seriesName)) {
           seriesMap.set(seriesName, [])
         }
+        const prices = (p.Prices || []).map(pr => parseFloat(pr.price) || 0).filter(v => v > 0)
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
         seriesMap.get(seriesName)!.push({
           id: p.id,
           name: p.name,
-          price: p.Prices && p.Prices.length > 0 ? `¥${p.Prices[0].price}` : '询价',
-          rawPrice: p.Prices && p.Prices.length > 0 ? p.Prices[0].price : 0,
+          price: maxPrice > 0 ? `¥${maxPrice}` : '询价',
+          rawPrice: maxPrice,
           productId: p.id
         })
       })

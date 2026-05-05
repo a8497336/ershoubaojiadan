@@ -10,6 +10,7 @@
     "db:seed": "node -e \"const s=require('./src/seeders/init_data');require('./src/models').sequelize.authenticate().then(()=>s.up(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
     "db:seed:test": "node -e \"const s=require('./src/seeders/test_data');require('./src/models').sequelize.authenticate().then(()=>s.up(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
     "db:seed:rollback": "node -e \"const s=require('./src/seeders/test_data');require('./src/models').sequelize.authenticate().then(()=>s.down(require('./src/models').sequelize.getQueryInterface(),require('sequelize'))).then(()=>process.exit())\"",
+    "import:excel": "node scripts/import-excel.js",
     "test": "jest --forceExit --detectOpenHandles"
   },
   "keywords": [],
@@ -31,7 +32,8 @@
     "sequelize": "^6.37.8",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "jest": "^30.3.0",
@@ -40,6 +42,8 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.js"]
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   }
 }

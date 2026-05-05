@@ -10,8 +10,8 @@ const ENV_CONFIG = {
     env: 'test'
   },
   production: {
-    apiBase: 'http://localhost:3000/api',
-    imageBase: 'http://localhost:3000',
+    apiBase: 'https://guanguan.yiw315.cn/api',
+    imageBase: 'https://guanguan.yiw315.cn',
     env: 'production'
   }
 }

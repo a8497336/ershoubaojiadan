@@ -156,6 +156,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 12rpx;
+  padding-right: 30px;
   border-bottom: 1rpx solid #f5f5f5;
 }
 .product-card:active { background: #f9f9f9; }
@@ -260,39 +261,64 @@
 }
 .modal-image-area image { width: 100%; height: 100%; border-radius: 16rpx; }
 
-/* 成色选择 */
-.grade-bar { margin-bottom: 24rpx; }
-.grade-label { font-size: 26rpx; color: #666; margin-bottom: 16rpx; }
-.grade-options { display: flex; gap: 16rpx; flex-wrap: wrap; }
-
-.grade-item {
-  padding: 12rpx 32rpx;
-  border: 2rpx solid #ddd;
-  border-radius: 40rpx;
-  font-size: 26rpx;
-  color: #666;
-  background: #fff;
-}
-.grade-item:active { background: #f5f5f5; }
-.grade-item.selected {
-  border-color: #ff2d4a;
-  color: #ff2d4a;
-  background: #fff5f5;
-}
-
-/* 数量控制 */
-.qty-row {
+.trend-btn {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 24rpx 0;
-  border-top: 1rpx solid #f0f0f0;
-  border-bottom: 1rpx solid #f0f0f0;
-  margin-bottom: 24rpx;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx 0;
+  margin-bottom: 20rpx;
+  border: 2rpx solid #ff2d4a;
+  border-radius: 48rpx;
+  color: #ff2d4a;
+  font-size: 28rpx;
+  font-weight: 500;
 }
-.qty-row .qty-label { font-size: 28rpx; color: #333; }
+.trend-btn:active {
+  background: #fff5f6;
+}
 
-.qty-ctrl { display: flex; align-items: center; gap: 32rpx; }
+.condition-section { margin-bottom: 24rpx; }
+.condition-label { font-size: 26rpx; color: #666; margin-bottom: 16rpx; }
+.condition-list { max-height: 480rpx; overflow-y: auto; }
+.condition-empty { display: flex; justify-content: center; padding: 32rpx 0; }
+
+.condition-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+.condition-price-row:last-child { border-bottom: none; }
+
+.condition-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+}
+
+.condition-price {
+  font-size: 30rpx;
+  color: #ff2d4a;
+  font-weight: bold;
+  margin: 0 24rpx;
+  min-width: 100rpx;
+  text-align: right;
+}
+.condition-price.zero {
+  color: #ccc;
+  font-weight: normal;
+}
+
+.condition-qty-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
 
 .qty-btn {
   width: 56rpx;
@@ -329,4 +355,203 @@
   justify-content: center;
   align-items: center;
   height: 600rpx;
+}
+
+/* 响应式调整 - 匹配H5端的媒体查询 */
+@media (max-width: 375px) {
+  .nav-bar {
+    height: 80rpx;
+  }
+  .nav-bar .title-text {
+    font-size: 32rpx;
+  }
+  .search-section {
+    padding: 16rpx 20rpx;
+    gap: 12rpx;
+  }
+  .search-input-box {
+    padding: 14rpx 24rpx;
+  }
+  .search-btn {
+    padding: 14rpx 28rpx;
+    font-size: 26rpx;
+  }
+  .category-tabs {
+    padding: 0 10rpx;
+  }
+  .category-tab {
+    padding: 20rpx 0;
+    font-size: 26rpx;
+  }
+  .content-row {
+    height: calc(100vh - 320rpx);
+  }
+  .brand-sidebar {
+    width: 140rpx;
+  }
+  .brand-sidebar-item {
+    padding: 24rpx 12rpx;
+    font-size: 24rpx;
+  }
+  .group-title {
+    font-size: 26rpx;
+    padding: 16rpx 0 6rpx;
+  }
+  .product-card {
+    padding: 20rpx 10rpx;
+  }
+  .product-info .p-name {
+    font-size: 26rpx;
+  }
+  .product-info .p-note {
+    font-size: 20rpx;
+  }
+  .product-price {
+    font-size: 28rpx;
+    margin-left: 20rpx;
+  }
+  .floating-cart {
+    bottom: 140rpx;
+    right: 20rpx;
+    width: 88rpx;
+    height: 88rpx;
+    font-size: 40rpx;
+  }
+  .cart-badge {
+    font-size: 20rpx;
+    min-width: 32rpx;
+    height: 32rpx;
+  }
+  .modal-panel {
+    padding: 28rpx 20rpx 40rpx;
+  }
+  .modal-title {
+    font-size: 30rpx;
+    margin-bottom: 36rpx;
+  }
+  .condition-label {
+    font-size: 24rpx;
+  }
+  .condition-name {
+    font-size: 26rpx;
+  }
+  .condition-price {
+    font-size: 28rpx;
+    margin: 0 20rpx;
+  }
+  .condition-qty-ctrl {
+    gap: 16rpx;
+  }
+  .qty-btn {
+    width: 52rpx;
+    height: 52rpx;
+    font-size: 30rpx;
+  }
+  .qty-num {
+    font-size: 32rpx;
+    min-width: 56rpx;
+  }
+  .add-cart-btn {
+    padding: 24rpx 0;
+    font-size: 30rpx;
+  }
+}
+
+@media (max-width: 320px) {
+  .nav-bar {
+    height: 72rpx;
+  }
+  .nav-bar .title-text {
+    font-size: 30rpx;
+  }
+  .search-section {
+    padding: 12rpx 16rpx;
+    gap: 10rpx;
+  }
+  .search-input-box {
+    padding: 12rpx 20rpx;
+  }
+  .search-btn {
+    padding: 12rpx 24rpx;
+    font-size: 24rpx;
+  }
+  .category-tabs {
+    padding: 0 8rpx;
+  }
+  .category-tab {
+    padding: 18rpx 0;
+    font-size: 24rpx;
+  }
+  .content-row {
+    height: calc(100vh - 300rpx);
+  }
+  .brand-sidebar {
+    width: 120rpx;
+  }
+  .brand-sidebar-item {
+    padding: 20rpx 10rpx;
+    font-size: 22rpx;
+  }
+  .group-title {
+    font-size: 24rpx;
+    padding: 14rpx 0 6rpx;
+  }
+  .product-card {
+    padding: 16rpx 8rpx;
+  }
+  .product-info .p-name {
+    font-size: 24rpx;
+  }
+  .product-info .p-note {
+    font-size: 18rpx;
+  }
+  .product-price {
+    font-size: 26rpx;
+    margin-left: 16rpx;
+  }
+  .floating-cart {
+    bottom: 130rpx;
+    right: 16rpx;
+    width: 80rpx;
+    height: 80rpx;
+    font-size: 36rpx;
+  }
+  .cart-badge {
+    font-size: 18rpx;
+    min-width: 28rpx;
+    height: 28rpx;
+  }
+  .modal-panel {
+    padding: 24rpx 16rpx 32rpx;
+  }
+  .modal-title {
+    font-size: 28rpx;
+    margin-bottom: 32rpx;
+  }
+  .condition-label {
+    font-size: 22rpx;
+  }
+  .condition-name {
+    font-size: 24rpx;
+  }
+  .condition-price {
+    font-size: 26rpx;
+    margin: 0 16rpx;
+  }
+  .condition-qty-ctrl {
+    gap: 12rpx;
+  }
+  .qty-btn {
+    width: 48rpx;
+    height: 48rpx;
+    font-size: 28rpx;
+  }
+  .qty-num {
+    font-size: 28rpx;
+    min-width: 48rpx;
+  }
+  .add-cart-btn {
+    padding: 20rpx 0;
+    font-size: 28rpx;
+  }
 }
