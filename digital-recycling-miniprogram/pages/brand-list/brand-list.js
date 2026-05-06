@@ -19,7 +19,8 @@ Page({
     selectedProduct: {},
     conditions: [],
     conditionsLoading: false,
-    cartCount: 0
+    cartCount: 0,
+    statusBarHeight: 0
   },
 
   onLoad(options) {
@@ -30,6 +31,7 @@ Page({
       this.setData({ currentCategoryIndex: parseInt(options.categoryId) || 0 })
     }
     this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight })
     this.loadData()
   },
 

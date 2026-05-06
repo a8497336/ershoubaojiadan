@@ -255,14 +255,16 @@ const uploadHeaders = {
 
 const getImageUrl = (path) => {
   if (!path) return ''
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http://')) return path.replace('http://', 'https://')
+  if (path.startsWith('https://')) return path
   if (path.startsWith('/uploads')) return `/api${path}`
   return path
 }
 
 const getVideoUrl = (path) => {
   if (!path) return ''
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http://')) return path.replace('http://', 'https://')
+  if (path.startsWith('https://')) return path
   if (path.startsWith('/uploads')) return `/api${path}`
   return path
 }

@@ -16,6 +16,10 @@ const userApi = {
   deleteAddress: (id) => request({ url: `/user/addresses/${id}`, method: 'DELETE' }),
   getWallet: () => request({ url: '/wallet/info' }),
   getPoints: () => request({ url: '/points/balance' }),
+  getCoupons: (data) => request({ url: '/coupons', data }),
+  getRedPackets: (data) => request({ url: '/red-packets', data }),
+  getRecordings: (data) => request({ url: '/user/recordings', data }),
+  getFavorites: (data) => request({ url: '/user/favorites', data }),
   uploadAvatar: (filePath) => uploadFile(filePath, '/user/avatar')
 }
 
@@ -39,7 +43,8 @@ const priceApi = {
   getTodayPrices: (data) => request({ url: '/prices/today', data }),
   getConditions: () => request({ url: '/prices/conditions' }),
   getPriceHistory: (productId, data) => request({ url: `/prices/history/${productId}`, data }),
-  getPriceTrend: (productId, data) => request({ url: `/prices/trend/${productId}`, data })
+  getPriceTrend: (productId, data) => request({ url: `/prices/trend/${productId}`, data }),
+  getChanges: (data) => request({ url: '/prices/changes', data })
 }
 
 const cartApi = {
@@ -79,6 +84,9 @@ const walletApi = {
 const pointsApi = {
   getBalance: () => request({ url: '/points/balance' }),
   getLogs: (data) => request({ url: '/points/logs', data }),
+  getLotteryRecords: () => request({ url: '/points/lottery-records' }),
+  getProducts: (data) => request({ url: '/points/products', data }),
+  exchange: (productId) => request({ url: '/points/exchange', method: 'POST', data: { product_id: productId } }),
   signIn: () => request({ url: '/points/sign', method: 'POST' })
 }
 
@@ -88,6 +96,10 @@ const messageApi = {
   markAllRead: () => request({ url: '/messages/read-all', method: 'PUT' }),
   getUnreadCount: () => request({ url: '/messages/unread-count' }),
   submitFeedback: (data) => request({ url: '/messages/feedback', method: 'POST', data })
+}
+
+const feedbackApi = {
+  getList: (data) => request({ url: '/feedback', data })
 }
 
 const contentApi = {
@@ -114,7 +126,7 @@ const userStockApi = {
 }
 
 const settingsApi = {
-  getQuoteConfig: () => request({ url: '/settings/quote-config' }),
+  getQuoteConfig: () => request({ url: '/settings/quote' }),
   getContactInfo: () => request({ url: '/settings/contact' })
 }
 
@@ -131,6 +143,7 @@ module.exports = {
   walletApi,
   pointsApi,
   messageApi,
+  feedbackApi,
   contentApi,
   searchApi,
   userStockApi,

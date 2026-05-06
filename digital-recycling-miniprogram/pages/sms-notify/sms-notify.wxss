@@ -1,0 +1,9 @@
+@import '/styles/design-tokens.wxss';
+.page-container { min-height: 100vh; background: var(--color-background); padding-top: 16rpx; }
+.settings-group { background: var(--color-background-white); margin: 0 24rpx 16rpx; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.group-title { font-size: var(--font-size-sm); color: var(--color-text-tertiary); padding: 24rpx 24rpx 12rpx; display: block; }
+.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 1rpx solid var(--color-border-light); font-size: var(--font-size-base); color: var(--color-text-primary); }
+.setting-item:last-child { border-bottom: none; }
+.si-left { display: flex; align-items: center; gap: 12rpx; }
+.si-icon { width: 36rpx; height: 36rpx; }
+.desc-text { padding: 24rpx; font-size: var(--font-size-xs); color: var(--color-text-tertiary); text-align: center; }

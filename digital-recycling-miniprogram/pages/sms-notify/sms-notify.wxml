@@ -1,0 +1,25 @@
+<view class="page-container">
+  <view class="settings-group">
+    <text class="group-title">短信通知设置</text>
+    <view class="setting-item">
+      <view class="si-left"><image class="si-icon" src="/images/icons/sms.svg" mode="aspectFit" /><text>开启短信通知</text></view>
+      <switch checked="{{smsEnabled}}" data-field="smsEnabled" bindchange="onToggle" color="#ff2d4a" />
+    </view>
+  </view>
+  <view class="settings-group" wx:if="{{smsEnabled}}">
+    <text class="group-title">通知类型</text>
+    <view class="setting-item">
+      <text>报价变动提醒</text>
+      <switch checked="{{priceAlert}}" data-field="priceAlert" bindchange="onToggle" color="#ff2d4a" />
+    </view>
+    <view class="setting-item">
+      <text>订单状态通知</text>
+      <switch checked="{{orderNotify}}" data-field="orderNotify" bindchange="onToggle" color="#ff2d4a" />
+    </view>
+    <view class="setting-item">
+      <text>促销活动通知</text>
+      <switch checked="{{promoNotify}}" data-field="promoNotify" bindchange="onToggle" color="#ff2d4a" />
+    </view>
+  </view>
+  <view class="desc-text">开启后，您将在短信中收到相关通知提醒</view>
+</view>

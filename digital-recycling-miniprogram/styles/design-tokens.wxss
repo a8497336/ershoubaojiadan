@@ -1,4 +1,4 @@
-:root {
+page {
   /* ========== 色彩系统 ========== */
   /* 主色 */
   --color-primary: #ff2d4a;
@@ -18,17 +18,21 @@
   --color-error: #ff2d4a;
   --color-error-light: #ffeef0;
   --color-info: #2980b9;
+  --color-info-light: #f0f8ff;
 
   /* 中性色 */
   --color-text-primary: #333333;
   --color-text-secondary: #666666;
   --color-text-tertiary: #999999;
   --color-text-placeholder: #cccccc;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #cccccc;
   --color-border: #eeeeee;
   --color-border-light: #f0f0f0;
   --color-background: #f5f5f5;
   --color-background-white: #ffffff;
   --color-background-gray: #f8f8f8;
+  --color-bg-mask: rgba(0, 0, 0, 0.5);
 
   /* 价格颜色 */
   --color-price-high: #27ae60;
@@ -89,4 +93,16 @@
   --transition-normal: 300ms ease;
   --transition-slow: 500ms ease;
   --transition-bounce: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* 页面过渡 */
+  --page-transition-duration: 300ms;
+  --page-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 骨骼屏 */
+  --skeleton-base: #f0f0f0;
+  --skeleton-shine: #e0e0e0;
+
+  /* 卡片交互 */
+  --card-hover-scale: 0.98;
+  --card-active-bg: #f9f9f9;
 }

@@ -22,10 +22,21 @@
     "pages/faq/faq",
     "pages/business-cooperation/business-cooperation",
     "pages/video-list/video-list",
-    "pages/video-play/video-play"
+    "pages/video-play/video-play",
+    "pages/wallet/wallet",
+    "pages/coupons/coupons",
+    "pages/red-packet/red-packet",
+    "pages/points-lottery/points-lottery",
+    "pages/points-mall/points-mall",
+    "pages/feedback-result/feedback-result",
+    "pages/ad-recording/ad-recording",
+    "pages/my-favorites/my-favorites",
+    "pages/price-changes/price-changes",
+    "pages/sms-notify/sms-notify"
   ],
   "window": {
     "backgroundTextStyle": "light",
+    "enableShareAppMessage": "true",
     "navigationBarBackgroundColor": "#ff2d4a",
     "navigationBarTitleText": "数码回收网",
     "navigationBarTextStyle": "white",

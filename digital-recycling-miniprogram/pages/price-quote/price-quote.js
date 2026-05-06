@@ -1,4 +1,4 @@
-const { priceApi, cartApi, searchApi } = require('../../utils/api-modules')
+const { priceApi, cartApi, searchApi, brandApi } = require('../../utils/api-modules')
 
 Page({
   data: {
@@ -15,7 +15,10 @@ Page({
     category: '',
     productId: null,
     keyword: '',
-    showSearch: false
+    showSearch: false,
+    receiverName: '',
+    receiverPhone: '',
+    receiverAddress: ''
   },
 
   onLoad(options) {
@@ -63,12 +66,19 @@ Page({
           return conditions
         })
 
+    const configPromise = options.brand_id
+      ? brandApi.getBrandDetail(options.brand_id)
+      : Promise.resolve(null)
+
     Promise.all([
       priceApi.getTodayPrices(apiData),
-      conditionsPromise
-    ]).then(([priceRes, conditions]) => {
+      conditionsPromise,
+      configPromise
+    ]).then(([priceRes, conditions, brandRes]) => {
       const data = priceRes.data || priceRes || {}
       const rawList = data.list || []
+      const brandData = brandRes ? (brandRes.data || brandRes) : null
+      const quoteConfig = brandData ? (brandData.quote_config || {}) : {}
 
       const processedList = rawList.map(item => {
         const priceMap = {}
@@ -132,7 +142,10 @@ Page({
         priceList: processedList,
         seriesList: seriesList,
         isEmpty: seriesList.length === 0,
-        loading: false
+        loading: false,
+        receiverName: quoteConfig.receiver_name || '',
+        receiverPhone: quoteConfig.receiver_phone || '',
+        receiverAddress: quoteConfig.receiver_address || ''
       })
       console.log(this.data.seriesList)
     }).catch(() => {

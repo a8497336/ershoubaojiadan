@@ -1,15 +1,17 @@
 const app = getApp()
 const userApi = require('../../utils/api-modules').userApi
 const messageApi = require('../../utils/api-modules').messageApi
+const { CONTACT } = require('../../utils/constants')
 
 Page({
   data: {
     userInfo: {},
     walletInfo: { balance: '0.00' },
     pointsInfo: { points: 0 },
+    statusBarHeight: 0,
 
     quickEntries: [
-      { icon: '💳', label: '我的钱包', badge: 0 },
+      { icon: '💰', label: '我的钱包', badge: 0 },
       { icon: '🎫', label: '我的卡券', badge: 0 },
       { icon: '🧧', label: '我的红包', badge: 0 },
       { icon: '📢', label: '公告中心', badge: 0 }
@@ -31,9 +33,9 @@ Page({
       { icon: '📋', label: '反馈结果' },
       { icon: '🤝', label: '商务合作' },
       { icon: '⚠️', label: '投诉建议', badge: '' },
-      { icon: '🎬', label: '广告录音', badge: '' },
-      { icon: '📊', label: '行情走势' },
-      { icon: '🎥', label: '回收教学视频' }
+      // { icon: '🎬', label: '广告录音', badge: '' },
+      // { icon: '📊', label: '行情走势' },
+      // { icon: '🎥', label: '回收教学视频' }
     ],
 
     vipFeatList: [
@@ -53,7 +55,7 @@ Page({
   },
 
   onLoad() {
-    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true, statusBarHeight: app.globalData.statusBarHeight })
     this.loadData()
   },
 
@@ -159,12 +161,12 @@ Page({
     switch (index) {
       case 0:
         wx.setClipboardData({
-          data: '15361862828',
+          data: CONTACT.WECHAT_ID,
           success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
         })
         break
       case 1:
-        wx.makePhoneCall({ phoneNumber: '15361862828' })
+        wx.makePhoneCall({ phoneNumber: CONTACT.PHONE })
         break
       case 2:
         wx.switchTab({ url: '/pages/index/index' })

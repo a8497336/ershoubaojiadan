@@ -1,0 +1,25 @@
+<view class="page-container">
+  <view wx:if="{{loading && list.length === 0}}"><loading-skeleton type="list" rowCount="5" /></view>
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="init">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text><text class="error-desc">点击重新加载</text>
+  </view>
+  <block wx:if="{{!loading && !networkError}}">
+    <view wx:if="{{list.length > 0}}" class="list-wrap">
+      <view class="change-item animate-slide-up" wx:for="{{list}}" wx:key="id" bindtap="onItemTap" data-index="{{index}}">
+        <view class="ch-top">
+          <text class="ch-name">{{item.name || item.product_name || '商品'}}</text>
+          <text class="ch-change {{item.trend === 'up' ? 'up' : 'down'}}">{{item.trend === 'up' ? '↑' : '↓'}} ¥{{item.change_amount || '0'}}</text>
+        </view>
+        <view class="ch-bottom">
+          <text class="ch-price">最新报价 ¥{{item.price || '--'}}</text>
+          <text class="ch-time">{{item.updated_at || ''}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:elif="{{!loading && list.length === 0}}" class="empty-wrap">
+      <empty-state title="暂无报价变动" desc="收藏商品后，价格变动会自动通知您" />
+    </view>
+    <view wx:if="{{!hasMore && list.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
+</view>

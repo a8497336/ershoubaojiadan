@@ -1,8 +1,22 @@
 const { authApi, userApi, cartApi } = require('./utils/api-modules')
 const { checkApiHealth } = require('./utils/api')
 
+const originalPage = Page
+Page = function (options) {
+  if (!options.onShareAppMessage) {
+    options.onShareAppMessage = function () {
+      return {
+        title: '数码回收网 - 专业数码产品回收平台',
+        path: '/pages/index/index'
+      }
+    }
+  }
+  originalPage(options)
+}
+
 App({
   onLaunch() {
+    this.globalData.statusBarHeight = wx.getSystemInfoSync().statusBarHeight
     this.initNetworkListener()
     this.checkApiStatus()
     this.ensureLogin()
@@ -138,6 +152,7 @@ App({
     cartItems: [],
     isConnected: true,
     networkType: 'wifi',
-    apiStatus: 'unknown'
+    apiStatus: 'unknown',
+    statusBarHeight: 0
   }
 })

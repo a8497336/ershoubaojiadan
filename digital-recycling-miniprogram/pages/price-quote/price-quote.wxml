@@ -14,9 +14,9 @@
     </view>
     <view class="header-title">{{brand ? brand + '回收报价' : (category ? category + '回收报价' : '今日回收报价')}}</view>
     <view class="header-info">
-      <text>收货地址：广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B</text>
-      <text>收件人：陈约</text>
-      <text>收款电话：15361862828（微信同号同步）</text>
+      <text>收货地址：{{receiverAddress}}</text>
+      <text>收件人：{{receiverName}}</text>
+      <text>收款电话：{{receiverPhone}}（微信同号同步）</text>
     </view>
     <view class="header-rules">
       <text class="rules-title">回收标准释义：</text>
@@ -39,10 +39,9 @@
   <block wx:if="{{!isEmpty}}">
     <view class="scroll-hint">← 左右滑动查看完整报价，点击机型查看价格趋势 →</view>
     <scroll-view class="table-container" scroll-x>
-      <view class="price-table" style="min-width: {{conditions.length * 110 + 360}}rpx;">
+      <view class="price-table" style="min-width: {{conditions.length * 110 + 260}}rpx;">
         <view class="table-header">
           <view class="th col-index">序号</view>
-          <view class="th col-series">系列</view>
           <view class="th col-model">型号</view>
           <view class="th col-price" wx:for="{{conditions}}" wx:key="id">{{item.name}}</view>
         </view>
@@ -51,7 +50,6 @@
             <block wx:for="{{series.items}}" wx:for-item="item" wx:key="index">
               <view class="tr {{index === 0 && series.index > 1 ? 'series-divider' : ''}}" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
                 <view class="td index-cell" >{{index}}</view>
-                <view class="td series-cell" >{{item.series_name}}</view>
                 <view class="td model-cell">
                   {{item.model}}
                   <text class="trend-hint">📈</text>

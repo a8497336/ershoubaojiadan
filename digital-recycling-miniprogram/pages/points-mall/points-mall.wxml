@@ -1,0 +1,33 @@
+<view class="page-container">
+  <view class="points-header">
+    <text class="ph-label">可用积分</text>
+    <text class="ph-value">{{points}}</text>
+  </view>
+
+  <view wx:if="{{loading && list.length === 0}}"><loading-skeleton type="card" rowCount="4" /></view>
+
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="init">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text><text class="error-desc">点击重新加载</text>
+  </view>
+
+  <block wx:if="{{!loading && !networkError}}">
+    <view wx:if="{{list.length > 0}}" class="product-grid">
+      <view class="pm-item animate-scale-in" wx:for="{{list}}" wx:key="id">
+        <image wx:if="{{item.image || item.cover}}" src="{{item.image || item.cover}}" class="pm-img" mode="aspectFill" />
+        <view wx:else class="pm-img-empty"><image src="/images/icons/mall.svg" mode="aspectFit" class="pm-d-icon"/></view>
+        <text class="pm-name">{{item.name || item.title}}</text>
+        <view class="pm-bottom"><text class="pm-pts">{{item.required_points || item.points}}积分</text>
+          <view class="pm-btn" bindtap="onExchange" data-index="{{index}}">兑换</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:elif="{{!loading && list.length === 0}}" class="empty-wrap">
+      <empty-state title="暂无商品" desc="敬请期待更多积分好物" />
+    </view>
+
+    <view wx:if="{{loading && list.length > 0}}" class="load-more"><loading-spinner size="small" /></view>
+    <view wx:if="{{!hasMore && list.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
+</view>

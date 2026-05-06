@@ -1,13 +1,21 @@
 const { authApi } = require('../../utils/api-modules')
+const app = getApp()
 
 Page({
   data: {
     isAgreed: false,
     loading: false,
-    redirectUrl: ''
+    redirectUrl: '',
+    statusBarHeight: 0,
+    loginHeaderPaddingTop: 44
   },
 
   onLoad(options) {
+    var statusBarHeight = app.globalData.statusBarHeight || 0
+    this.setData({
+      statusBarHeight: statusBarHeight,
+      loginHeaderPaddingTop: statusBarHeight + 44
+    })
     if (options.redirect) {
       this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
     }

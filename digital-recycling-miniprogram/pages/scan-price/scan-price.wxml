@@ -131,7 +131,10 @@
     <view class="compare-row">
       <view class="compare-card card-correct">
         <view class="card-image-wrapper">
-          <image class="phone-preview" src="/images/examples/correct.svg" mode="aspectFill"/>
+          <view class="phone-placeholder phone-correct">
+            <text class="phone-emoji">📱</text>
+            <text class="phone-label">手机背面</text>
+          </view>
           <view class="overlay-correct"></view>
         </view>
         <view class="card-bottom correct-bottom">
@@ -141,7 +144,10 @@
       </view>
       <view class="compare-card card-wrong">
         <view class="card-image-wrapper">
-          <image class="phone-preview" src="/images/examples/wrong.svg" mode="aspectFill"/>
+          <view class="phone-placeholder phone-wrong">
+            <text class="phone-emoji">📱</text>
+            <text class="phone-label">手机正面</text>
+          </view>
           <view class="overlay-wrong"></view>
         </view>
         <view class="card-bottom wrong-bottom">
@@ -155,10 +161,10 @@
   <!-- 底部功能按钮 -->
   <view class="bottom-actions">
     <button class="action-btn secondary-btn" bindtap="viewAllHistory">
-      <image class="btn-icon-img" src="/images/icons/search.svg" mode="aspectFit"/> 查看历史
+      <text class="btn-icon-text">📋</text> 查看历史
     </button>
     <button class="action-btn primary-btn" bindtap="goToFaq">
-      <image class="btn-icon-img" src="/images/icons/faq.svg" mode="aspectFit"/> 帮助中心
+      <text class="btn-icon-text">❓</text> 帮助中心
     </button>
   </view>
 

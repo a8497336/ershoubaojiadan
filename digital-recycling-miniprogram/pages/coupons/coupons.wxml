@@ -1,0 +1,33 @@
+<view class="page-container">
+  <view wx:if="{{loading && list.length === 0}}">
+    <loading-skeleton type="list" rowCount="4" />
+  </view>
+
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="init">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text>
+    <text class="error-desc">点击重新加载</text>
+  </view>
+
+  <block wx:if="{{!loading && !networkError}}">
+    <view wx:if="{{list.length > 0}}" class="coupon-list">
+      <view class="coupon-item animate-slide-up" wx:for="{{list}}" wx:key="id" bindtap="onItemTap" data-index="{{index}}">
+        <view class="coupon-left">
+          <text class="coupon-value">¥{{item.amount || item.value || '0'}}</text>
+          <text class="coupon-cond">{{item.condition || '满减券'}}</text>
+        </view>
+        <view class="coupon-right">
+          <text class="coupon-title">{{item.title || item.name || '优惠券'}}</text>
+          <text class="coupon-date">有效期至 {{item.expire_time || item.expireTime || '--'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:elif="{{!loading && list.length === 0}}" class="empty-wrap">
+      <empty-state title="暂无卡券" desc="参与活动获取更多卡券" />
+    </view>
+
+    <view wx:if="{{loading && list.length > 0}}" class="load-more"><loading-spinner size="small" /></view>
+    <view wx:if="{{!hasMore && list.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
+</view>

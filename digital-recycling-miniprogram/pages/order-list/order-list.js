@@ -1,11 +1,11 @@
 const { orderApi } = require('../../utils/api-modules')
 
 const STATUS_MAP = {
-  shipping: { text: '待发货', color: '#ff9500' },
-  transit: { text: '运输中', color: '#007aff' },
+  shipping: { text: '待发货', color: 'var(--color-warning)' },
+  transit: { text: '运输中', color: 'var(--color-info)' },
   inspecting: { text: '质检中', color: '#5856d6' },
-  completed: { text: '已完成', color: '#34c759' },
-  cancelled: { text: '已取消', color: '#8e8e93' }
+  completed: { text: '已完成', color: 'var(--color-success)' },
+  cancelled: { text: '已取消', color: 'var(--color-text-tertiary)' }
 }
 
 Page({
@@ -19,7 +19,8 @@ Page({
       { key: 'cancelled', label: '已取消' }
     ],
     filteredOrders: [],
-    isLoading: true,
+    loading: true,
+    networkError: false,
     page: 1,
     hasMore: true
   },
@@ -31,15 +32,16 @@ Page({
     this.loadOrders()
   },
 
-  onShow() {
-    this.setData({ page: 1, hasMore: true, filteredOrders: [] })
-    this.loadOrders()
-  },
-
   onPullDownRefresh() {
     this.setData({ page: 1, hasMore: true, filteredOrders: [] })
     this.loadOrders()
     wx.stopPullDownRefresh()
+  },
+
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loading) return
+    this.setData({ page: this.data.page + 1 })
+    this.loadOrders()
   },
 
   formatOrder(raw) {
@@ -59,14 +61,12 @@ Page({
       statusInfo,
       items,
       totalAmountText,
-      createTime,
-      trackingNo: raw.tracking_no || '',
-      logisticsCompany: raw.logistics_company || ''
+      createTime
     }
   },
 
   loadOrders() {
-    this.setData({ isLoading: true })
+    this.setData({ loading: true })
     orderApi.getOrders({
       status: this.data.activeTab,
       page: this.data.page,
@@ -78,10 +78,14 @@ Page({
       this.setData({
         filteredOrders: this.data.page === 1 ? newOrders : [...this.data.filteredOrders, ...newOrders],
         hasMore: rawList.length >= 10,
-        isLoading: false
+        loading: false,
+        networkError: false
       })
     }).catch(() => {
-      this.setData({ isLoading: false })
+      this.setData({
+        loading: false,
+        networkError: this.data.filteredOrders.length === 0
+      })
     })
   },
 
@@ -115,16 +119,9 @@ Page({
     })
   },
 
-  viewLogistics(e) {
-    const id = e.currentTarget.dataset.id
-    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${id}` })
-  },
-
-  loadMore() {
-    if (this.data.hasMore && !this.data.isLoading) {
-      this.setData({ page: this.data.page + 1 })
-      this.loadOrders()
-    }
+  onRetry() {
+    this.setData({ loading: true, networkError: false })
+    this.loadOrders()
   },
 
   goHome() {

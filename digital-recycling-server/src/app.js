@@ -12,6 +12,8 @@ const db = require('./models')
 
 const app = express()
 
+app.set('trust proxy', true)
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(cors({
   origin: '*',

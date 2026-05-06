@@ -1,6 +1,6 @@
 <view class="cart-page">
-  <view class="nav-bar">
-    <view class="title-text">回收车</view>
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px">
+    <text class="title-text">回收车</text>
   </view>
 
   <view wx:if="{{loading}}" class="full-loading">
@@ -21,75 +21,63 @@
     <view wx:if="{{cartItems.length > 0}}">
       <view class="category-header">
         <view class="category-left">
-          <text class="category-icon">📱</text>
+          <text>🛒</text>
           <text class="category-title">回收商品</text>
         </view>
-        <view class="clear-category-btn" bindtap="handleClearCategory">清空</view>
+        <view class="clear-category-btn" bindtap="onClearAll">清空</view>
       </view>
 
       <view class="cart-list">
         <view class="cart-item {{item.selected ? 'selected' : ''}}" wx:for="{{cartItems}}" wx:key="id">
-          <view class="cart-checkbox {{item.selected ? 'checked' : ''}}" bindtap="toggleSelect" data-index="{{index}}"></view>
+          <view class="cart-checkbox {{item.selected ? 'checked' : ''}}" bindtap="onSelect" data-index="{{index}}"></view>
           <view class="cart-item-info">
-            <view class="ci-name">{{item.model || item.name || item.product_name}}</view>
-            <view class="ci-grade" wx:if="{{item.condition_text || item.grade}}">成色：{{item.condition_text || item.grade}}</view>
+            <view class="ci-name">{{item.productName}}</view>
+            <view class="ci-grade" wx:if="{{item.conditionName}}">成色：{{item.conditionName}}</view>
             <view class="ci-price">
               <text class="price-label">回收价：</text>
-              <text class="price-red">¥{{item.price || item.unit_price}}</text>
+              <text class="price-red">¥{{item.price}}</text>
             </view>
           </view>
           <view class="qty-ctrl">
-            <view class="qty-btn" bindtap="decreaseQty" data-index="{{index}}">−</view>
-            <text class="qty-num">{{item.quantity || item.qty || 1}}</text>
-            <view class="qty-btn" bindtap="increaseQty" data-index="{{index}}">+</view>
+            <view class="qty-btn" bindtap="onDecrease" data-index="{{index}}">−</view>
+            <text class="qty-num">{{item.totalQuantity}}</text>
+            <view class="qty-btn" bindtap="onIncrease" data-index="{{index}}">+</view>
           </view>
-          <view class="delete-btn" bindtap="showDeleteModal" data-index="{{index}}"></view>
+          <view class="delete-btn" bindtap="onDeleteTap" data-index="{{index}}">🗑</view>
         </view>
       </view>
 
       <view class="tip-text">
-        <text class="tip-icon">💡</text>
+        <text>💡</text>
         提示：左滑可删除产品，点击商品可选择
       </view>
 
       <view class="settle-bar">
-        <view class="select-all" bindtap="toggleSelectAll">
-          <view class="cart-checkbox {{allSelected ? 'checked' : ''}}"></view>
+        <view class="select-all" bindtap="onSelectAll">
+          <view class="cart-checkbox {{isAllSelected ? 'checked' : ''}}"></view>
           <text>全选</text>
         </view>
         <view class="total-section">
           <view class="total-text">合计：<text class="price">¥{{totalPrice}}</text></view>
           <view class="total-hint" wx:if="{{selectedCount > 0}}">已选 {{selectedCount}} 件商品</view>
         </view>
-        <button class="add-more-btn" bindtap="goToBrandList">+ 继续添加</button>
-        <button class="submit-btn" bindtap="submitOrder" disabled="{{selectedCount === 0}}">提交订单</button>
+        <button class="add-more-btn" bindtap="onAddMore">+ 继续添加</button>
+        <button class="submit-btn" bindtap="onSubmit" disabled="{{selectedCount === 0}}">提交订单</button>
       </view>
     </view>
 
     <view wx:else class="empty-section">
-      <empty-state text="回收车是空的" subtext="快去添加商品吧" />
-      <button class="go-shop-btn" bindtap="goToBrandList">去逛逛</button>
+      <empty-state title="回收车是空的" desc="快去估价添加商品吧" showBtn="{{true}}" btnText="去估价" bind:btnTap="onAddMore" />
     </view>
   </block>
 
-  <view wx:if="{{showDeleteConfirm}}" class="modal-overlay" bindtap="hideDeleteModal">
-    <view class="modal-box" catchtap="nop">
-      <view class="modal-icon">🗑️</view>
+  <view wx:if="{{showDeleteConfirm}}" class="modal-overlay" bindtap="onDeleteCancel">
+    <view class="modal-box" catchtap="">
+      <text class="modal-icon-text">🗑</text>
       <view class="modal-title">确认删除该商品？</view>
       <view class="modal-btns">
-        <button class="cancel" bindtap="hideDeleteModal">取消</button>
-        <button class="confirm" bindtap="confirmDelete">确定</button>
-      </view>
-    </view>
-  </view>
-
-  <view wx:if="{{showClearConfirm}}" class="modal-overlay" bindtap="hideClearModal">
-    <view class="modal-box" catchtap="nop">
-      <view class="modal-icon">⚠️</view>
-      <view class="modal-title">确认清空回收车？</view>
-      <view class="modal-btns">
-        <button class="cancel" bindtap="hideClearModal">取消</button>
-        <button class="confirm" bindtap="confirmClear">确定</button>
+        <button class="cancel" bindtap="onDeleteCancel">取消</button>
+        <button class="confirm" bindtap="onDeleteConfirm">确定</button>
       </view>
     </view>
   </view>

@@ -21,10 +21,10 @@ Component({
   data: {
     tabs: [
       { key: 'home', text: '首页', icon: 'home', page: '/pages/index/index' },
-      { key: 'priceList', text: '产品列表', icon: 'price', page: '/pages/brand-list/brand-list' },
-      { key: 'scanPrice', text: '扫码报价', icon: 'scan', page: '/pages/scan-price/scan-price', isCenter: true },
-      { key: 'shopping', text: '回收车', icon: 'cart', page: '/pages/shopping/shopping' },
-      { key: 'profile', text: '我的', icon: 'profile', page: '/pages/profile/profile' }
+      { key: 'priceList', text: '产品列表', icon: 'file-invoice-dollar', page: '/pages/brand-list/brand-list' },
+      { key: 'scanPrice', text: '扫码报价', icon: 'qrcode', page: '/pages/scan-price/scan-price', isCenter: true },
+      { key: 'shopping', text: '回收车', icon: 'shopping-cart', page: '/pages/shopping/shopping' },
+      { key: 'profile', text: '我的', icon: 'user', page: '/pages/profile/profile' }
     ]
   },
 

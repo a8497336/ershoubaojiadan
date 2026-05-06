@@ -1,33 +1,40 @@
 <view class="profile-page">
   <view class="profile-header">
-    <view class="profile-nav">
-      <view class="more-btn">●●●</view>
+    <view class="profile-nav" style="padding-top: {{statusBarHeight}}px">
+      <!-- <view class="more-btn">●●●</view> -->
       <view class="nav-title">个人中心</view>
-      <view class="capsule">
+      <!-- <view class="capsule">
         <text>━</text>
         <text>○</text>
-      </view>
+      </view> -->
     </view>
 
     <view class="user-info-area">
       <view class="user-avatar" bindtap="changeAvatar">
         <image wx:if="{{userInfo.avatar}}" src="{{userInfo.avatar}}" mode="aspectFill" />
-        <text wx:else>👤</text>
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-em">{{userInfo.nickname || userInfo.name || '用'}}</text>
+        </view>
         <view class="avatar-edit-tag">更换头像</view>
       </view>
       <view class="user-details">
         <view class="u-name">{{userInfo.nickname || userInfo.name || '用户'}}</view>
         <view class="u-id">编号：{{userInfo.id || userInfo.user_id || '--'}}</view>
-        <view class="u-phone" wx:if="{{userInfo.phone}}">📱 {{userInfo.phone}}</view>
+        <view class="u-phone" wx:if="{{userInfo.phone}}">
+          <text class="u-phone-icon">📞</text>
+          <text>{{userInfo.phone}}</text>
+        </view>
       </view>
     </view>
 
     <view class="stats-row">
-      <view class="stat-card">
+      <view class="stat-card" bindtap="goToWallet">
+        <text class="stat-em">💰</text>
         <view class="stat-value">¥{{walletInfo.balance || '0.00'}}</view>
         <view class="stat-label">余额</view>
       </view>
-      <view class="stat-card">
+      <view class="stat-card" bindtap="goToMyPoints">
+        <text class="stat-em">⭐</text>
         <view class="stat-value">{{pointsInfo.points || '0'}}</view>
         <view class="stat-label">积分</view>
       </view>
@@ -37,20 +44,20 @@
   <view class="vip-card-outer" bindtap="goToMembership">
     <view class="vip-card">
       <view class="vip-left">
-        <text class="vip-icon">👑</text>
+        <text class="vip-em">👑</text>
         <view>
           <view class="vip-text">{{userInfo.member_level || userInfo.vip_level || '普通'}}会员</view>
           <view class="vip-desc" wx:if="{{!userInfo.is_vip}}">开通会员享更多特权</view>
         </view>
       </view>
-      <button class="vip-open-btn" wx:if="{{!userInfo.is_vip}}">立即开通</button>
+      <view class="vip-open-btn" wx:if="{{!userInfo.is_vip}}">立即开通</view>
     </view>
   </view>
 
   <view class="quick-entry">
     <view wx:for="{{quickEntries}}" wx:key="index" class="quick-item" bindtap="onQuickEntryTap" data-index="{{index}}">
-      <text class="quick-icon">{{item.icon}}</text>
-      <text>{{item.label}}</text>
+      <text class="quick-em">{{item.icon}}</text>
+      <text class="quick-label">{{item.label}}</text>
       <view wx:if="{{item.badge > 0}}" class="quick-badge">{{item.badge > 99 ? '99+' : item.badge}}</view>
     </view>
   </view>
@@ -62,7 +69,7 @@
     </view>
     <view class="points-grid">
       <view wx:for="{{pointActivities}}" wx:key="index" class="points-item" bindtap="onPointActivityTap" data-index="{{index}}">
-        <text class="p-icon">{{item.icon}}</text>
+        <text class="p-em">{{item.icon}}</text>
         <text class="p-label">{{item.label}}</text>
       </view>
     </view>
@@ -71,7 +78,7 @@
   <view class="func-section">
     <view class="func-grid-3">
       <view wx:for="{{commonFuncs}}" wx:key="index" class="func-item-compact" bindtap="onCommonFuncTap" data-index="{{index}}">
-        <text class="ficon">{{item.icon}}</text>
+        <text class="ficon-em">{{item.icon}}</text>
         <text class="flabel">{{item.label}}</text>
         <view wx:if="{{item.badge}}" class="func-badge">{{item.badge}}</view>
       </view>
@@ -81,7 +88,7 @@
   <view class="vip-features" wx:if="{{userInfo.is_vip}}">
     <view class="vip-grid">
       <view wx:for="{{vipFeatList}}" wx:key="index" class="vip-feat-item" bindtap="onVipFeatTap" data-index="{{index}}">
-        <text class="vf-icon">{{item.icon}}</text>
+        <text class="vf-em">{{item.icon}}</text>
         <text class="vf-label">{{item.label}}</text>
       </view>
     </view>
@@ -89,7 +96,7 @@
 
   <view class="contact-bar">
     <view wx:for="{{contactItems}}" wx:key="index" class="contact-item" bindtap="onContactTap" data-index="{{index}}">
-      <text class="cicon">{{item.icon}}</text>
+      <text class="c-em">{{item.icon}}</text>
       <text>{{item.label}}</text>
     </view>
   </view>

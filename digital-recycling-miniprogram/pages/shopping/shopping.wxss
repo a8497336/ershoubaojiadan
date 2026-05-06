@@ -1,69 +1,68 @@
 @import '/styles/design-tokens.wxss';
 
 .cart-page {
-  background: #f5f5f5;
+  background: var(--color-background);
   min-height: 100vh;
   padding-bottom: 200rpx;
 }
 
-/* ===== 导航栏 ===== */
 .nav-bar {
-  background: #ffffff;
-  height: 88rpx;
+  background: var(--color-primary);
+  min-height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   position: sticky;
-  top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-sm);
 }
-.nav-bar .title-text { color: #333; font-size: 34rpx; font-weight: 500; }
+.title-text { color: var(--color-text-primary); font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
 
-/* ===== 统计栏 ===== */
 .stats-bar {
-  background: #fff;
+  background: var(--color-background-white);
   padding: 20rpx 24rpx;
   display: flex;
   align-items: center;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
-.stat-label { font-size: 26rpx; color: #999; }
-.stat-num { font-size: 26rpx; color: #ff3344; font-weight: 600; margin: 0 4rpx; }
+.stat-label { font-size: 26rpx; color: var(--color-text-tertiary); }
+.stat-num { font-size: 26rpx; color: var(--color-primary); font-weight: var(--font-weight-semibold); margin: 0 4rpx; }
 .stat-num.highlight { font-size: 30rpx; }
 
-/* ===== 分类标签 ===== */
 .category-header {
-  background: #fff;
+  background: var(--color-background-white);
   padding: 20rpx 24rpx;
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
-.category-left { display: flex; align-items: center; gap: 12rpx; }
-.category-icon { font-size: 24px; }
-.category-title { font-size: 20px; font-weight: 700; }
-.clear-category-btn { background: #f5f5f5; border: none; color: #999; font-size: 14px; padding: 6px 14px; border-radius: 6px; }
+.category-left { display: flex; align-items: center; gap: 12rpx; font-size: 32rpx; }
+.clear-category-btn {
+  background: var(--color-background);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-sm);
+}
 
-/* ===== 商品列表 ===== */
-.cart-list { background: #fff; }
+.cart-list { background: var(--color-background-white); }
 
 .cart-item {
   display: flex;
   align-items: center;
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--color-background);
 }
-.cart-item.selected { background: #fff9f9; }
+.cart-item.selected { background: var(--color-primary-light); }
 
 .cart-checkbox {
   width: 40rpx;
   height: 40rpx;
-  border: 3rpx solid #ddd;
+  border: 3rpx solid var(--color-border);
   border-radius: 50%;
   margin-right: 20rpx;
   display: flex;
@@ -72,332 +71,133 @@
   flex-shrink: 0;
 }
 .cart-checkbox.checked {
-  background: #ff2d4a;
-  border-color: #ff2d4a;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 .cart-checkbox.checked::after {
   content: '✓';
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: 24rpx;
 }
 
 .cart-item-info { flex: 1; min-width: 0; }
-.cart-item-info .ci-name { font-size: 28rpx; color: #333; font-weight: 500; }
-.cart-item-info .ci-grade { font-size: 22rpx; color: #999; margin-top: 4rpx; }
+.ci-name { font-size: var(--font-size-base); color: var(--color-text-primary); font-weight: var(--font-weight-medium); }
+.ci-grade { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: 4rpx; }
 .ci-price { margin-top: 6rpx; display: flex; align-items: baseline; }
-.price-label { font-size: 15px; color: #666; }
-.price-red { color: #ff2222; font-size: 20px; font-weight: 800; }
+.price-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+.price-red { color: var(--color-primary); font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
 
-.qty-ctrl { display: flex; align-items: center; gap: 16rpx; margin-right: 16rpx; }
+.qty-ctrl { display: flex; align-items: center; gap: 12rpx; margin-right: 12rpx; }
 .qty-btn {
   width: 48rpx; height: 48rpx;
-  border: 2rpx solid #ddd;
+  border: 2rpx solid var(--color-border);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 28rpx; color: #666; background: #fff;
-  margin-right: 16rpx;
+  font-size: var(--font-size-md); color: var(--color-text-secondary); background: var(--color-background-white);
 }
-.qty-btn:last-child { margin-right: 0; }
-.qty-btn:active { background: #f0f0f0; }
-.qty-num { font-size: 28rpx; color: #333; min-width: 48rpx; text-align: center; margin-right: 16rpx; }
+.qty-num { font-size: var(--font-size-base); color: var(--color-text-primary); min-width: 48rpx; text-align: center; }
 
 .delete-btn {
-  width: 44px;
-  height: 44px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  position: relative;
-  flex-shrink: 0;
-}
-.delete-btn::after {
-  content: '🗑️';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 20px;
-}
-
-/* ===== 提示文字 ===== */
-.tip-text {
-  padding: 16px 20px;
-  color: #999;
-  font-size: 14px;
+  width: 44rpx; height: 44rpx;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #fff;
+  justify-content: center;
+  font-size: 24rpx;
+  flex-shrink: 0;
 }
-.tip-icon { font-size: 18px; }
 
-/* ===== 底部结算栏 ===== */
+.tip-text {
+  padding: 20rpx 24rpx;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: var(--color-background-white);
+}
+
 .settle-bar {
   position: fixed;
   bottom: 100rpx;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--color-background-white);
   padding: 20rpx 24rpx;
   display: flex;
   align-items: center;
   box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
   z-index: 50;
 }
-
 .select-all { display: flex; align-items: center; gap: 12rpx; margin-right: 16rpx; }
 .select-all .cart-checkbox { margin-right: 0; }
-.select-all text { font-size: 26rpx; color: #666; }
+.select-all text { font-size: 26rpx; color: var(--color-text-secondary); }
 
 .total-section { flex: 1; text-align: center; }
-.total-text { font-size: 28rpx; color: #333; }
-.total-text .price { color: #ff2d4a; font-size: 36rpx; font-weight: bold; }
-.total-hint { font-size: 12px; color: #999; margin-top: 2px; }
+.total-text { font-size: var(--font-size-base); color: var(--color-text-primary); }
+.total-text .price { color: var(--color-primary); font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
+.total-hint { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: 2rpx; }
 
 .add-more-btn {
-  background: #ff9800;
-  color: #fff;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 40rpx;
-  padding: 16rpx 32rpx;
-  font-size: 28rpx;
+  border-radius: var(--radius-full);
+  padding: 16rpx 28rpx;
+  font-size: var(--font-size-base);
   margin-right: 16rpx;
 }
-.add-more-btn:active { background: #f57c00; }
 
 .submit-btn {
-  background: #ff2d4a;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 40rpx;
-  padding: 16rpx 32rpx;
-  font-size: 28rpx;
+  border-radius: var(--radius-full);
+  padding: 16rpx 28rpx;
+  font-size: var(--font-size-base);
 }
-.submit-btn:active { background: #e62540; }
 .submit-btn[disabled] { opacity: 0.5; }
 
-/* ===== 空状态 ===== */
-.empty-section { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0; }
-.go-shop-btn { margin-top: 32rpx; background: #ff3344; color: #fff; border: none; border-radius: 40rpx; padding: 16rpx 48rpx; font-size: 28rpx; }
-
-/* ===== 弹窗 ===== */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes slideUp {
-  from { transform: translateY(60rpx); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
 }
 
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--color-bg-mask);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
-  animation: fadeIn 0.3s ease;
 }
 .modal-box {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
   width: 600rpx;
-  padding: 40rpx 32rpx 32rpx;
-  animation: slideUp 0.3s ease;
+  padding: 48rpx 32rpx 32rpx;
 }
-.modal-icon { font-size: 64px; margin-bottom: 16px; text-align: center; }
-.modal-box .modal-title { font-size: 32rpx; font-weight: 600; color: #333; text-align: center; margin-bottom: 40rpx; }
+.modal-icon-text { font-size: 64rpx; display: block; text-align: center; margin-bottom: 24rpx; opacity: 0.6; }
+.modal-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: 40rpx;
+}
 .modal-btns { display: flex; gap: 24rpx; }
-.modal-btns button { flex: 1; border: none; border-radius: 40rpx; padding: 24rpx 0; font-size: 28rpx; margin-right: 24rpx; }
-.modal-btns button:last-child { margin-right: 0; }
-.modal-btns .cancel { background: #f5f5f5; color: #666; }
-.modal-btns .confirm { background: #ff2d4a; color: #fff; }
-.modal-btns .cancel:active { background: #e8e8e8; }
-.modal-btns .confirm:active { background: #e62540; }
+.modal-btns button {
+  flex: 1;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 24rpx 0;
+  font-size: var(--font-size-base);
+}
+.modal-btns .cancel { background: var(--color-background); color: var(--color-text-secondary); }
+.modal-btns .confirm { background: var(--color-primary); color: var(--color-text-inverse); }
 
-/* 全屏加载 */
 .full-loading { display: flex; justify-content: center; align-items: center; height: 600rpx; }
-
-/* 响应式调整 - 匹配H5端的媒体查询 */
-@media (max-width: 375px) {
-  .nav-bar {
-    height: 80rpx;
-  }
-  .nav-bar .title-text {
-    font-size: 32rpx;
-  }
-  .stats-bar {
-    padding: 16rpx 20rpx;
-  }
-  .stat-label {
-    font-size: 24rpx;
-  }
-  .stat-num {
-    font-size: 24rpx;
-  }
-  .category-header {
-    padding: 16rpx 20rpx;
-  }
-  .category-title {
-    font-size: 28rpx;
-  }
-  .cart-item {
-    padding: 20rpx;
-  }
-  .cart-item-info .ci-name {
-    font-size: 26rpx;
-  }
-  .cart-item-info .ci-grade {
-    font-size: 20rpx;
-  }
-  .price-label {
-    font-size: 24rpx;
-  }
-  .price-red {
-    font-size: 36rpx;
-  }
-  .qty-ctrl {
-    gap: 12rpx;
-    margin-right: 12rpx;
-  }
-  .qty-btn {
-    width: 44rpx;
-    height: 44rpx;
-    font-size: 24rpx;
-  }
-  .qty-num {
-    font-size: 24rpx;
-    min-width: 40rpx;
-  }
-  .delete-btn {
-    width: 40rpx;
-    height: 40rpx;
-  }
-  .settle-bar {
-    padding: 16rpx 20rpx;
-    bottom: 90rpx;
-  }
-  .select-all text {
-    font-size: 24rpx;
-  }
-  .total-text {
-    font-size: 26rpx;
-  }
-  .total-text .price {
-    font-size: 32rpx;
-  }
-  .total-hint {
-    font-size: 22rpx;
-  }
-  .add-more-btn {
-    padding: 14rpx 28rpx;
-    font-size: 26rpx;
-    margin-right: 12rpx;
-  }
-  .submit-btn {
-    padding: 14rpx 28rpx;
-    font-size: 26rpx;
-  }
-  .tip-text {
-    padding: 14rpx 16rpx;
-    font-size: 24rpx;
-  }
-}
-
-@media (max-width: 320px) {
-  .nav-bar {
-    height: 72rpx;
-  }
-  .nav-bar .title-text {
-    font-size: 30rpx;
-  }
-  .stats-bar {
-    padding: 12rpx 16rpx;
-  }
-  .stat-label {
-    font-size: 22rpx;
-  }
-  .stat-num {
-    font-size: 22rpx;
-  }
-  .category-header {
-    padding: 12rpx 16rpx;
-  }
-  .category-title {
-    font-size: 26rpx;
-  }
-  .cart-item {
-    padding: 16rpx;
-  }
-  .cart-item-info .ci-name {
-    font-size: 24rpx;
-  }
-  .cart-item-info .ci-grade {
-    font-size: 18rpx;
-  }
-  .price-label {
-    font-size: 22rpx;
-  }
-  .price-red {
-    font-size: 32rpx;
-  }
-  .qty-ctrl {
-    gap: 8rpx;
-    margin-right: 8rpx;
-  }
-  .qty-btn {
-    width: 40rpx;
-    height: 40rpx;
-    font-size: 22rpx;
-  }
-  .qty-num {
-    font-size: 22rpx;
-    min-width: 36rpx;
-  }
-  .delete-btn {
-    width: 36rpx;
-    height: 36rpx;
-  }
-  .settle-bar {
-    padding: 12rpx 16rpx;
-    bottom: 80rpx;
-  }
-  .select-all text {
-    font-size: 22rpx;
-  }
-  .total-text {
-    font-size: 24rpx;
-  }
-  .total-text .price {
-    font-size: 28rpx;
-  }
-  .total-hint {
-    font-size: 20rpx;
-  }
-  .add-more-btn {
-    padding: 12rpx 24rpx;
-    font-size: 24rpx;
-    margin-right: 8rpx;
-  }
-  .submit-btn {
-    padding: 12rpx 24rpx;
-    font-size: 24rpx;
-  }
-  .tip-text {
-    padding: 12rpx 16rpx;
-    font-size: 22rpx;
-  }
-  .modal-box {
-    width: 540rpx;
-    padding: 32rpx 24rpx 24rpx;
-  }
-  .modal-box .modal-title {
-    font-size: 28rpx;
-    margin-bottom: 32rpx;
-  }
-  .modal-btns button {
-    padding: 20rpx 0;
-    font-size: 26rpx;
-  }
-}

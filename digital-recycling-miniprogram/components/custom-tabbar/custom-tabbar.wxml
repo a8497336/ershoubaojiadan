@@ -11,7 +11,7 @@
       <block wx:if="{{!item.isCenter}}">
         <view class="tab-indicator"></view>
         <view class="tabbar-icon">
-          <image src="/images/tabbar/{{item.icon}}{{item.key === activeTab ? '-active' : ''}}.png" mode="aspectFit" class="tab-icon-img"/>
+          <image src="/images/tabbar/{{item.icon}}{{item.key === activeTab ? '-selected' : ''}}.png" mode="aspectFit" class="tab-icon-img"/>
           <!-- 数字角标 -->
           <view wx:if="{{item.key === 'shopping' && badgeCount > 0}}" class="tab-badge">{{badgeCount}}</view>
           <!-- 小红点 -->

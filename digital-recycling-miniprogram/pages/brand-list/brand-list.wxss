@@ -9,13 +9,12 @@
 /* ===== 自定义导航栏 ===== */
 .nav-bar {
   background: #ff2d4a;
-  height: 88rpx;
+  min-height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 24rpx;
   position: sticky;
-  top: 0;
   z-index: 100;
 }
 .nav-bar .back-btn {
@@ -231,7 +230,7 @@
   background: #fff;
   border-radius: 24rpx 24rpx 0 0;
   width: 100%;
-  padding: 32rpx 24rpx 48rpx;
+  padding: 32rpx 24rpx 250rpx;
   animation: slideUp 0.3s ease;
 }
 @keyframes slideUp {
@@ -360,7 +359,7 @@
 /* 响应式调整 - 匹配H5端的媒体查询 */
 @media (max-width: 375px) {
   .nav-bar {
-    height: 80rpx;
+    min-height: 80rpx;
   }
   .nav-bar .title-text {
     font-size: 32rpx;
@@ -459,7 +458,7 @@
 
 @media (max-width: 320px) {
   .nav-bar {
-    height: 72rpx;
+    min-height: 72rpx;
   }
   .nav-bar .title-text {
     font-size: 30rpx;

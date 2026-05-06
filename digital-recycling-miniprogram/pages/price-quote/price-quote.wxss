@@ -275,7 +275,7 @@
 .th {
   display: table-cell;
   background-color: #c0392b;
-  background-color: var(--color-primary);
+  /* background-color: var(--color-primary); */
   /* color: #666666; */
   padding: 20rpx 12rpx;
   text-align: center;

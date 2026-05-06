@@ -1,36 +1,31 @@
 <view class="order-list-page">
-  <!-- 状态筛选Tab -->
   <view class="status-tabs">
-    <view 
-      class="tab-item {{activeTab === item.key ? 'active' : ''}}"
-      wx:for="{{tabs}}"
-      wx:key="key"
-      bindtap="switchTab"
-      data-key="{{item.key}}"
-    >
+    <view class="tab-item {{activeTab === item.key ? 'active' : ''}}"
+      wx:for="{{tabs}}" wx:key="key"
+      bindtap="switchTab" data-key="{{item.key}}">
       {{item.label}}
     </view>
   </view>
 
-  <!-- 订单列表 -->
-  <view class="order-list">
-    <block wx:if="{{!isLoading && filteredOrders.length > 0}}">
-      <view 
-        class="order-card"
-        wx:for="{{filteredOrders}}"
-        wx:key="id"
-        bindtap="goToDetail"
-        data-id="{{item.id}}"
-      >
-        <!-- 订单头部 -->
+  <view wx:if="{{loading && filteredOrders.length === 0}}">
+    <loading-skeleton type="list" rowCount="3" showAvatar="{{false}}" />
+  </view>
+
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="onRetry">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text>
+    <text class="error-desc">点击重新加载</text>
+  </view>
+
+  <block wx:if="{{!loading && !networkError}}">
+    <view wx:if="{{filteredOrders.length > 0}}" class="order-list">
+      <view class="order-card animate-slide-up" wx:for="{{filteredOrders}}" wx:key="id"
+        bindtap="goToDetail" data-id="{{item.id}}">
         <view class="order-header">
           <text class="order-id">订单号：{{item.id}}</text>
-          <view class="status-badge" style="color: {{item.statusInfo.color}}">
-            {{item.statusInfo.text}}
-          </view>
+          <view class="status-badge" style="color: {{item.statusInfo.color}}">{{item.statusInfo.text}}</view>
         </view>
 
-        <!-- 商品信息 -->
         <view class="order-items">
           <view class="item-row" wx:for="{{item.items}}" wx:for-item="product" wx:key="index">
             <view class="item-info">
@@ -45,7 +40,6 @@
           </view>
         </view>
 
-        <!-- 订单底部 -->
         <view class="order-footer">
           <text class="order-time">{{item.createTime}}</text>
           <view class="order-total">
@@ -54,31 +48,25 @@
           </view>
         </view>
 
-        <!-- 操作按钮 -->
         <view class="order-actions" wx:if="{{item.status === 'shipping'}}">
-          <button class="btn btn-outline btn-sm" catchtap="cancelOrder" data-id="{{item.id}}">取消订单</button>
-          <button class="btn btn-primary btn-sm" catchtap="viewLogistics" data-id="{{item.id}}">查看物流</button>
+          <button class="btn-outline btn-sm" catchtap="cancelOrder" data-id="{{item.id}}">取消订单</button>
         </view>
-      </view>
-    </block>
-
-    <!-- 加载状态 -->
-    <view class="loading-state" wx:if="{{isLoading}}">
-      <view class="skeleton-card" wx:for="{{3}}" wx:key="index">
-        <view class="skeleton-line title"></view>
-        <view class="skeleton-line"></view>
-        <view class="skeleton-line short"></view>
       </view>
     </view>
 
-    <!-- 空状态 -->
-    <empty-state 
-      wx:if="{{!isLoading && filteredOrders.length === 0}}"
-      title="暂无订单"
-      desc="您还没有相关状态的订单"
-      show-btn="true"
-      btn-text="去回收"
-      bind:btnTap="goHome"
-    />
-  </view>
+    <view wx:if="{{filteredOrders.length === 0}}" class="empty-wrap">
+      <empty-state
+        title="暂无订单"
+        desc="您还没有相关状态的订单"
+        showBtn="{{true}}"
+        btnText="去回收"
+        bind:btnTap="goHome"
+      />
+    </view>
+
+    <view wx:if="{{loading && filteredOrders.length > 0}}" class="load-more">
+      <loading-spinner size="small" />
+    </view>
+    <view wx:if="{{!hasMore && filteredOrders.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
 </view>

@@ -1,0 +1,49 @@
+<view class="page-container">
+  <view wx:if="{{loading && logs.length === 0}}">
+    <loading-skeleton type="list" rowCount="4" />
+  </view>
+
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="init">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text>
+    <text class="error-desc">点击重新加载</text>
+  </view>
+
+  <block wx:if="{{!loading && !networkError}}">
+    <view class="balance-card">
+      <text class="balance-label">账户余额(元)</text>
+      <text class="balance-value">¥{{balance}}</text>
+      <view class="withdraw-btn" bindtap="onWithdraw">提现</view>
+    </view>
+
+    <view class="log-header">
+      <text class="log-title">交易记录</text>
+    </view>
+
+    <view wx:if="{{logs.length > 0}}" class="log-list">
+      <view class="log-item animate-slide-up" wx:for="{{logs}}" wx:key="id" bindtap="onLogTap" data-index="{{index}}">
+        <view class="log-left">
+          <text class="log-desc">{{item.description || item.type_text || '交易'}}</text>
+          <text class="log-time">{{item.created_at || item.createTime || ''}}</text>
+        </view>
+        <view class="log-right">
+          <text class="log-amount {{item.type === 'income' ? 'income' : ''}}">
+            {{item.type === 'income' ? '+' : '-'}}¥{{item.amount || '0.00'}}
+          </text>
+          <text class="log-after">余额 ¥{{item.after_balance || balance}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:elif="{{!loading && logs.length === 0}}" class="empty-state">
+      <image src="/images/icons/empty.svg" mode="aspectFit" class="empty-img" />
+      <text>暂无交易记录</text>
+    </view>
+
+    <view wx:if="{{loading && logs.length > 0}}" class="load-more">
+      <loading-spinner size="small" />
+    </view>
+
+    <view wx:if="{{!hasMore && logs.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
+</view>

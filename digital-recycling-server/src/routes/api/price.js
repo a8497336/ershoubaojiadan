@@ -102,6 +102,13 @@ router.get('/today', optionalAuth, async (req, res, next) => {
       order: [['sort_order', 'ASC']]
     })
 
+    const todayView = await db.PriceView.findOne({ where: { view_date: today } })
+    if (todayView) {
+      await todayView.increment('view_count')
+    } else {
+      await db.PriceView.create({ view_date: today, view_count: 1 })
+    }
+
     const viewCount = await db.PriceView.sum('view_count', {
       where: { view_date: today }
     })

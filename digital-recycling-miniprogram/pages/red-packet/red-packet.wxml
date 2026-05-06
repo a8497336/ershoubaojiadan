@@ -1,0 +1,28 @@
+<view class="page-container">
+  <view wx:if="{{loading && list.length === 0}}"><loading-skeleton type="list" rowCount="4" /></view>
+
+  <view wx:if="{{networkError && !loading}}" class="error-state" bindtap="init">
+    <image class="error-img" src="/images/icons/empty.svg" mode="aspectFit" />
+    <text class="error-title">网络连接失败</text><text class="error-desc">点击重新加载</text>
+  </view>
+
+  <block wx:if="{{!loading && !networkError}}">
+    <view wx:if="{{list.length > 0}}" class="list-wrap">
+      <view class="packet-item animate-slide-up" wx:for="{{list}}" wx:key="id" bindtap="onItemTap" data-index="{{index}}">
+        <view class="packet-left">
+          <text class="packet-amount">¥{{item.amount || '0.00'}}</text>
+          <text class="packet-from">来自 {{item.from || '系统'}}</text>
+        </view>
+        <view class="packet-right">
+          <text class="packet-status {{item.status === 'received' ? 'done' : ''}}">{{item.status_text || item.status || '待领取'}}</text>
+          <text class="packet-time">{{item.created_at || ''}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:elif="{{!loading && list.length === 0}}" class="empty-wrap">
+      <empty-state title="暂无红包" desc="参与活动获取更多红包" />
+    </view>
+    <view wx:if="{{!hasMore && list.length > 0}}" class="no-more">— 已经到底了 —</view>
+  </block>
+</view>

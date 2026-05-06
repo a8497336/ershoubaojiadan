@@ -3,9 +3,11 @@ const contentApi = require('../../utils/api-modules').contentApi
 const categoryApi = require('../../utils/api-modules').categoryApi
 const priceApi = require('../../utils/api-modules').priceApi
 const searchApi = require('../../utils/api-modules').searchApi
+const { CONTACT, STORE } = require('../../utils/constants')
 
 Page({
   data: {
+    statusBarHeight: 0,
     banners: [],
     announcements: [],
     storesData: [],
@@ -169,7 +171,7 @@ Page({
   },
 
   onLoad() {
-    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight, online: app.getNetworkStatus ? app.getNetworkStatus() : true })
     this.init()
   },
 
@@ -232,7 +234,7 @@ Page({
         this.fetchBanners(),
         this.fetchAnnouncements(),
         this.fetchStores(),
-        this.fetchVideos(),
+        this.fetchVideos('查看报价'),
         this.fetchCategories()
       ])
       this.setData({ banners: bannerRes, announcements: announceRes })
@@ -256,7 +258,7 @@ Page({
         this.setData({ storesData: storeRes })
         this.processStore(storeRes)
       } else {
-        this.setData({ storeInfo: { name: '安徽门店', distance: '52.11', phone: '18755875222', wechat: '18755875222', contact_name: '范凯旋', contact_phone: '18755875222', province: '安徽省阜阳市', city: '太和县', address: '双浮镇双北路1号数字回收网废旧手机回收中心（五星大桥南50米路）' } })
+        this.setData({ storeInfo: STORE.DEFAULT_STORE })
       }
 
       if (catRes.length > 0) {
@@ -383,10 +385,10 @@ Page({
           duration: v.duration || 0
         }))
         const finalVideos = videos.length > 0 ? videos : [
-          { id: 1, title: '华为手机查询报价教程', cover_image: '', category: '查看报价' },
-          { id: 2, title: '报价单查看教程', cover_image: '', category: '实用功能' },
-          { id: 3, title: '如何下单回收手机', cover_image: '', category: '下单相关' },
-          { id: 4, title: '回收收入提现指南', cover_image: '', category: '收入相关' }
+          { id: 1, title: '暂无数据', cover_image: '', category: '查看报价' },
+          // { id: 2, title: '报价单查看教程', cover_image: '', category: '实用功能' },
+          // { id: 3, title: '如何下单回收手机', cover_image: '', category: '下单相关' },
+          // { id: 4, title: '回收收入提现指南', cover_image: '', category: '收入相关' }
         ]
         this.setData({ videos: finalVideos, filteredVideos: finalVideos })
         resolve(finalVideos)
@@ -406,7 +408,7 @@ Page({
   switchVideoTab(e) {
     const tabId = parseInt(e.currentTarget.dataset.index)
     const { videoTabs } = this.data
-    const category = tabId === 0 ? undefined : videoTabs[tabId]
+    const category = videoTabs[tabId]
     this.setData({ activeVideoTab: tabId })
     this.fetchVideos(category)
   },
@@ -495,7 +497,7 @@ Page({
     }
   },
 
-  goToScanPrice() { wx.navigateTo({ url: '/pages/scan-price/scan-price' }) },
+  goToScanPrice() { wx.switchTab({ url: '/pages/scan-price/scan-price' }) },
   goToInvite() { wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }) },
   goToPriceQuote() { wx.navigateTo({ url: '/pages/price-quote/price-quote' }) },
   goToVideoList() { wx.navigateTo({ url: '/pages/video-list/video-list' }) },
@@ -508,7 +510,7 @@ Page({
   },
 
   copyWechat(e) {
-    const wxid = e ? (e.currentTarget.dataset.wxid || '') : (this.data.storeInfo ? (this.data.storeInfo.wechat || '15361862828') : '15361862828')
+    const wxid = e ? (e.currentTarget.dataset.wxid || '') : (this.data.storeInfo ? (this.data.storeInfo.wechat || CONTACT.WECHAT_ID) : CONTACT.WECHAT_ID)
     if (!wxid) { this.showToast('暂无内容'); return }
     wx.setClipboardData({ data: wxid, success: () => this.showToast('微信号已复制') })
   },
@@ -517,9 +519,9 @@ Page({
     const s = this.data.storeInfo
     if (!s) { this.showToast('暂无门店信息'); return }
     wx.openLocation({
-      latitude: s.latitude ? Number(s.latitude) : 33.1624,
-      longitude: s.longitude ? Number(s.longitude) : 115.6218,
-      name: s.name || '数字回收网废旧手机回收中心',
+      latitude: s.latitude ? Number(s.latitude) : STORE.DEFAULT_STORE.latitude,
+      longitude: s.longitude ? Number(s.longitude) : STORE.DEFAULT_STORE.longitude,
+      name: s.name || '数码回收网废旧手机回收中心',
       address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
     })
   },

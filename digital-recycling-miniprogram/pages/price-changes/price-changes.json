@@ -1,0 +1,5 @@
+{
+  "navigationBarTitleText": "报价变动",
+  "enablePullDownRefresh": true,
+  "usingComponents": { "loading-skeleton": "/components/common/loading-skeleton/loading-skeleton", "empty-state": "/components/common/empty-state/empty-state" }
+}

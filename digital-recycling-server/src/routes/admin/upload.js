@@ -9,7 +9,7 @@ const { adminAuth } = require('../../middlewares/adminAuth')
 const getBaseUrl = (req) => {
   const apiBaseUrl = process.env.API_BASE_URL
   if (apiBaseUrl) return apiBaseUrl
-  const protocol = req.protocol
+  const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
   const host = req.get('host')
   return `${protocol}://${host}`
 }

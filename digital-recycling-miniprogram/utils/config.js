@@ -22,7 +22,8 @@ const getConfig = () => {
 
 const getImageUrl = (path) => {
   if (!path) return ''
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http://')) return path.replace('http://', 'https://')
+  if (path.startsWith('https://')) return path
   return `${getConfig().imageBase}${path}`
 }
 

@@ -15,13 +15,8 @@
 
   <block wx:if="{{!loading && !networkError}}">
     <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="more-btn">●●●</view>
+    <view class="nav-bar" style="padding-top: {{statusBarHeight}}px;">
       <view class="title">数码回收网报价单</view>
-      <view class="capsule">
-        <text>━</text>
-        <text>○</text>
-      </view>
     </view>
 
     <!-- Banner轮播 -->
@@ -56,28 +51,22 @@
     <!-- 功能入口网格 -->
     <view class="func-grid">
       <view class="func-item" bindtap="goToBrandList">
+        <text class="func-item-icon-em">🔍</text>
         <text class="func-title">快速查价</text>
-        <text class="func-desc">先估价 再下单</text>
-        <view class="go-btn">GO ></view>
-        <view class="func-icon">🔍</view>
       </view>
       <view class="func-item" bindtap="goToScanPrice">
+        <text class="func-item-icon-em">📷</text>
         <text class="func-title">拍照查价</text>
-        <text class="func-desc">拍照片 查价格</text>
-        <view class="go-btn">GO ></view>
-        <view class="func-icon">📷</view>
       </view>
       <view class="func-item" bindtap="goToInvite">
+        <text class="func-item-icon-em">👥</text>
         <text class="func-title">邀请好友</text>
-        <text class="func-desc">邀好友 分佣金</text>
-        <view class="go-btn">GO ></view>
-        <view class="func-icon">👥</view>
       </view>
     </view>
 
     <!-- 公告栏 -->
     <view class="notice-bar" wx:if="{{displayAnnouncements.length > 0}}">
-      <view class="notice-tag">📢公告</view>
+      <view class="notice-tag">📢 公告</view>
       <view class="notice-scroll-wrapper">
         <view class="notice-scroll-inner" style="transform: translateY(-{{currentAnnouncementIndex * 40}}rpx);">
           <view class="notice-scroll-item" wx:for="{{displayAnnouncements}}" wx:key="index">
@@ -94,22 +83,32 @@
         <text class="store-tag">附近门店</text>
         <text class="store-name">{{storeInfo.name || '安徽门店'}}</text>
         <text class="store-distance" wx:if="{{storeInfo.distance}}">{{storeInfo.distance}}km</text>
-        <text class="store-distance" wx:else>52.11km</text>
+        <!-- <text class="store-distance" wx:else>52.11km</text> -->
       </view>
       <view class="store-info-row" bindtap="makePhoneCall" data-phone="{{storeInfo.phone || '18755875222'}}">
-        <text class="store-label">📞 {{storeInfo.contact_name || '范凯旋'}} {{storeInfo.phone || storeInfo.contact_phone || '18755875222'}}</text>
+        <view class="store-label">
+          <text>📞 {{storeInfo.contact_name || '范凯旋'}} {{storeInfo.phone || storeInfo.contact_phone || '18755875222'}}</text>
+        </view>
         <text class="store-action">拨打 ></text>
       </view>
       <view class="store-info-row" bindtap="copyWechat" data-wxid="{{storeInfo.wechat || '18755875222'}}">
-        <text class="store-label">💬 {{storeInfo.wechat || '18755875222'}}</text>
+        <view class="store-label">
+          <text>💬 {{storeInfo.wechat || '18755875222'}}</text>
+        </view>
         <text class="store-action">复制 ></text>
       </view>
       <view class="store-address" bindtap="openLocation">
-        <text class="store-label" style="flex:1;">📍 {{storeInfo.province || '安徽省阜阳市'}}{{storeInfo.city || '太和县'}}{{storeInfo.address || '双浮镇双北路1号数码回收网废旧手机回收中心（五星大桥南50米路）'}}</text>
+        <view class="store-label" style="flex:1;">
+          <text>📍 {{storeInfo.province || '安徽省阜阳市'}}{{storeInfo.city || '太和县'}}{{storeInfo.address || '双浮镇双北路1号数码回收网废旧手机回收中心（五星大桥南50米路）'}}</text>
+        </view>
         <text class="store-action">导航 ></text>
       </view>
     </view>
-
+    <!-- 常用报价 -->
+    <view class="common-quote-header">
+      <text class="active">常用报价</text>
+      <text class="more" bindtap="goToPriceQuote">查看全部 ></text>
+    </view>
     <!-- 搜索栏 -->
     <view class="search-bar">
       <view class="search-input">
@@ -123,12 +122,8 @@
       <view class="cat-tab {{activeCategory === index ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="switchCategory" data-index="{{index}}">{{item.name}}</view>
     </view>
 
-    <!-- 常用报价 -->
-    <view class="common-quote-header">
-      <text class="active">常用报价</text>
-      <text class="more" bindtap="goToPriceQuote">查看全部 ></text>
-    </view>
-    <block wx:if="{{hotPriceList.length > 0}}">
+
+    <!-- <block wx:if="{{hotPriceList.length > 0}}">
       <scroll-view class="hot-price-list" scroll-x enhanced show-scrollbar="{{false}}">
         <view class="hot-price-item" wx:for="{{hotPriceList}}" wx:key="id" bindtap="goToBrandList" data-id="{{item.brandId}}" data-name="{{item.brand}}">
           <view class="price-brand">{{item.brand}}</view>
@@ -136,11 +131,11 @@
           <view class="price-value">{{item.maxPrice}}</view>
         </view>
       </scroll-view>
-    </block>
-    <view wx:elif="{{!priceLoading}}" class="common-quote">
+    </block> -->
+    <!-- <view wx:elif="{{!priceLoading}}" class="common-quote">
       <text class="active">常用报价</text>
       <text class="empty">暂无常用报价</text>
-    </view>
+    </view> -->
     <!-- 分类品牌区 -->
     <view  wx:if="{{currentCategorySection}}">
       <view class="section-title">{{currentCategorySection.name}}回收报价</view>
@@ -236,19 +231,19 @@
       <view class="flow-title">发货下单 → 到货验机 → 确认报价 → 成交收款</view>
       <view class="flow-steps">
         <view class="flow-step">
-          <view class="flow-icon">🛡️</view>
+          <text class="flow-icon-em">🛡️</text>
           <text class="flow-step-text">报价精准</text>
         </view>
         <view class="flow-step">
-          <view class="flow-icon">🔍</view>
+          <text class="flow-icon-em">🔍</text>
           <text class="flow-step-text">专业质检</text>
         </view>
         <view class="flow-step">
-          <view class="flow-icon">💳</view>
+          <text class="flow-icon-em">💰</text>
           <text class="flow-step-text">快速提现</text>
         </view>
         <view class="flow-step">
-          <view class="flow-icon">⭐</view>
+          <text class="flow-icon-em">⭐</text>
           <text class="flow-step-text">高质服务</text>
         </view>
       </view>
@@ -264,9 +259,15 @@
       <text class="footer-title">数码网·真诚服务好每一位客户</text>
       <text class="footer-desc">耕耘十余年始终为您提供最新最可靠的回收报价</text>
       <view class="footer-actions">
-        <view class="footer-action" bindtap="copyWechat">💬 添加微信</view>
-        <view class="footer-action" bindtap="makePhoneCall" data-phone="15361862828">📞 客服电话</view>
-        <view class="footer-action" bindtap="goToStoreList">🏪 门店列表</view>
+        <view class="footer-action" bindtap="copyWechat">
+          <text>💬 添加微信</text>
+        </view>
+        <view class="footer-action" bindtap="makePhoneCall" data-phone="15361862828">
+          <text>📞 客服电话</text>
+        </view>
+        <view class="footer-action" bindtap="goToStoreList">
+          <text>🏪 门店列表</text>
+        </view>
       </view>
     </view>
 
@@ -274,7 +275,7 @@
     <view class="custom-toast {{toastVisible ? 'show' : ''}}">{{toastMsg}}</view>
 
     <!-- 返回顶部 -->
-    <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">⬆️</view>
+    <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">⬆</view>
   </block>
 
   <custom-tabbar activeTab="home" />

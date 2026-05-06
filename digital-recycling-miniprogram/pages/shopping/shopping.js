@@ -1,4 +1,5 @@
 const { cartApi, orderApi } = require('../../utils/api-modules')
+const app = getApp()
 
 Page({
   data: {
@@ -8,16 +9,15 @@ Page({
     selectedCount: 0,
     totalPrice: '0.00',
     isAllSelected: false,
-    allSelected: false,
     isEmpty: true,
     loading: true,
     showDeleteConfirm: false,
-    showClearConfirm: false,
-    deleteTargetId: null
+    deleteTargetId: null,
+    statusBarHeight: 0
   },
 
   onLoad() {
-    this.loadCart()
+    this.setData({ statusBarHeight: app.globalData.statusBarHeight })
   },
 
   onShow() {
@@ -54,7 +54,6 @@ Page({
         selectedCount: cart.selectedCount || cartItems.filter(i => i.selected).length,
         totalPrice: cart.totalPrice || '0.00',
         isAllSelected: allSelected,
-        allSelected: allSelected,
         isEmpty: cartItems.length === 0,
         loading: false
       })
@@ -63,7 +62,7 @@ Page({
     })
   },
 
-  toggleItemSelection(e) {
+  onSelect(e) {
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item) return
@@ -72,18 +71,14 @@ Page({
     }).catch(() => {})
   },
 
-  toggleSelect(e) {
-    this.toggleItemSelection(e)
-  },
-
-  toggleSelectAll() {
+  onSelectAll() {
     const newSelected = !this.data.isAllSelected
     cartApi.selectAll(newSelected).then(() => {
       this.loadCart()
     }).catch(() => {})
   },
 
-  decreaseQuantity(e) {
+  onDecrease(e) {
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item || item.totalQuantity <= 1) return
@@ -92,11 +87,7 @@ Page({
     }).catch(() => {})
   },
 
-  decreaseQty(e) {
-    this.decreaseQuantity(e)
-  },
-
-  increaseQuantity(e) {
+  onIncrease(e) {
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item) return
@@ -105,36 +96,18 @@ Page({
     }).catch(() => {})
   },
 
-  increaseQty(e) {
-    this.increaseQuantity(e)
-  },
-
-  handleDelete(e) {
+  onDeleteTap(e) {
     const index = e.currentTarget.dataset.index
     const item = this.data.cartItems[index]
     if (!item) return
     this.setData({ showDeleteConfirm: true, deleteTargetId: item.id })
   },
 
-  showDeleteModal(e) {
-    this.handleDelete(e)
-  },
-
-  closeDeleteConfirm() {
+  onDeleteCancel() {
     this.setData({ showDeleteConfirm: false, deleteTargetId: null })
   },
 
-  hideDeleteModal() {
-    this.closeDeleteConfirm()
-  },
-
-  stopPropagation() {},
-
-  nop() {
-    this.stopPropagation()
-  },
-
-  confirmDelete() {
+  onDeleteConfirm() {
     const id = this.data.deleteTargetId
     if (!id) return
     cartApi.remove(id).then(() => {
@@ -145,51 +118,26 @@ Page({
     })
   },
 
-  handleClearAll() {
-    this.setData({ showClearConfirm: true })
-  },
-
-  showClearModal() {
-    this.handleClearAll()
-  },
-
-  handleClearCategory() {
-    this.setData({ showClearConfirm: true })
-  },
-
-  closeClearConfirm() {
-    this.setData({ showClearConfirm: false })
-  },
-
-  hideClearModal() {
-    this.closeClearConfirm()
-  },
-
-  confirmClearAll() {
-    cartApi.clear().then(() => {
-      this.setData({ showClearConfirm: false })
-      this.loadCart()
-    }).catch(() => {
-      this.setData({ showClearConfirm: false })
+  onClearAll() {
+    wx.showModal({
+      title: '确认清空',
+      content: '确定清空回收车中所有商品？',
+      success: (res) => {
+        if (res.confirm) {
+          cartApi.clear().then(() => {
+            this.loadCart()
+          }).catch(() => {})
+        }
+      }
     })
   },
 
-  confirmClear() {
-    this.confirmClearAll()
-  },
-
-  handleAddMore() {
+  onAddMore() {
     wx.switchTab({ url: '/pages/brand-list/brand-list' })
   },
 
-  goToBrandList() {
-    wx.switchTab({ url: '/pages/brand-list/brand-list' })
-  },
-
-  handleSubmit() {
-    if (this.data.selectedCount <= 0) {
-      return
-    }
+  onSubmit() {
+    if (this.data.selectedCount <= 0) return
     wx.showModal({
       title: '确认提交',
       content: `确定提交 ${this.data.selectedCount} 台设备的回收订单吗？`,
@@ -206,14 +154,6 @@ Page({
         }
       }
     })
-  },
-
-  submitOrder() {
-    this.handleSubmit()
-  },
-
-  goHome() {
-    wx.switchTab({ url: '/pages/index/index' })
   },
 
   onShareAppMessage() {

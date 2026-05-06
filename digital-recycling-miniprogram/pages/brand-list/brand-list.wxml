@@ -1,6 +1,6 @@
 <view class="brand-page">
-  <view class="nav-bar">
-    <view class="back-btn" bindtap="goBack">←</view>
+  <view class="nav-bar" style="padding-top: {{statusBarHeight}}px">
+    <!-- <view class="back-btn" bindtap="goBack">←</view> -->
     <view class="title-text">品牌列表</view>
   </view>
 
