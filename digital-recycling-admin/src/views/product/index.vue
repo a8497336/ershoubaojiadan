@@ -154,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -192,19 +192,39 @@ const loadData = async () => {
       tableData.value = res.data.list
       total.value = res.data.pagination.total
     }
+  } catch (error) {
+    console.error('加载数据失败:', error)
+    ElMessage.error(error?.message || '加载数据失败，请重试')
   } finally {
     loading.value = false
   }
 }
 
+const refreshWithDelay = async (delay = 300) => {
+  formVisible.value = false
+  quoteConfigVisible.value = false
+  await nextTick()
+  setTimeout(() => loadData(), delay)
+}
+
 const loadCategories = async () => {
-  const res = await getCategories()
-  categories.value = res.data
+  try {
+    const res = await getCategories()
+    categories.value = res.data
+  } catch (error) {
+    console.error('加载分类失败:', error)
+    ElMessage.error('加载分类列表失败')
+  }
 }
 
 const loadBrands = async () => {
-  const res = await getBrands({ pageSize: 200 })
-  allBrands.value = res.data.list
+  try {
+    const res = await getBrands({ pageSize: 200 })
+    allBrands.value = res.data.list
+  } catch (error) {
+    console.error('加载品牌失败:', error)
+    ElMessage.error('加载品牌列表失败')
+  }
 }
 
 const handleAdd = () => {
@@ -227,25 +247,36 @@ const handleEdit = (row) => {
 }
 
 const handleDelete = async (row) => {
-  await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
-  const fns = { category: deleteCategory, brand: deleteBrand, product: deleteProduct }
-  await fns[activeTab.value](row.id)
-  ElMessage.success('删除成功')
-  loadData()
+  try {
+    await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
+    const fns = { category: deleteCategory, brand: deleteBrand, product: deleteProduct }
+    await fns[activeTab.value](row.id)
+    ElMessage.success('删除成功')
+    await refreshWithDelay()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error(error?.message || '删除失败，请重试')
+    }
+  }
 }
 
 const handleSave = async () => {
-  const fns = {
-    category: { create: createCategory, update: updateCategory },
-    brand: { create: createBrand, update: updateBrand },
-    product: { create: createProduct, update: updateProduct }
+  try {
+    const fns = {
+      category: { create: createCategory, update: updateCategory },
+      brand: { create: createBrand, update: updateBrand },
+      product: { create: createProduct, update: updateProduct }
+    }
+    const fn = formId.value ? fns[activeTab.value].update : fns[activeTab.value].create
+    const id = formId.value
+    await id ? fn(id, formData.value) : fn(formData.value)
+    ElMessage.success('保存成功')
+    await refreshWithDelay()
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error(error?.message || '保存失败，请重试')
   }
-  const fn = formId.value ? fns[activeTab.value].update : fns[activeTab.value].create
-  const id = formId.value
-  await id ? fn(id, formData.value) : fn(formData.value)
-  ElMessage.success('保存成功')
-  formVisible.value = false
-  loadData()
 }
 
 const handleQuoteConfig = (row) => {
@@ -286,10 +317,11 @@ const saveQuoteConfig = async () => {
     }
     await updateBrand(quoteForm.value.id, data)
     ElMessage.success('报价配置保存成功')
-    quoteConfigVisible.value = false
-    loadData()
+    await refreshWithDelay()
   } catch (error) {
-    ElMessage.error(error.message || '保存失败')
+    console.error('保存报价配置失败:', error)
+    const errorMsg = error?.response?.data?.message || error?.message || '保存失败，请重试'
+    ElMessage.error(errorMsg)
   }
 }
 

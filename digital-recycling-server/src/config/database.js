@@ -1,5 +1,14 @@
 require('dotenv').config()
 
+const commonDefine = {
+  underscored: true,
+  freezeTableName: true,
+  charset: 'utf8mb4',
+  dialectOptions: {
+    collate: 'utf8mb4_unicode_ci'
+  }
+}
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
@@ -10,14 +19,7 @@ module.exports = {
     dialect: process.env.DB_DIALECT || 'mysql',
     logging: console.log,
     timezone: '+08:00',
-    define: {
-      underscored: false,
-      freezeTableName: true,
-      charset: 'utf8mb4',
-      dialectOptions: {
-        collate: 'utf8mb4_unicode_ci'
-      }
-    }
+    define: commonDefine
   },
   test: {
     username: process.env.DB_USER || 'root',
@@ -26,7 +28,8 @@ module.exports = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    logging: false
+    logging: false,
+    define: commonDefine
   },
   production: {
     username: process.env.DB_USER,
@@ -36,6 +39,7 @@ module.exports = {
     port: process.env.DB_PORT,
     dialect: 'mysql',
     logging: false,
+    define: commonDefine,
     pool: {
       max: 20,
       min: 5,

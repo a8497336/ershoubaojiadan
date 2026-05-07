@@ -332,8 +332,9 @@ const handleDeleteCondition = async (row) => {
     })
     await deleteCondition(row.id)
     ElMessage.success('删除成功')
-    handleConditionManage()
-    loadBaseData()
+    const condRes = await getConditions()
+    conditionList.value = condRes.data
+    conditions.value = condRes.data
     loadData()
   } catch (error) {
     if (error !== 'cancel') {
@@ -356,8 +357,9 @@ const handleSaveCondition = async () => {
           ElMessage.success('创建成功')
         }
         conditionFormVisible.value = false
-        handleConditionManage()
-        loadBaseData()
+        const condRes = await getConditions()
+        conditionList.value = condRes.data
+        conditions.value = condRes.data
         loadData()
       } catch (error) {
         ElMessage.error(error.message || '操作失败')

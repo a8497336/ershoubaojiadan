@@ -186,6 +186,8 @@ const loadData = async () => {
       tableData.value = res.data.list
       total.value = res.data.pagination.total
     }
+  } catch (error) {
+    ElMessage.error(error.message || '数据加载失败')
   } finally {
     loading.value = false
   }
@@ -227,24 +229,22 @@ const handleDeletePlan = async (row) => {
 
 const savePlan = async () => {
   if (!planFormRef.value) return
-  
-  await planFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        if (planForm.value.id) {
-          await updateMembershipPlan(planForm.value.id, planForm.value)
-          ElMessage.success('更新成功')
-        } else {
-          await createMembershipPlan(planForm.value)
-          ElMessage.success('创建成功')
-        }
-        planVisible.value = false
-        loadData()
-      } catch (error) {
-        ElMessage.error(error.message || '操作失败')
-      }
+  try {
+    await planFormRef.value.validate()
+    if (planForm.value.id) {
+      await updateMembershipPlan(planForm.value.id, planForm.value)
+      ElMessage.success('更新成功')
+    } else {
+      await createMembershipPlan(planForm.value)
+      ElMessage.success('创建成功')
     }
-  })
+    planVisible.value = false
+    loadData()
+  } catch (error) {
+    if (error !== false) {
+      ElMessage.error(error.message || '操作失败')
+    }
+  }
 }
 
 const handleToggleMemberStatus = async (row) => {
@@ -279,7 +279,12 @@ const handleDeleteMember = async (row) => {
   }
 }
 
-watch(activeTab, () => { page.value = 1; loadData() })
+watch(activeTab, () => {
+  page.value = 1
+  memberKeyword.value = ''
+  orderKeyword.value = ''
+  loadData()
+})
 onMounted(loadData)
 </script>
 

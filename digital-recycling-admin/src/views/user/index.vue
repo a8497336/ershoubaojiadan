@@ -89,7 +89,7 @@
       </el-form>
       <template #footer>
         <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
 
@@ -142,7 +142,6 @@ const editVisible = ref(false)
 const editForm = ref({})
 const addVisible = ref(false)
 const addFormRef = ref(null)
-const submitLoadingAdd = ref(false)
 const addForm = ref({
   username: '',
   phone: '',
@@ -181,6 +180,8 @@ const loadData = async () => {
     const res = await getUsers({ keyword: keyword.value, page: page.value, pageSize: pageSize.value })
     tableData.value = res.data.list
     total.value = res.data.pagination.total
+  } catch (error) {
+    ElMessage.error(error.message || '加载用户列表失败')
   } finally {
     loading.value = false
   }
@@ -201,7 +202,7 @@ const handleAddSubmit = async () => {
   
   await addFormRef.value.validate(async (valid) => {
     if (valid) {
-      submitLoadingAdd.value = true
+      submitLoading.value = true
       try {
         await createUser(addForm.value)
         ElMessage.success('用户创建成功')
@@ -210,7 +211,7 @@ const handleAddSubmit = async () => {
       } catch (error) {
         ElMessage.error(error.message || '创建失败')
       } finally {
-        submitLoadingAdd.value = false
+        submitLoading.value = false
       }
     }
   })
@@ -222,6 +223,7 @@ const handleEdit = (row) => {
 }
 
 const handleSave = async () => {
+  submitLoading.value = true
   try {
     await updateUser(editForm.value.id, editForm.value)
     ElMessage.success('更新成功')
@@ -229,6 +231,8 @@ const handleSave = async () => {
     loadData()
   } catch (error) {
     ElMessage.error(error.message || '更新失败')
+  } finally {
+    submitLoading.value = false
   }
 }
 

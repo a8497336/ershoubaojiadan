@@ -358,6 +358,8 @@ const loadData = async () => {
     const res = await apiMap[activeTab.value].list({ page: page.value, pageSize: pageSize.value })
     tableData.value = res.data.list || res.data
     total.value = res.data.pagination?.total || 0
+  } catch (e) {
+    ElMessage.error(e?.message || '加载数据失败')
   } finally {
     loading.value = false
   }
@@ -380,36 +382,70 @@ const handleEdit = (row) => {
 }
 
 const handleDelete = async (row) => {
-  await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
-  await apiMap[activeTab.value].delete(row.id)
-  ElMessage.success('删除成功')
-  loadData()
+  try {
+    await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
+    await apiMap[activeTab.value].delete(row.id)
+    ElMessage.success('删除成功')
+    loadData()
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.message || '删除失败')
+    }
+  }
 }
 
 const handleSave = async () => {
+  if (activeTab.value === 'banner' && !formData.value.image) {
+    ElMessage.warning('请上传Banner图片')
+    return
+  }
+  if (activeTab.value === 'announcement' && (!formData.value.title || !formData.value.content)) {
+    ElMessage.warning('请填写公告标题和内容')
+    return
+  }
   if (activeTab.value === 'video' && !formData.value.title) {
     ElMessage.warning('请输入视频标题')
+    return
+  }
+  if (activeTab.value === 'video' && !formData.value.video_url) {
+    ElMessage.warning('请上传视频文件')
     return
   }
   if (videoUploading.value) {
     ElMessage.warning('视频正在上传中，请稍候')
     return
   }
-  const api = apiMap[activeTab.value]
-  await formId.value ? api.update(formId.value, formData.value) : api.create(formData.value)
-  ElMessage.success('保存成功')
-  formVisible.value = false
-  loadData()
+  try {
+    const api = apiMap[activeTab.value]
+    await formId.value ? api.update(formId.value, formData.value) : api.create(formData.value)
+    ElMessage.success('保存成功')
+    formVisible.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e?.message || '保存失败')
+  }
 }
 
 const sendMessage = async () => {
-  if (msgForm.value.isBroadcast) {
-    await broadcastMessage(msgForm.value)
-  } else {
-    await sendMsg(msgForm.value)
+  if (!msgForm.value.title || !msgForm.value.content) {
+    ElMessage.warning('请填写消息标题和内容')
+    return
   }
-  ElMessage.success('发送成功')
-  msgForm.value = { type: 'system', isBroadcast: true, title: '', content: '', user_id: '' }
+  if (!msgForm.value.isBroadcast && !msgForm.value.user_id) {
+    ElMessage.warning('请输入用户ID')
+    return
+  }
+  try {
+    if (msgForm.value.isBroadcast) {
+      await broadcastMessage(msgForm.value)
+    } else {
+      await sendMsg(msgForm.value)
+    }
+    ElMessage.success('发送成功')
+    msgForm.value = { type: 'system', isBroadcast: true, title: '', content: '', user_id: '' }
+  } catch (e) {
+    ElMessage.error(e?.message || '发送失败')
+  }
 }
 
 watch(activeTab, () => { page.value = 1; loadData() })

@@ -142,6 +142,8 @@ const loadData = async () => {
     const res = await getOrders({ status: filterStatus.value, keyword: keyword.value, page: page.value, pageSize: pageSize.value })
     tableData.value = res.data.list
     total.value = res.data.pagination.total
+  } catch (error) {
+    ElMessage.error(error.message || '加载订单数据失败')
   } finally {
     loading.value = false
   }
@@ -203,10 +205,14 @@ const handleLogistics = (row) => {
 }
 
 const saveLogistics = async () => {
-  await updateOrderLogistics(logisticsForm.value.id, logisticsForm.value)
-  ElMessage.success('发货成功')
-  logisticsVisible.value = false
-  loadData()
+  try {
+    await updateOrderLogistics(logisticsForm.value.id, logisticsForm.value)
+    ElMessage.success('发货成功')
+    logisticsVisible.value = false
+    loadData()
+  } catch (error) {
+    ElMessage.error(error.message || '发货失败')
+  }
 }
 
 const handleInspect = (row) => {
@@ -215,10 +221,14 @@ const handleInspect = (row) => {
 }
 
 const saveInspect = async () => {
-  await inspectOrder(inspectForm.value.id, inspectForm.value)
-  ElMessage.success('质检完成')
-  inspectVisible.value = false
-  loadData()
+  try {
+    await inspectOrder(inspectForm.value.id, inspectForm.value)
+    ElMessage.success('质检完成')
+    inspectVisible.value = false
+    loadData()
+  } catch (error) {
+    ElMessage.error(error.message || '质检失败')
+  }
 }
 
 const handlePay = async (row) => {
