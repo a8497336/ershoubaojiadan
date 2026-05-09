@@ -23,32 +23,58 @@
       </view>
     </view>
 
-    <view wx:if="{{brands.length > 0 || productGroups.length > 0}}" class="content-row">
-      <view class="brand-sidebar">
-        <scroll-view class="brand-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-          <view class="brand-sidebar-item {{item.id === selectedBrandId ? 'active' : ''}}" wx:for="{{brands}}" wx:key="id" bindtap="selectBrand" data-id="{{item.id}}">{{item.name}}</view>
-          <empty-state wx:if="{{brands.length === 0}}" text="暂无品牌" />
-        </scroll-view>
+    <!-- 搜索模式 -->
+    <block wx:if="{{isSearchMode}}">
+      <view class="content-row">
+        <view class="product-list-area" style="width: 100%;">
+          <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+            <loading-spinner wx:if="{{searchLoading}}" size="small" color="gray" />
+            <block wx:elif="{{searchResults.length > 0}}">
+              <block wx:for="{{searchResults}}" wx:key="title">
+                <view class="group-title">{{item.title}}</view>
+                <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
+                  <view class="product-info">
+                    <view class="p-name">{{product.model || product.name}}</view>
+                  </view>
+                  <view class="product-price">{{product.highestPriceText}}</view>
+                </view>
+              </block>
+            </block>
+            <empty-state wx:else text="未找到相关产品" />
+          </scroll-view>
+        </view>
       </view>
+    </block>
 
-      <view class="product-list-area">
-        <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMoreProducts">
-          <block wx:for="{{productGroups}}" wx:key="title">
-            <view class="group-title">{{item.title}}</view>
-            <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
-              <view class="product-info">
-                <view class="p-name">{{product.model || product.name}}</view>
+    <!-- 浏览模式 -->
+    <block wx:else>
+      <view wx:if="{{brands.length > 0 || productGroups.length > 0}}" class="content-row">
+        <view class="brand-sidebar">
+          <scroll-view class="brand-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+            <view class="brand-sidebar-item {{item.id === selectedBrandId ? 'active' : ''}}" wx:for="{{brands}}" wx:key="id" bindtap="selectBrand" data-id="{{item.id}}">{{item.name}}</view>
+            <empty-state wx:if="{{brands.length === 0}}" text="暂无品牌" />
+          </scroll-view>
+        </view>
+
+        <view class="product-list-area">
+          <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMoreProducts">
+            <block wx:for="{{productGroups}}" wx:key="title">
+              <view class="group-title">{{item.title}}</view>
+              <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
+                <view class="product-info">
+                  <view class="p-name">{{product.model || product.name}}</view>
+                </view>
+                <view class="product-price">{{product.highestPriceText}}</view>
               </view>
-              <view class="product-price">{{product.highestPriceText}}</view>
-            </view>
-          </block>
-          <empty-state wx:if="{{productGroups.length === 0 && !productsLoading}}" text="暂无产品，请先选择品牌" />
-          <loading-spinner wx:if="{{productsLoading}}" size="small" color="gray" />
-        </scroll-view>
+            </block>
+            <empty-state wx:if="{{productGroups.length === 0 && !productsLoading}}" text="暂无产品，请先选择品牌" />
+            <loading-spinner wx:if="{{productsLoading}}" size="small" color="gray" />
+          </scroll-view>
+        </view>
       </view>
-    </view>
 
-    <empty-state wx:else text="暂无数据" />
+      <empty-state wx:else text="暂无数据" />
+    </block>
 
     <view class="floating-cart" bindtap="goToCart" wx:if="{{cartCount > 0}}">
       <text>🛒</text>

@@ -299,6 +299,21 @@ router.delete('/conditions/:id', adminAuth, async (req, res, next) => {
   try {
     const condition = await db.ProductCondition.findByPk(req.params.id)
     if (!condition) return notFound(res, '成色等级不存在')
+    
+    await db.Price.destroy({
+      where: { condition_id: req.params.id }
+    })
+    
+    await db.PriceHistory.destroy({
+      where: { condition_id: req.params.id }
+    })
+    
+    if (db.Cart) {
+      await db.Cart.destroy({
+        where: { condition_id: req.params.id }
+      })
+    }
+    
     await condition.destroy()
     return success(res, null, '删除成功')
   } catch (err) { next(err) }

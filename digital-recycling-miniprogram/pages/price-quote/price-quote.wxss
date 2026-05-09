@@ -96,15 +96,17 @@
 }
 
 .table-container {
-  overflow-x: auto;
   background-color: #fff;
+  padding: 0 5rpx
 }
 
 .price-table {
   display: table;
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 22rpx;
+  table-layout: fixed;
 }
 
 /* 响应式调整 - 匹配H5端的媒体查询 */
@@ -144,23 +146,13 @@
     padding: 14rpx 6rpx;
     
   }
-  .col-index {
-    width: 50rpx;
-    min-width: 50rpx;
-    
-    
-  }
-  .col-series {
-    width: 140rpx;
-    min-width: 140rpx;
-  }
   .col-model {
-    width: 120rpx;
-    min-width: 120rpx;
+    width: 130rpx;
+    min-width: 130rpx;
   }
   .col-price {
-    width: 100rpx;
-    min-width: 100rpx;
+    width: 88rpx;
+    min-width: 88rpx;
   }
   .series-cell {
     font-size: 18rpx;
@@ -250,15 +242,10 @@
 
 .table-header {
   display: table-row;
-  /* color: #666666;
-  background-color: var(--color-primary); */
   background-color: #c0392b;
   color: #fff;
-  padding: 10px 6px;
   text-align: center;
   font-weight: 600;
-  border: 1px solid #a93226;
-  white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -275,14 +262,13 @@
 .th {
   display: table-cell;
   background-color: #c0392b;
-  /* background-color: var(--color-primary); */
-  /* color: #666666; */
-  padding: 20rpx 12rpx;
+  padding: 20rpx 4rpx;
   text-align: center;
   font-weight: 600;
   border: 1rpx solid #a93226;
   border: 1rpx solid var(--color-primary-dark);
-  white-space: nowrap;
+  word-break: break-all;
+  vertical-align: middle;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -290,30 +276,20 @@
 
 .td {
   display: table-cell;
-  padding: 16rpx 8rpx;
+  padding: 12rpx 4rpx;
   text-align: center;
   border: 1rpx solid #ddd;
   vertical-align: middle;
 }
 
-.col-index {
-  width: 60rpx;
-  min-width: 60rpx;
-}
-
-.col-series {
-  width: 160rpx;
-  min-width: 160rpx;
-}
-
 .col-model {
-  width: 140rpx;
-  min-width: 140rpx;
+  width: 130rpx;
+  min-width: 130rpx;
 }
 
 .col-price {
-  width: 110rpx;
-  min-width: 110rpx;
+  width: 96rpx;
+  min-width: 96rpx;
 }
 
 .series-cell {
@@ -321,19 +297,6 @@
   font-weight: 600;
   color: var(--color-primary);
   font-size: 20rpx;
-}
-
-.index-cell {
-  background-color: #c0392b;
-  color: #fff;
-  padding: 10px 6px;
-  text-align: center;
-  font-weight: 600;
-  border: 1px solid #a93226;
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .model-cell {

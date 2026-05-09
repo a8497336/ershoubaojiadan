@@ -1,0 +1,1284 @@
+{
+  "brands_data": {
+    "30": {
+      "models": [
+        "M6",
+        "M5至尊",
+        "M5",
+        "灵感M5+",
+        "M4",
+        "M3",
+        "M2"
+      ],
+      "prices": [
+        {
+          "model": "M6",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "M6",
+          "condition_id": 4,
+          "price": 40
+        },
+        {
+          "model": "M6",
+          "condition_id": 5,
+          "price": 40
+        },
+        {
+          "model": "M6",
+          "condition_id": 6,
+          "price": 40
+        },
+        {
+          "model": "M5至尊",
+          "condition_id": 1,
+          "price": 40
+        },
+        {
+          "model": "M5至尊",
+          "condition_id": 4,
+          "price": 40
+        },
+        {
+          "model": "M5至尊",
+          "condition_id": 5,
+          "price": 40
+        },
+        {
+          "model": "M5至尊",
+          "condition_id": 6,
+          "price": 40
+        },
+        {
+          "model": "M5",
+          "condition_id": 1,
+          "price": 40
+        },
+        {
+          "model": "M5",
+          "condition_id": 4,
+          "price": 40
+        },
+        {
+          "model": "M5",
+          "condition_id": 5,
+          "price": 40
+        },
+        {
+          "model": "M5",
+          "condition_id": 6,
+          "price": 40
+        },
+        {
+          "model": "灵感M5+",
+          "condition_id": 1,
+          "price": 40
+        },
+        {
+          "model": "灵感M5+",
+          "condition_id": 4,
+          "price": 40
+        },
+        {
+          "model": "灵感M5+",
+          "condition_id": 5,
+          "price": 40
+        },
+        {
+          "model": "灵感M5+",
+          "condition_id": 6,
+          "price": 40
+        },
+        {
+          "model": "M4",
+          "condition_id": 1,
+          "price": 40
+        },
+        {
+          "model": "M4",
+          "condition_id": 4,
+          "price": 40
+        },
+        {
+          "model": "M4",
+          "condition_id": 5,
+          "price": 40
+        },
+        {
+          "model": "M4",
+          "condition_id": 6,
+          "price": 40
+        },
+        {
+          "model": "M3",
+          "condition_id": 1,
+          "price": 40
+        },
+        {
+          "model": "M3",
+          "condition_id": 4,
+          "price": 35
+        },
+        {
+          "model": "M3",
+          "condition_id": 5,
+          "price": 35
+        },
+        {
+          "model": "M3",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "M2",
+          "condition_id": 1,
+          "price": 25
+        },
+        {
+          "model": "M2",
+          "condition_id": 4,
+          "price": 25
+        },
+        {
+          "model": "M2",
+          "condition_id": 5,
+          "price": 25
+        },
+        {
+          "model": "M2",
+          "condition_id": 6,
+          "price": 25
+        }
+      ],
+      "count": 7
+    },
+    "32": {
+      "models": [
+        "Imoo get",
+        "Imoo c1"
+      ],
+      "prices": [
+        {
+          "model": "Imoo get",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "Imoo get",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "Imoo get",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "Imoo get",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "Imoo c1",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "Imoo c1",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "Imoo c1",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "Imoo c1",
+          "condition_id": 6,
+          "price": 30
+        }
+      ],
+      "count": 2
+    },
+    "17": {
+      "models": [
+        "锤子Pro3",
+        "坚果R2",
+        "锤子Pro2s",
+        "R1",
+        "坚果3",
+        "坚果2",
+        "锤子Pro2",
+        "锤子Pro",
+        "坚果3 64",
+        "坚果3 128",
+        "锤子M1",
+        "坚果",
+        "锤子T2",
+        "锤子T1"
+      ],
+      "prices": [
+        {
+          "model": "锤子Pro3",
+          "condition_id": 1,
+          "price": 150
+        },
+        {
+          "model": "锤子Pro3",
+          "condition_id": 4,
+          "price": 150
+        },
+        {
+          "model": "锤子Pro3",
+          "condition_id": 5,
+          "price": 150
+        },
+        {
+          "model": "锤子Pro3",
+          "condition_id": 6,
+          "price": 130
+        },
+        {
+          "model": "坚果R2",
+          "condition_id": 1,
+          "price": 200
+        },
+        {
+          "model": "坚果R2",
+          "condition_id": 4,
+          "price": 180
+        },
+        {
+          "model": "坚果R2",
+          "condition_id": 5,
+          "price": 150
+        },
+        {
+          "model": "坚果R2",
+          "condition_id": 6,
+          "price": 150
+        },
+        {
+          "model": "锤子Pro2s",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2s",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2s",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2s",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "R1",
+          "condition_id": 1,
+          "price": 80
+        },
+        {
+          "model": "R1",
+          "condition_id": 4,
+          "price": 80
+        },
+        {
+          "model": "R1",
+          "condition_id": 5,
+          "price": 80
+        },
+        {
+          "model": "R1",
+          "condition_id": 6,
+          "price": 80
+        },
+        {
+          "model": "坚果3",
+          "condition_id": 1,
+          "price": 80
+        },
+        {
+          "model": "坚果3",
+          "condition_id": 4,
+          "price": 80
+        },
+        {
+          "model": "坚果3",
+          "condition_id": 5,
+          "price": 80
+        },
+        {
+          "model": "坚果3",
+          "condition_id": 6,
+          "price": 80
+        },
+        {
+          "model": "坚果2",
+          "condition_id": 1,
+          "price": 80
+        },
+        {
+          "model": "坚果2",
+          "condition_id": 4,
+          "price": 80
+        },
+        {
+          "model": "坚果2",
+          "condition_id": 5,
+          "price": 80
+        },
+        {
+          "model": "坚果2",
+          "condition_id": 6,
+          "price": 80
+        },
+        {
+          "model": "锤子Pro2",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro2",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "锤子Pro",
+          "condition_id": 1,
+          "price": 80
+        },
+        {
+          "model": "锤子Pro",
+          "condition_id": 4,
+          "price": 80
+        },
+        {
+          "model": "锤子Pro",
+          "condition_id": 5,
+          "price": 80
+        },
+        {
+          "model": "锤子Pro",
+          "condition_id": 6,
+          "price": 80
+        },
+        {
+          "model": "坚果3 64",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "坚果3 64",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "坚果3 64",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "坚果3 64",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "坚果3 128",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "坚果3 128",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "坚果3 128",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "坚果3 128",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "锤子M1",
+          "condition_id": 1,
+          "price": 130
+        },
+        {
+          "model": "锤子M1",
+          "condition_id": 4,
+          "price": 130
+        },
+        {
+          "model": "锤子M1",
+          "condition_id": 5,
+          "price": 130
+        },
+        {
+          "model": "锤子M1",
+          "condition_id": 6,
+          "price": 130
+        },
+        {
+          "model": "坚果",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "坚果",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "坚果",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "坚果",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "锤子T2",
+          "condition_id": 1,
+          "price": 25
+        },
+        {
+          "model": "锤子T2",
+          "condition_id": 4,
+          "price": 25
+        },
+        {
+          "model": "锤子T2",
+          "condition_id": 5,
+          "price": 25
+        },
+        {
+          "model": "锤子T2",
+          "condition_id": 6,
+          "price": 25
+        },
+        {
+          "model": "锤子T1",
+          "condition_id": 1,
+          "price": 25
+        },
+        {
+          "model": "锤子T1",
+          "condition_id": 4,
+          "price": 25
+        },
+        {
+          "model": "锤子T1",
+          "condition_id": 5,
+          "price": 25
+        },
+        {
+          "model": "锤子T1",
+          "condition_id": 6,
+          "price": 25
+        }
+      ],
+      "count": 14
+    },
+    "34": {
+      "models": [
+        "朵唯D9 pro",
+        "X11proM",
+        "K10pro",
+        "M30",
+        "M40Pro",
+        "M2",
+        "L9mini/C32",
+        "L9",
+        "L8plus/C27",
+        "L825/C38",
+        "L7/C24",
+        "L5P/C19",
+        "L5m/C22",
+        "L520/C38",
+        "A8",
+        "A6/C25",
+        "A55/Q5801",
+        "A5/C29",
+        "A15/C36",
+        "A12/C34",
+        "A11/C33",
+        "A10/C35",
+        "525",
+        "520",
+        "S5/C20",
+        "L5P/C21",
+        "L3c/C17",
+        "L1/C14",
+        "P70",
+        "逆客V8",
+        "逆客V5",
+        "逆客V3",
+        "逆客V1"
+      ],
+      "prices": [
+        {
+          "model": "朵唯D9 pro",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "朵唯D9 pro",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "朵唯D9 pro",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "朵唯D9 pro",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "X11proM",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "X11proM",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "X11proM",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "X11proM",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "K10pro",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "K10pro",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "K10pro",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "K10pro",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "M30",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "M30",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "M30",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "M30",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "M40Pro",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "M40Pro",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "M40Pro",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "M40Pro",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "M2",
+          "condition_id": 1,
+          "price": 20
+        },
+        {
+          "model": "M2",
+          "condition_id": 4,
+          "price": 20
+        },
+        {
+          "model": "M2",
+          "condition_id": 5,
+          "price": 20
+        },
+        {
+          "model": "M2",
+          "condition_id": 6,
+          "price": 20
+        },
+        {
+          "model": "L9mini/C32",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L9mini/C32",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L9mini/C32",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L9mini/C32",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L9",
+          "condition_id": 1,
+          "price": 60
+        },
+        {
+          "model": "L9",
+          "condition_id": 4,
+          "price": 60
+        },
+        {
+          "model": "L9",
+          "condition_id": 5,
+          "price": 60
+        },
+        {
+          "model": "L9",
+          "condition_id": 6,
+          "price": 60
+        },
+        {
+          "model": "L8plus/C27",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L8plus/C27",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L8plus/C27",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L8plus/C27",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L825/C38",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L825/C38",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L825/C38",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L825/C38",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L7/C24",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L7/C24",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L7/C24",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L7/C24",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L5P/C19",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L5P/C19",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L5P/C19",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L5P/C19",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L5m/C22",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L5m/C22",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L5m/C22",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L5m/C22",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L520/C38",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "L520/C38",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "L520/C38",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "L520/C38",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "A8",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "A8",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "A8",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "A8",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "A6/C25",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A6/C25",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A6/C25",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A6/C25",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A55/Q5801",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A55/Q5801",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A55/Q5801",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A55/Q5801",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A5/C29",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A5/C29",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A5/C29",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A5/C29",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A15/C36",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A15/C36",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A15/C36",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A15/C36",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A12/C34",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A12/C34",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A12/C34",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A12/C34",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A11/C33",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A11/C33",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A11/C33",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A11/C33",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "A10/C35",
+          "condition_id": 1,
+          "price": 50
+        },
+        {
+          "model": "A10/C35",
+          "condition_id": 4,
+          "price": 50
+        },
+        {
+          "model": "A10/C35",
+          "condition_id": 5,
+          "price": 50
+        },
+        {
+          "model": "A10/C35",
+          "condition_id": 6,
+          "price": 50
+        },
+        {
+          "model": "525",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "525",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "525",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "525",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "520",
+          "condition_id": 1,
+          "price": 100
+        },
+        {
+          "model": "520",
+          "condition_id": 4,
+          "price": 100
+        },
+        {
+          "model": "520",
+          "condition_id": 5,
+          "price": 100
+        },
+        {
+          "model": "520",
+          "condition_id": 6,
+          "price": 100
+        },
+        {
+          "model": "S5/C20",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "S5/C20",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "S5/C20",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "S5/C20",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L5P/C21",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L5P/C21",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L5P/C21",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L5P/C21",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L3c/C17",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L3c/C17",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L3c/C17",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L3c/C17",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "L1/C14",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "L1/C14",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "L1/C14",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "L1/C14",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "P70",
+          "condition_id": 1,
+          "price": 80
+        },
+        {
+          "model": "P70",
+          "condition_id": 4,
+          "price": 80
+        },
+        {
+          "model": "P70",
+          "condition_id": 5,
+          "price": 80
+        },
+        {
+          "model": "P70",
+          "condition_id": 6,
+          "price": 80
+        },
+        {
+          "model": "逆客V8",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "逆客V8",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "逆客V8",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "逆客V8",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "逆客V5",
+          "condition_id": 1,
+          "price": 30
+        },
+        {
+          "model": "逆客V5",
+          "condition_id": 4,
+          "price": 30
+        },
+        {
+          "model": "逆客V5",
+          "condition_id": 5,
+          "price": 30
+        },
+        {
+          "model": "逆客V5",
+          "condition_id": 6,
+          "price": 30
+        },
+        {
+          "model": "逆客V3",
+          "condition_id": 1,
+          "price": 25
+        },
+        {
+          "model": "逆客V3",
+          "condition_id": 4,
+          "price": 25
+        },
+        {
+          "model": "逆客V3",
+          "condition_id": 5,
+          "price": 25
+        },
+        {
+          "model": "逆客V3",
+          "condition_id": 6,
+          "price": 25
+        },
+        {
+          "model": "逆客V1",
+          "condition_id": 1,
+          "price": 25
+        },
+        {
+          "model": "逆客V1",
+          "condition_id": 4,
+          "price": 25
+        },
+        {
+          "model": "逆客V1",
+          "condition_id": 5,
+          "price": 25
+        },
+        {
+          "model": "逆客V1",
+          "condition_id": 6,
+          "price": 25
+        }
+      ],
+      "count": 33
+    },
+    "35": {
+      "models": [
+        "格力3代",
+        "格力2代",
+        "格力1代"
+      ],
+      "prices": [
+        {
+          "model": "格力3代",
+          "condition_id": 1,
+          "price": 45
+        },
+        {
+          "model": "格力3代",
+          "condition_id": 4,
+          "price": 45
+        },
+        {
+          "model": "格力3代",
+          "condition_id": 5,
+          "price": 45
+        },
+        {
+          "model": "格力3代",
+          "condition_id": 6,
+          "price": 45
+        },
+        {
+          "model": "格力2代",
+          "condition_id": 1,
+          "price": 55
+        },
+        {
+          "model": "格力2代",
+          "condition_id": 4,
+          "price": 55
+        },
+        {
+          "model": "格力2代",
+          "condition_id": 5,
+          "price": 55
+        },
+        {
+          "model": "格力2代",
+          "condition_id": 6,
+          "price": 55
+        },
+        {
+          "model": "格力1代",
+          "condition_id": 1,
+          "price": 20
+        },
+        {
+          "model": "格力1代",
+          "condition_id": 4,
+          "price": 20
+        },
+        {
+          "model": "格力1代",
+          "condition_id": 5,
+          "price": 20
+        },
+        {
+          "model": "格力1代",
+          "condition_id": 6,
+          "price": 20
+        }
+      ],
+      "count": 3
+    }
+  },
+  "conditions": [
+    1,
+    4,
+    5,
+    6
+  ]
+}

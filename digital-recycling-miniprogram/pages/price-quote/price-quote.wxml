@@ -37,11 +37,9 @@
   </view> -->
 
   <block wx:if="{{!isEmpty}}">
-    <view class="scroll-hint">← 左右滑动查看完整报价，点击机型查看价格趋势 →</view>
-    <scroll-view class="table-container" scroll-x>
-      <view class="price-table" style="min-width: {{conditions.length * 110 + 260}}rpx;">
+    <view class="table-container">
+      <view class="price-table">
         <view class="table-header">
-          <view class="th col-index">序号</view>
           <view class="th col-model">型号</view>
           <view class="th col-price" wx:for="{{conditions}}" wx:key="id">{{item.name}}</view>
         </view>
@@ -49,7 +47,6 @@
           <block wx:for="{{seriesList}}" wx:for-item="series" wx:key="index">
             <block wx:for="{{series.items}}" wx:for-item="item" wx:key="index">
               <view class="tr {{index === 0 && series.index > 1 ? 'series-divider' : ''}}" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
-                <view class="td index-cell" >{{index}}</view>
                 <view class="td model-cell">
                   {{item.model}}
                   <text class="trend-hint">📈</text>
@@ -60,7 +57,7 @@
           </block>
         </view>
       </view>
-    </scroll-view>
+    </view>
   </block>
 
   <!-- 空状态 -->

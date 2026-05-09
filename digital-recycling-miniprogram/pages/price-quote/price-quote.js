@@ -61,7 +61,15 @@ Page({
     const conditionsPromise = this.data.conditions.length > 0
       ? Promise.resolve(this.data.conditions)
       : priceApi.getConditions().then(res => {
-          const conditions = (res.data || res || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          const allConditions = (res.data || res || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          const filterNames = ['开机屏好', '开机屏好外屏碎', '开机屏坏未拆标', '开机屏坏', '不开机', '废板整机']
+          const conditions = allConditions.filter(c => filterNames.includes(c.name))
+          // 确保 "废板-整机" 在最后
+          conditions.sort((a, b) => {
+            const aIdx = filterNames.indexOf(a.name)
+            const bIdx = filterNames.indexOf(b.name)
+            return aIdx - bIdx
+          })
           this.setData({ conditions })
           return conditions
         })

@@ -12,7 +12,7 @@ const request = (options) => {
       header['Authorization'] = `Bearer ${token}`
     }
 
-    const timeout = options.timeout || 10000
+    const timeout = options.timeout || 100000
 
     wx.request({
       url: BASE_URL + options.url,

@@ -3,6 +3,7 @@ const contentApi = require('../../utils/api-modules').contentApi
 const categoryApi = require('../../utils/api-modules').categoryApi
 const productApi = require('../../utils/api-modules').productApi
 const cartApi = require('../../utils/api-modules').cartApi
+const searchApi = require('../../utils/api-modules').searchApi
 
 Page({
   data: {
@@ -20,7 +21,10 @@ Page({
     conditions: [],
     conditionsLoading: false,
     cartCount: 0,
-    statusBarHeight: 0
+    statusBarHeight: 0,
+    isSearchMode: false,
+    searchResults: [],
+    searchLoading: false
   },
 
   onLoad(options) {
@@ -32,7 +36,11 @@ Page({
     }
     this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
     this.setData({ statusBarHeight: app.globalData.statusBarHeight })
-    this.loadData()
+    if (this.data.searchKeyword) {
+      this.doSearch()
+    } else {
+      this.loadData()
+    }
   },
 
   onShow() {
@@ -132,8 +140,46 @@ Page({
 
   doSearch() {
     const kw = (this.data.searchKeyword || '').trim()
-    if (!kw) return
-    wx.navigateTo({ url: '/pages/brand-list/brand-list?keyword=' + encodeURIComponent(kw) })
+    if (!kw) {
+      this.setData({ isSearchMode: false, searchResults: [] })
+      return
+    }
+    this.setData({ isSearchMode: true, searchLoading: true, searchResults: [] })
+    searchApi.search(kw).then(res => {
+      const data = res.data || res || []
+      const list = Array.isArray(data) ? data : (data.list || [])
+      const seriesMap = new Map()
+      list.forEach(p => {
+        let highestPrice = 0
+        if (p.Prices && p.Prices.length > 0) {
+          highestPrice = Math.max(...p.Prices.map(pr => pr.price || 0))
+        }
+        const seriesName = p.series_name || '其他'
+        if (!seriesMap.has(seriesName)) {
+          seriesMap.set(seriesName, [])
+        }
+        seriesMap.get(seriesName).push({
+          id: p.id,
+          name: p.name,
+          model: p.model || p.name,
+          price: highestPrice,
+          highestPrice: highestPrice,
+          highestPriceText: highestPrice > 0 ? ('¥' + highestPrice) : '询价',
+          series: p.series_name || '',
+          brand: (p.Brand && p.Brand.name) || '',
+          image: p.image || '',
+          productId: p.id
+        })
+      })
+      const searchResults = []
+      seriesMap.forEach((products, title) => {
+        searchResults.push({ title, products })
+      })
+      this.setData({ searchResults, searchLoading: false })
+    }).catch(() => {
+      this.setData({ searchLoading: false })
+      wx.showToast({ title: '搜索失败，请重试', icon: 'none' })
+    })
   },
 
   openProductDetail(e) {

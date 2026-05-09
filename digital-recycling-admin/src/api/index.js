@@ -111,3 +111,7 @@ export const updateSettings = (data) => request.put('/admin/settings', data)
 export const uploadFile = (formData) => request.post('/admin/upload', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 })
+
+export const importProducts = (formData) => request.post('/admin/products/import', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+})

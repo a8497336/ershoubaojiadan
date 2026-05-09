@@ -61,6 +61,7 @@
           </el-select>
           <el-input v-model="keyword" placeholder="搜索产品名称" clearable style="width: 200px" @clear="loadData" @keyup.enter="loadData" />
           <el-button type="primary" @click="loadData">搜索</el-button>
+          <el-button type="success" @click="handleImportDialogOpen">导入</el-button>
         </div>
         <el-table :data="tableData" v-loading="loading" stripe>
           <el-table-column prop="id" label="ID" width="80" />
@@ -150,12 +151,40 @@
         <el-button type="primary" @click="saveQuoteConfig">保存配置</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="importDialogVisible" title="导入产品数据" width="500px" :close-on-click-modal="false">
+      <div style="margin-bottom: 16px; color: #666; font-size: 14px;">
+        请选择同行手机回收报价单格式的Excel文件（.xlsx），系统将自动解析品牌、产品型号和价格数据。
+      </div>
+      <el-upload
+        ref="importUploadRef"
+        drag
+        :auto-upload="false"
+        :limit="1"
+        accept=".xlsx"
+        :on-change="handleImportFileChange"
+        :on-remove="handleImportFileRemove"
+        :file-list="importFileList"
+      >
+        <el-icon class="el-icon--upload"><i class="el-icon-upload" /></el-icon>
+        <div class="el-upload__text">
+          将Excel文件拖到此处，或<em>点击上传</em>
+        </div>
+        <template #tip>
+          <div class="el-upload__tip">仅支持 .xlsx 格式文件</div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importLoading" :disabled="!importFileReady" @click="handleImportSubmit">确认导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct } from '@/api'
+import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct, importProducts } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const activeTab = ref('category')
@@ -176,6 +205,12 @@ const quoteConfigVisible = ref(false)
 const quoteForm = ref({})
 const quoteRulesText = ref('')
 const quoteFooterText = ref('')
+
+const importDialogVisible = ref(false)
+const importLoading = ref(false)
+const importFileReady = ref(false)
+const importFileList = ref([])
+const importUploadRef = ref(null)
 
 const loadData = async () => {
   loading.value = true
@@ -322,6 +357,51 @@ const saveQuoteConfig = async () => {
     console.error('保存报价配置失败:', error)
     const errorMsg = error?.response?.data?.message || error?.message || '保存失败，请重试'
     ElMessage.error(errorMsg)
+  }
+}
+
+const handleImportDialogOpen = () => {
+  importDialogVisible.value = true
+  importLoading.value = false
+  importFileReady.value = false
+  importFileList.value = []
+}
+
+const handleImportFileChange = (file) => {
+  importUploadRef.value.clearFiles()
+  importFileList.value = [file]
+  importFileReady.value = true
+}
+
+const handleImportFileRemove = () => {
+  importFileReady.value = false
+}
+
+const handleImportSubmit = async () => {
+  if (!importFileReady.value) return
+  importLoading.value = true
+  try {
+    const file = importFileList.value[0]?.raw
+    if (!file) {
+      ElMessage.error('请选择文件')
+      importLoading.value = false
+      return
+    }
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await importProducts(formData)
+    const stats = res.data
+    ElMessage.success(
+      `导入成功！品牌：${stats.brandName}，新增产品：${stats.products}个，写入价格：${stats.prices}条`
+    )
+    importDialogVisible.value = false
+    loadData()
+  } catch (err) {
+    console.error('导入失败:', err)
+    const msg = err?.response?.data?.message || err?.message || '导入失败，请检查文件格式'
+    ElMessage.error(msg)
+  } finally {
+    importLoading.value = false
   }
 }
 
