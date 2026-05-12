@@ -1,0 +1,11 @@
+{
+  "totals": {
+    "brands": 0,
+    "products": 2522,
+    "conditions": 182,
+    "prices": 13712,
+    "success": 34,
+    "fail": 0
+  },
+  "failed": []
+}

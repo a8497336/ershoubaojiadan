@@ -6,7 +6,7 @@ Page({
     updateTime: '',
     viewCount: 0,
     priceList: [],
-    seriesList: [],
+    categoryGroups: [],
     conditions: [],
     isEmpty: false,
     loading: true,
@@ -61,15 +61,7 @@ Page({
     const conditionsPromise = this.data.conditions.length > 0
       ? Promise.resolve(this.data.conditions)
       : priceApi.getConditions().then(res => {
-          const allConditions = (res.data || res || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-          const filterNames = ['开机屏好', '开机屏好外屏碎', '开机屏坏未拆标', '开机屏坏', '不开机', '废板整机']
-          const conditions = allConditions.filter(c => filterNames.includes(c.name))
-          // 确保 "废板-整机" 在最后
-          conditions.sort((a, b) => {
-            const aIdx = filterNames.indexOf(a.name)
-            const bIdx = filterNames.indexOf(b.name)
-            return aIdx - bIdx
-          })
+          const conditions = (res.data || res || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
           this.setData({ conditions })
           return conditions
         })
@@ -102,31 +94,46 @@ Page({
           ...item,
           id: item.id,
           model: item.model || item.name || '',
-          series: item.series || (item.Category ? item.Category.name : '其他'),
+          series: item.series_name || item.series || (item.Category ? item.Category.name : '其他'),
+          categoryName: item.Category ? item.Category.name : '其他',
           brand: item.Brand ? item.Brand.name : '',
+          remark: item.remark || '',
           priceMap,
           _rawPrices: item.Prices || []
         }
       })
 
-      const seriesMap = {}
-      let seriesIndex = 0
+      // 按 series 分组（当 series 有意义时），否则按 category 分组
+      const categoryMap = {}
+      let categoryIndex = 0
 
       processedList.forEach((item) => {
         const seriesName = item.series || '其他'
+        const categoryName = item.categoryName || '其他'
+        // 使用 series 作为分组键，若 series 为空则回退到 category
+        const groupKey = seriesName !== '其他' ? seriesName : categoryName
 
-        if (!seriesMap[seriesName]) {
-          seriesIndex++
-          seriesMap[seriesName] = {
-            index: seriesIndex,
-            name: seriesName,
+        if (!categoryMap[groupKey]) {
+          categoryIndex++
+          categoryMap[groupKey] = {
+            index: categoryIndex,
+            name: groupKey,
+            seriesMap: {}
+          }
+        }
+
+        const subSeriesName = item.series || '其他'
+        if (!categoryMap[groupKey].seriesMap[subSeriesName]) {
+          categoryMap[groupKey].seriesMap[subSeriesName] = {
+            name: subSeriesName,
             items: []
           }
         }
 
-        seriesMap[seriesName].items.push({
+        categoryMap[groupKey].seriesMap[subSeriesName].items.push({
           productId: item.id,
           model: item.model,
+          remark: item.remark,
           ...item,
           prices: conditions.map(c => ({
             val: this.formatPrice(item.priceMap[c.id]),
@@ -135,7 +142,42 @@ Page({
         })
       })
 
-      const seriesList = Object.values(seriesMap)
+      // 转换为数组结构，并为每个系列计算可见成色列
+      const categoryGroups = Object.values(categoryMap).map(cat => ({
+        ...cat,
+        seriesList: Object.values(cat.seriesMap).map((series, sIdx) => {
+          // 计算该系列下哪些成色条件有有效数据
+          const visibleConditionIds = new Set()
+          series.items.forEach(item => {
+            conditions.forEach((c, idx) => {
+              const price = item.priceMap[c.id]
+              if (price !== undefined && price !== null && price > 0) {
+                visibleConditionIds.add(c.id)
+              }
+            })
+          })
+
+          // 构建可见条件数组（保持原始排序）
+          const visibleConditions = conditions.filter(c => visibleConditionIds.has(c.id))
+
+          // 为每个产品构建仅包含可见列的 prices 数组
+          const itemsWithVisiblePrices = series.items.map(item => ({
+            ...item,
+            prices: visibleConditions.map(c => ({
+              val: this.formatPrice(item.priceMap[c.id]),
+              cls: this.getPriceClass(item.priceMap[c.id])
+            }))
+          }))
+
+          return {
+            ...series,
+            index: sIdx + 1,
+            visibleConditions,
+            items: itemsWithVisiblePrices
+          }
+        })
+      }))
+
       this.setData({
         priceDate: data.date || new Date().toISOString().split('T')[0],
         updateTime: data.updateTime ?
@@ -148,19 +190,18 @@ Page({
           }) : '',
         viewCount: data.viewCount || 0,
         priceList: processedList,
-        seriesList: seriesList,
-        isEmpty: seriesList.length === 0,
+        categoryGroups: categoryGroups,
+        isEmpty: categoryGroups.length === 0,
         loading: false,
         receiverName: quoteConfig.receiver_name || '',
         receiverPhone: quoteConfig.receiver_phone || '',
         receiverAddress: quoteConfig.receiver_address || ''
       })
-      console.log(this.data.seriesList)
     }).catch(() => {
       this.setData({
         loading: false,
         isEmpty: true,
-        seriesList: []
+        categoryGroups: []
       })
     })
   },

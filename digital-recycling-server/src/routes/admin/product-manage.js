@@ -132,6 +132,34 @@ const HEADER_KEYWORDS = ['开机屏好', '开机屏坏', '不开机', '废板']
 const SKIP_COLUMNS = ['网络型号', '序号', '备注']
 const NO_SERIES_MARKERS = ['型号', '序号']
 
+const SERIES_INFER_MAP = {
+  'One': 'One系列',
+  'M9': 'M系列',
+  'M8': 'M系列',
+  'E9': 'M系列',
+  'Desire': 'Desire系列',
+  'D830': 'Desire系列',
+  'D728': 'Desire系列',
+  'D626': 'Desire系列',
+  'D530': 'Desire系列',
+  '826': '8系列',
+  '820': '8系列',
+  '816': '8系列',
+  '803': '8系列',
+  '802': '8系列',
+  '8088': '8系列'
+}
+
+function inferSeriesName(productName) {
+  if (!productName) return null
+  for (const prefix of Object.keys(SERIES_INFER_MAP)) {
+    if (productName.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return SERIES_INFER_MAP[prefix]
+    }
+  }
+  return null
+}
+
 const importUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -349,11 +377,19 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
 
       if (!productName) continue
 
+      // Skip description text rows (long text without model-like format)
+      if (productName.length > 20 || /[\u4e00-\u9fa5]{6,}/.test(productName)) {
+        console.log(`  Skipping description text: ${productName.substring(0, 40)}`)
+        continue
+      }
+
       productSortOrder++
 
       let product = await db.Product.findOne({
         where: { brand_id: brand.id, name: productName }
       })
+
+      const inferredSeries = currentSeries || inferSeriesName(productName)
 
       if (!product) {
         product = await db.Product.create({
@@ -361,11 +397,13 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
           category_id: 1,
           name: productName,
           model_code: modelCode || productName,
-          series_name: currentSeries,
+          series_name: inferredSeries,
           sort_order: productSortOrder,
           status: 1
         })
         stats.products++
+      } else if (!product.series_name && inferredSeries) {
+        await product.update({ series_name: inferredSeries })
       }
 
       for (const cond of currentConditions) {

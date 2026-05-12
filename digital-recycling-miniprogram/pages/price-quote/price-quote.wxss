@@ -95,14 +95,40 @@
   background-color: #f9f9f9;
 }
 
-.table-container {
+.category-section {
   background-color: #fff;
-  padding: 0 5rpx
+  margin-bottom: 20rpx;
+}
+
+.category-title {
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: bold;
+  text-align: center;
+  padding: 16rpx;
+  letter-spacing: 2rpx;
+}
+
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: #fff;
+}
+
+.table-scroll-wrap::-webkit-scrollbar {
+  height: 6rpx;
+}
+
+.table-scroll-wrap::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3rpx;
 }
 
 .price-table {
   display: table;
   width: 100%;
+  min-width: max-content;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 22rpx;
@@ -153,6 +179,10 @@
   .col-price {
     width: 88rpx;
     min-width: 88rpx;
+  }
+  .col-remark {
+    width: 140rpx;
+    min-width: 140rpx;
   }
   .series-cell {
     font-size: 18rpx;
@@ -221,6 +251,10 @@
   .col-price {
     width: 88rpx;
     min-width: 88rpx;
+  }
+  .col-remark {
+    width: 120rpx;
+    min-width: 120rpx;
   }
   .series-cell {
     font-size: 16rpx;
@@ -292,6 +326,11 @@
   min-width: 96rpx;
 }
 
+.col-remark {
+  width: 160rpx;
+  min-width: 160rpx;
+}
+
 .series-cell {
   background-color: #fdf2f2;
   font-weight: 600;
@@ -303,6 +342,13 @@
   font-weight: 500;
   color: var(--color-text-primary);
   font-size: 20rpx;
+}
+
+.remark-cell {
+  font-size: 18rpx;
+  color: var(--color-text-secondary);
+  text-align: left;
+  padding: 12rpx 8rpx;
 }
 
 .price-high {
