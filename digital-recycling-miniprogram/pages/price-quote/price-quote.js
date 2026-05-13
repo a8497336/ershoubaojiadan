@@ -12,6 +12,7 @@ Page({
     loading: true,
     brandId: null,
     brand: '',
+    pageTitle: '报价单',
     category: '',
     productId: null,
     keyword: '',
@@ -142,38 +143,46 @@ Page({
         })
       })
 
-      // 转换为数组结构，并为每个系列计算可见成色列
       const categoryGroups = Object.values(categoryMap).map(cat => ({
         ...cat,
         seriesList: Object.values(cat.seriesMap).map((series, sIdx) => {
-          // 计算该系列下哪些成色条件有有效数据
-          const visibleConditionIds = new Set()
-          series.items.forEach(item => {
-            conditions.forEach((c, idx) => {
-              const price = item.priceMap[c.id]
-              if (price !== undefined && price !== null && price > 0) {
-                visibleConditionIds.add(c.id)
-              }
+          const chunkSize = 6
+          const chunks = []
+          for (let i = 0; i < series.items.length; i += chunkSize) {
+            chunks.push(series.items.slice(i, i + chunkSize))
+          }
+
+          const subTables = chunks.map(chunk => {
+            const chunkVisibleConditionIds = new Set()
+            chunk.forEach(item => {
+              conditions.forEach(c => {
+                const price = item.priceMap[c.id]
+                if (price !== undefined && price !== null && price > 0) {
+                  chunkVisibleConditionIds.add(c.id)
+                }
+              })
             })
-          })
 
-          // 构建可见条件数组（保持原始排序）
-          const visibleConditions = conditions.filter(c => visibleConditionIds.has(c.id))
+            const chunkVisibleConditions = conditions.filter(c => chunkVisibleConditionIds.has(c.id))
 
-          // 为每个产品构建仅包含可见列的 prices 数组
-          const itemsWithVisiblePrices = series.items.map(item => ({
-            ...item,
-            prices: visibleConditions.map(c => ({
-              val: this.formatPrice(item.priceMap[c.id]),
-              cls: this.getPriceClass(item.priceMap[c.id])
+            const chunkItems = chunk.map(item => ({
+              ...item,
+              prices: chunkVisibleConditions.map(c => ({
+                val: this.formatPrice(item.priceMap[c.id]),
+                cls: this.getPriceClass(item.priceMap[c.id])
+              }))
             }))
-          }))
+
+            return {
+              items: chunkItems,
+              visibleConditions: chunkVisibleConditions
+            }
+          })
 
           return {
             ...series,
             index: sIdx + 1,
-            visibleConditions,
-            items: itemsWithVisiblePrices
+            subTables
           }
         })
       }))
@@ -193,6 +202,9 @@ Page({
         categoryGroups: categoryGroups,
         isEmpty: categoryGroups.length === 0,
         loading: false,
+        brandId: quoteConfig.brand_id || null,
+        brand: quoteConfig.brand_name || '',
+        pageTitle: quoteConfig.page_title || '报价单',
         receiverName: quoteConfig.receiver_name || '',
         receiverPhone: quoteConfig.receiver_phone || '',
         receiverAddress: quoteConfig.receiver_address || ''

@@ -43,6 +43,7 @@ const unauthorized = (res, message = '未认证，请先登录') => {
   return res.status(401).json({
     code: 401,
     message,
+    needRelogin: true,
     data: null,
     timestamp: Date.now()
   })

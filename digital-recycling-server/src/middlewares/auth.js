@@ -26,7 +26,7 @@ const auth = async (req, res, next) => {
     if (err.name === 'JsonWebTokenError') {
       return unauthorized(res, 'Token无效')
     }
-    return error(res, '认证失败', 401, 401)
+    return unauthorized(res, '认证失败')
   }
 }
 

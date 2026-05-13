@@ -24,7 +24,7 @@ const adminAuth = async (req, res, next) => {
     if (err.name === 'TokenExpiredError') {
       return unauthorized(res, 'Token已过期，请重新登录')
     }
-    return error(res, '认证失败', 401, 401)
+    return unauthorized(res, '认证失败')
   }
 }
 

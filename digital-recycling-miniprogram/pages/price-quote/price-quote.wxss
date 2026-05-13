@@ -444,4 +444,124 @@
   background-color: #f0f8ff;
 }
 
+/* Sticky left column */
+.col-model {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: #fff;
+}
+
+.table-header .col-model {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background-color: #c0392b;
+  color: #fff;
+}
+
+/* Sub-table separator */
+.sub-table {
+  border-top: 3rpx solid var(--color-primary);
+}
+
+/* Loading mask */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Fixed left panel for flex layout */
+.sub-table-container {
+  display: flex;
+  border-bottom: 1rpx solid #ddd;
+}
+
+.has-divider {
+  border-top: 3rpx solid var(--color-primary);
+}
+
+.fixed-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: #fff;
+  flex-shrink: 0;
+  width: 130rpx;
+  border-right: 1rpx solid #ddd;
+}
+
+.scroll-col {
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+/* Override table styles for flex panels */
+.fixed-col .table-header,
+.fixed-col .table-body,
+.scroll-col .table-header,
+.scroll-col .table-body {
+  display: flex;
+}
+
+.fixed-col .table-body,
+.scroll-col .table-body {
+  flex-direction: column;
+}
+
+.fixed-col .th {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background-color: #c0392b;
+  color: #fff;
+}
+
+.scroll-col .th {
+  background-color: #c0392b;
+  color: #fff;
+  flex-shrink: 0;
+  width: 96rpx;
+  min-width: 96rpx;
+}
+
+.scroll-col .th.col-remark {
+  width: 160rpx;
+  min-width: 160rpx;
+}
+
+.fixed-col .td {
+  border-bottom: 1rpx solid #eee;
+}
+
+.scroll-col .td {
+  border-bottom: 1rpx solid #eee;
+  flex-shrink: 0;
+  width: 96rpx;
+  min-width: 96rpx;
+}
+
+.scroll-col .td.col-remark {
+  width: 160rpx;
+  min-width: 160rpx;
+}
+
+/* Ensure sticky works correctly */
+.fixed-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
 

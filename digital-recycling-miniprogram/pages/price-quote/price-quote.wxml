@@ -12,7 +12,7 @@
       <text>浏览量：{{viewCount}}</text>
       <text>更新时间：{{updateTime}}</text>
     </view>
-    <view class="header-title">{{brand ? brand + '回收报价' : (category ? category + '回收报价' : '今日回收报价')}}</view>
+    <view class="header-title">{{pageTitle}}</view>
     <view class="header-info">
       <text>收货地址：{{receiverAddress}}</text>
       <text>收件人：{{receiverName}}</text>
@@ -36,33 +36,39 @@
     </view>
   </view> -->
 
+  <!-- Loading 遮罩 -->
+  <view wx:if="{{loading}}" class="loading-mask">
+    <loading-spinner size="large" color="primary" text="加載中..." />
+  </view>
+
   <block wx:if="{{!isEmpty}}">
     <block wx:for="{{categoryGroups}}" wx:for-item="category" wx:key="index">
       <view class="category-section">
-        <view class="category-title">{{category.name}}</view>
-        <view class="table-scroll-wrap">
-          <view class="price-table">
-            <view class="table-header">
-              <view class="th col-model">型号</view>
-              <view class="th col-price" wx:for="{{category.seriesList[0].visibleConditions}}" wx:key="id">{{item.name}}</view>
-              <view class="th col-remark">备注</view>
-            </view>
-            <view class="table-body">
-              <block wx:for="{{category.seriesList}}" wx:for-item="series" wx:key="index">
-                <block wx:for="{{series.items}}" wx:for-item="item" wx:key="index">
-                  <view class="tr {{index === 0 && series.index > 1 ? 'series-divider' : ''}}" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
-                    <view class="td model-cell">
-                      {{item.model}}
-                      <text class="trend-hint">📈</text>
+        <block wx:for="{{category.seriesList}}" wx:for-item="series" wx:key="index">
+          <block wx:for="{{series.subTables}}" wx:for-item="subTable" wx:key="index">
+            <view class="table-scroll-wrap">
+              <view class="price-table {{subTable.items.length > 1 ? 'sub-table' : ''}}">
+                <view class="table-header">
+                  <view class="th col-model">{{series.name}}</view>
+                  <view class="th col-price" wx:for="{{subTable.visibleConditions}}" wx:for-item="cond" wx:key="id">{{cond.name}}</view>
+                  <view class="th col-remark">备注</view>
+                </view>
+                <view class="table-body">
+                  <block wx:for="{{subTable.items}}" wx:for-item="item" wx:key="index">
+                    <view class="tr" bindtap="goToPriceTrend" data-product-id="{{item.productId}}" data-model="{{item.model}}">
+                      <view class="td model-cell">
+                        {{item.model}}
+                        <text class="trend-hint">📈</text>
+                      </view>
+                      <view class="td {{price.cls}}" wx:for="{{item.prices}}" wx:for-item="price" wx:key="index">{{price.val}}</view>
+                      <view class="td remark-cell">{{item.remark}}</view>
                     </view>
-                    <view class="td {{price.cls}}" wx:for="{{item.prices}}" wx:for-item="price" wx:key="index">{{price.val}}</view>
-                    <view class="td remark-cell">{{item.remark}}</view>
-                  </view>
-                </block>
-              </block>
+                  </block>
+                </view>
+              </view>
             </view>
-          </view>
-        </view>
+          </block>
+        </block>
       </view>
     </block>
   </block>

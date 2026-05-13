@@ -81,6 +81,7 @@ const { adminAuth } = require('../../middlewares/adminAuth')
 const { success, notFound, paginate, error } = require('../../utils/response')
 const db = require('../../models')
 const { Op } = require('sequelize')
+const iconv = require('iconv-lite')
 
 const BRAND_STYLE_MAP = {
   '热门老年机': { icon_text: '老年', bg_color: 'bg-xiaomi' },
@@ -173,9 +174,60 @@ const importUpload = multer({
   }
 })
 
+function fixGarbledFilename(garbledStr) {
+  try {
+    const utf8String = Buffer.from(garbledStr, 'latin1').toString('utf8')
+    if (hasValidChinese(utf8String)) {
+      console.log(`  ✓ 从乱码恢复文件名(UTF-8): "${utf8String}"`)
+      return utf8String
+    }
+  } catch (e) {
+    console.log(`  Latin-1→UTF-8解码失败: ${e.message}`)
+  }
+  try {
+    const latin1Buffer = Buffer.from(garbledStr, 'latin1')
+    const gbkString = iconv.decode(latin1Buffer, 'gbk')
+    if (hasValidChinese(gbkString)) {
+      console.log(`  ✓ 从乱码恢复文件名(GBK): "${gbkString}"`)
+      return gbkString
+    }
+  } catch (e) {
+    console.log(`  Latin-1→GBK解码失败: ${e.message}`)
+  }
+  try {
+    const gbkString = iconv.decode(Buffer.from(garbledStr, 'binary'), 'gbk')
+    if (hasValidChinese(gbkString)) {
+      console.log(`  ✓ 从binary恢复文件名(GBK): "${gbkString}"`)
+      return gbkString
+    }
+  } catch (e) {
+    console.log(`  binary→GBK解码失败: ${e.message}`)
+  }
+  return null
+}
+
 function extractBrandName(filename) {
-  return filename
+  let name = filename
     .replace(/\.xlsx$/i, '')
+  
+  if (/[Ã¤Ã©Ã¨ÃªÃ«]/.test(name) || /[æŠ¥ä»·å°•]/.test(name)) {
+    console.log('  ⚠️ 检测到文件名包含乱码，尝试编码修复...')
+    const recovered = fixGarbledFilename(name)
+    if (recovered) {
+      name = recovered
+    } else {
+      console.log('  ⚠️ 编码修复失败，回退到字母数字提取...')
+      const match = name.match(/([a-zA-Z0-9]+)/)
+      if (match) {
+        console.log(`  ✓ 提取到品牌名: ${match[1]}`)
+        return match[1]
+      }
+      console.log('  ✗ 无法从乱码中提取有效品牌名')
+      return ''
+    }
+  }
+  
+  return name
     .replace(/报价单/g, '')
     .replace(/手机/g, '')
     .replace(/\d+$/g, '')
@@ -225,8 +277,21 @@ function parsePrice(val) {
 }
 
 async function getOrCreateBrand(brandName, sortOrder) {
-  let brand = await db.Brand.findOne({ where: { name: brandName } })
+  const cleanedName = cleanGarbledData(brandName)
+  if (!cleanedName) {
+    console.log(`  ⚠️ 跳过乱码品牌名: ${brandName}`)
+    return null
+  }
+  
+  if (!hasValidChinese(cleanedName)) {
+    console.log(`  ⚠️ 跳过不包含有效中文的品牌名: ${cleanedName}`)
+    return null
+  }
+  
+  let brand = await db.Brand.findOne({ where: { name: cleanedName } })
   if (brand) return brand
+  
+  brandName = cleanedName
   const style = BRAND_STYLE_MAP[brandName] || { icon_text: brandName.substring(0, 2), bg_color: 'bg-default' }
   brand = await db.Brand.create({
     category_id: 1, name: brandName, code: brandName.toLowerCase(),
@@ -319,7 +384,9 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       return error(res, '请选择文件', 422, 422)
     }
 
-    const wb = XLSX.read(req.file.buffer, { type: 'buffer' })
+    console.log('正在检测文件编码...')
+    const processedBuffer = detectAndConvertEncoding(req.file.buffer)
+    const wb = XLSX.read(processedBuffer, { type: 'buffer' })
     const ws = wb.Sheets[wb.SheetNames[0]]
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
 
@@ -331,8 +398,32 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     const effectiveDate = new Date().toISOString().split('T')[0]
 
     const brand = await getOrCreateBrand(brandName, 0)
+    if (!brand) {
+      console.log(`  ⚠️ 跳过乱码品牌: ${brandName}`)
+      return error(res, `品牌名 "${brandName}" 为乱码或无效，已跳过导入`, 400, 400)
+    }
 
-    const stats = { brands: 1, products: 0, conditions: 0, prices: 0 }
+    const stats = { brands: 1, products: 0, productsUpdated: 0, conditions: 0, prices: 0, skippedRows: 0 }
+
+    // ===== Phase 1: 批量预加载现有产品和价格 =====
+    const existingProducts = await db.Product.findAll({ where: { brand_id: brand.id } })
+    const productMap = new Map(existingProducts.map(p => [p.name, p]))
+    const productIds = existingProducts.map(p => p.id)
+
+    const existingPrices = productIds.length > 0
+      ? await db.Price.findAll({ where: { product_id: { [Op.in]: productIds }, effective_date: effectiveDate } })
+      : []
+    const priceMap = new Map()
+    for (const p of existingPrices) {
+      priceMap.set(`${p.product_id}:${p.condition_id}`, p)
+    }
+
+    // ===== Phase 2: 解析所有行（纯内存操作，零DB查询） =====
+    const newProductsData = []
+    const newPricesData = []
+    const newProductPricesData = []   // { tempIdx, ... } 暂存新产品的价格
+    const pricesToUpdate = []
+    const seriesUpdates = []
 
     let currentSeries = null
     let currentConditions = []
@@ -377,53 +468,127 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
 
       if (!productName) continue
 
-      // Skip description text rows (long text without model-like format)
-      if (productName.length > 20 || /[\u4e00-\u9fa5]{6,}/.test(productName)) {
+      if (!isValidProductName(productName)) {
+        console.log(`  跳过无效的产品名: ${productName}`)
+        stats.skippedRows++
+        continue
+      }
+
+      const descriptionKeywords = [
+        '所有', '备注', '提示', '须知', '注意', '说明', '声明', '联系', '免责',
+        '欢迎', '免责声明', '温馨提示', '特别提示', '平台', '公司', '倡议', '坚持', '统一',
+        '愿各位', '早日突围', '突围', '打造', '共同', '回收', '兄弟们', '一起', '套路', '公平', '公正', '公开',
+        '炸弹机', '芯片', '缺失', '更换', '外观', '正常', '价格', '不满意', '货物', '交易',
+        '远离', '核算', '深圳', '行情', '一机一价', '参考', '让我们', '回收价格', '报价参考',
+        '诚信', '经营', '合作', '共赢'
+      ]
+      const hasKeyword = descriptionKeywords.some(kw => productName.includes(kw))
+      const pureChineseOnly = /^[\u4e00-\u9fa5]+$/.test(productName)
+      const isTooLongPureChinese = pureChineseOnly && productName.length > 6
+
+      if (hasKeyword || isTooLongPureChinese) {
         console.log(`  Skipping description text: ${productName.substring(0, 40)}`)
         continue
       }
 
       productSortOrder++
-
-      let product = await db.Product.findOne({
-        where: { brand_id: brand.id, name: productName }
-      })
-
       const inferredSeries = currentSeries || inferSeriesName(productName)
 
-      if (!product) {
-        product = await db.Product.create({
-          brand_id: brand.id,
-          category_id: 1,
-          name: productName,
-          model_code: modelCode || productName,
-          series_name: inferredSeries,
-          sort_order: productSortOrder,
-          status: 1
-        })
-        stats.products++
-      } else if (!product.series_name && inferredSeries) {
-        await product.update({ series_name: inferredSeries })
-      }
-
+      // 确保条件已缓存（仅4个条件，首次创建后缓存）
       for (const cond of currentConditions) {
-        const rawVal = row[cond.colIndex]
-        const priceVal = parsePrice(rawVal)
-        if (priceVal === null) continue
-
-        let condition = conditionCache[cond.name]
-        if (!condition) {
-          condition = await getOrCreateCondition(cond.name, conditionSortOrder++)
-          conditionCache[cond.name] = condition
+        if (!conditionCache[cond.name]) {
+          conditionCache[cond.name] = await getOrCreateCondition(cond.name, conditionSortOrder++)
           stats.conditions++
         }
+      }
 
-        await upsertPrice(product.id, condition.id, priceVal, effectiveDate)
-        stats.prices++
+      if (productMap.has(productName)) {
+        // 产品已存在
+        const product = productMap.get(productName)
+        stats.productsUpdated++
+        if (!product.series_name && inferredSeries) {
+          seriesUpdates.push({ id: product.id, series_name: inferredSeries })
+        }
+
+        for (const cond of currentConditions) {
+          const rawVal = row[cond.colIndex]
+          const priceVal = parsePrice(rawVal)
+          if (priceVal === null) continue
+
+          const condObj = conditionCache[cond.name]
+          const key = `${product.id}:${condObj.id}`
+          const existingPrice = priceMap.get(key)
+          if (existingPrice) {
+            if (existingPrice.price !== priceVal) {
+              pricesToUpdate.push({ id: existingPrice.id, price: priceVal })
+            }
+          } else {
+            newPricesData.push({
+              product_id: product.id, condition_id: condObj.id,
+              price: priceVal, is_available: 1, effective_date: effectiveDate
+            })
+          }
+          stats.prices++
+        }
+      } else {
+        // 新产品：暂存数据，后续批量创建
+        const tempIdx = newProductsData.length
+        newProductsData.push({
+          brand_id: brand.id, category_id: 1, name: productName,
+          model_code: modelCode || productName, series_name: inferredSeries,
+          sort_order: productSortOrder, status: 1
+        })
+        stats.products++
+
+        for (const cond of currentConditions) {
+          const rawVal = row[cond.colIndex]
+          const priceVal = parsePrice(rawVal)
+          if (priceVal === null) continue
+
+          const condObj = conditionCache[cond.name]
+          newProductPricesData.push({
+            tempIdx, condition_id: condObj.id,
+            price: priceVal, is_available: 1, effective_date: effectiveDate
+          })
+          stats.prices++
+        }
       }
     }
 
-    if (stats.products === 0) {
+    // ===== Phase 3: 批量写入 =====
+    const createdProducts = newProductsData.length > 0
+      ? await db.Product.bulkCreate(newProductsData)
+      : []
+
+    // 将新产品价格中的 tempIdx 映射为真实 product.id
+    for (const np of newProductPricesData) {
+      newPricesData.push({
+        product_id: createdProducts[np.tempIdx].id,
+        condition_id: np.condition_id,
+        price: np.price,
+        is_available: 1,
+        effective_date: effectiveDate
+      })
+    }
+
+    // 批量创建新价格
+    if (newPricesData.length > 0) {
+      await db.Price.bulkCreate(newPricesData)
+    }
+
+    // 并行更新现有价格 + series_name
+    if (pricesToUpdate.length > 0 || seriesUpdates.length > 0) {
+      await Promise.all([
+        ...pricesToUpdate.map(p =>
+          db.Price.update({ price: p.price }, { where: { id: p.id } })
+        ),
+        ...seriesUpdates.map(p =>
+          db.Product.update({ series_name: p.series_name }, { where: { id: p.id } })
+        )
+      ])
+    }
+
+    if (stats.products === 0 && stats.productsUpdated === 0) {
       return error(res, '文件中未找到有效产品数据', 422, 422)
     }
 
@@ -431,8 +596,10 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       brandName: brandName,
       brands: stats.brands,
       products: stats.products,
+      productsUpdated: stats.productsUpdated,
       conditions: stats.conditions,
-      prices: stats.prices
+      prices: stats.prices,
+      skippedRows: stats.skippedRows
     }, '导入成功')
   } catch (err) {
     if (err.message && err.message.includes('仅支持')) {
@@ -441,5 +608,147 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     next(err)
   }
 })
+
+function isGarbledText(text) {
+  if (!text) return false
+  const garbledPatterns = [
+    /Ã¤/, /Ã©/, /Ã¨/, /Ãª/, /Ã«/, /Ã¯/, /Ã®/, /Ã¼/,
+    /Ã¡/, /Ã³/, /Ãº/, /Ã±/, /Ã§/, /Ã¸/,
+    /â€/ , /â€"/ , /â€"/ , /â€˜/ , /â€™/ , /â€œ/ , /â€/
+  ]
+  return garbledPatterns.some(pattern => pattern.test(text))
+}
+
+function hasValidChinese(text) {
+  if (!text) return false
+  
+  // 如果只包含数字和字母（如"360"、"TCL"），认为是有效的
+  if (/^[a-zA-Z0-9]+$/.test(text)) {
+    return true
+  }
+  
+  // 检查是否包含有效中文
+  const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
+  const totalChars = text.replace(/[\x00-\u1F]/g, '').length
+  return totalChars > 0 && chineseChars / totalChars > 0.1
+}
+
+function isValidProductName(productName) {
+  if (!productName) return false
+  
+  // 如果只包含字母、数字、空格、括号、连字符（如"N6 Pro"、"N7 Lite"、"Q30"），认为是有效的
+  if (/^[a-zA-Z0-9\s\(\)\-]+$/.test(productName)) {
+    return true
+  }
+  
+  // 检查是否包含有效中文
+  const chineseChars = (productName.match(/[\u4e00-\u9fa5]/g) || []).length
+  const totalChars = productName.replace(/[\x00-\u1F]/g, '').length
+  
+  return totalChars > 0 && chineseChars / totalChars > 0.1
+}
+
+function cleanGarbledData(data) {
+  if (!data) return null
+  if (isGarbledText(data)) {
+    console.log(`  ⚠️ 检测到乱码数据: ${data.substring(0, 50)}`)
+    return null
+  }
+  return data
+}
+
+async function cleanupGarbageBrands() {
+  try {
+    const allBrands = await db.Brand.findAll()
+    const garbageIds = []
+    
+    for (const brand of allBrands) {
+      if (isGarbledText(brand.name) || !hasValidChinese(brand.name)) {
+        garbageIds.push(brand.id)
+        console.log(`  发现乱码品牌: ID=${brand.id}, name=${brand.name}`)
+      }
+    }
+    
+    if (garbageIds.length > 0) {
+      await db.Brand.destroy({ where: { id: garbageIds } })
+      console.log(`✓ 已清理 ${garbageIds.length} 条乱码品牌数据`)
+      return garbageIds.length
+    } else {
+      console.log('✓ 未发现乱码品牌数据')
+      return 0
+    }
+  } catch (error) {
+    console.error('清理品牌数据失败:', error.message)
+    throw error
+  }
+}
+
+async function cleanupGarbageProducts() {
+  try {
+    const allProducts = await db.Product.findAll()
+    const garbageIds = []
+    
+    for (const product of allProducts) {
+      if (isGarbledText(product.name) || !hasValidChinese(product.name)) {
+        garbageIds.push(product.id)
+        console.log(`  发现乱码产品: ID=${product.id}, name=${product.name}`)
+      }
+    }
+    
+    if (garbageIds.length > 0) {
+      await db.Product.destroy({ where: { id: garbageIds } })
+      console.log(`✓ 已清理 ${garbageIds.length} 条乱码产品数据`)
+      return garbageIds.length
+    } else {
+      console.log('✓ 未发现乱码产品数据')
+      return 0
+    }
+  } catch (error) {
+    console.error('清理产品数据失败:', error.message)
+    throw error
+  }
+}
+
+async function cleanupAllGarbageData() {
+  console.log('开始清理乱码数据...')
+  console.log('='.repeat(50))
+  
+  const brandsDeleted = await cleanupGarbageBrands()
+  const productsDeleted = await cleanupGarbageProducts()
+  
+  console.log('='.repeat(50))
+  console.log('清理完成!')
+  console.log(`  - 清理品牌数: ${brandsDeleted}`)
+  console.log(`  - 清理产品数: ${productsDeleted}`)
+  
+  return { brandsDeleted, productsDeleted }
+}
+
+function detectAndConvertEncoding(buffer) {
+  try {
+    const utf8String = buffer.toString('utf8')
+    
+    if (isGarbledText(utf8String)) {
+      console.log('  ⚠️ 检测到可能的编码问题，尝试GBK解码...')
+      
+      try {
+        const gbkBuffer = Buffer.from(utf8String, 'latin1')
+        const gbkString = iconv.decode(gbkBuffer, 'gbk')
+        
+        if (hasValidChinese(gbkString)) {
+          console.log('  ✓ 成功转换GBK编码')
+          return Buffer.from(gbkString, 'utf8')
+        }
+      } catch (e) {
+        console.log('  ✗ GBK解码失败:', e.message)
+      }
+    }
+    
+    return buffer
+  } catch (e) {
+    console.log('  ⚠️ 编码检测异常，使用原始数据:', e.message)
+    return buffer
+  }
+}
 
 module.exports = router
