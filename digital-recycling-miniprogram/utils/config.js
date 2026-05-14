@@ -16,8 +16,20 @@ const ENV_CONFIG = {
   }
 }
 
+const ENV_MAP = {
+  develop: 'development',
+  trial: 'test',
+  release: 'production'
+}
+
 const getConfig = () => {
-  return ENV_CONFIG.production
+  try {
+    const envVersion = wx.getAccountInfoSync().miniProgram.envVersion
+    const env = ENV_MAP[envVersion] || 'production'
+    return ENV_CONFIG[env]
+  } catch (e) {
+    return ENV_CONFIG.production
+  }
 }
 
 const getImageUrl = (path) => {

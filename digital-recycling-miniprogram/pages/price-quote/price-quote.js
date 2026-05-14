@@ -202,7 +202,6 @@ Page({
         categoryGroups: categoryGroups,
         isEmpty: categoryGroups.length === 0,
         loading: false,
-        brandId: quoteConfig.brand_id || null,
         brand: quoteConfig.brand_name || '',
         pageTitle: quoteConfig.page_title || '报价单',
         receiverName: quoteConfig.receiver_name || '',
@@ -222,7 +221,7 @@ Page({
     if (price === null || price === undefined || price === '') return '/'
     const num = parseFloat(price)
     if (isNaN(num)) return '/'
-    return num > 0 ? `¥${num}` : '/'
+    return num > 0 ? num.toString() : '/'
   },
 
   getPriceClass(price) {
