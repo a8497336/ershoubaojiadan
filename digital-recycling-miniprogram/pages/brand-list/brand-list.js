@@ -187,7 +187,7 @@ Page({
     this.setData({ showModal: true, conditions: [], conditionsLoading: true, selectedProduct: product })
     productApi.getProductDetail(product.productId || product.id).then(res => {
       const detail = res.data || res || {}
-      const prices = detail.Prices || []
+      const prices = detail.prices || []
       const conditions = prices.map(p => ({
         conditionId: p.condition_id || (p.Condition && p.Condition.id) || 0,
         conditionName: (p.Condition && p.Condition.name) || '',
