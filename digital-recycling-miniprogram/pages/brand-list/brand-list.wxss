@@ -131,7 +131,7 @@
   flex: 1;
   background: #fff;
 }
-.product-scroll { height: 100%; padding: 0 12rpx; }
+.product-scroll { height: 100%; padding: 0 12rpx; padding-bottom: 250rpx; }
 
 .group-title {
   font-size: 28rpx;
