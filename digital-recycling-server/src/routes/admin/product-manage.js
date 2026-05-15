@@ -509,6 +509,7 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     const existingProducts = await db.Product.findAll({ where: { brand_id: brand.id } })
     const productMap = new Map(existingProducts.map(p => [p.name, p]))
     const productIds = existingProducts.map(p => p.id)
+    const deletedProductIds = existingProducts.filter(p => p.status === 0).map(p => p.id)
 
     const existingPrices = productIds.length > 0
       ? await db.Price.findAll({ where: { product_id: { [Op.in]: productIds }, effective_date: effectiveDate } })
@@ -697,6 +698,11 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
           db.Product.update({ series_name: p.series_name }, { where: { id: p.id } })
         )
       ])
+    }
+
+    // 恢复已删除产品 status=1（重新导入时自动激活）
+    if (deletedProductIds.length > 0) {
+      await db.Product.update({ status: 1 }, { where: { id: { [Op.in]: deletedProductIds } } })
     }
 
     if (stats.products === 0 && stats.productsUpdated === 0) {
