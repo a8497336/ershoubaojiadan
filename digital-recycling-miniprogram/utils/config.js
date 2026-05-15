@@ -25,7 +25,7 @@ const ENV_MAP = {
 const getConfig = () => {
   try {
     const envVersion = wx.getAccountInfoSync().miniProgram.envVersion
-    const env = ENV_MAP[envVersion] || 'production'
+    const env = 'production'
     return ENV_CONFIG[env]
   } catch (e) {
     return ENV_CONFIG.production

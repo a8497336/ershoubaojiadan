@@ -76,6 +76,7 @@
 const router = require('express').Router()
 const multer = require('multer')
 const XLSX = require('xlsx')
+const JSZip = require('jszip')
 const path = require('path')
 const { adminAuth } = require('../../middlewares/adminAuth')
 const { success, notFound, paginate, error } = require('../../utils/response')
@@ -203,35 +204,87 @@ function fixGarbledFilename(garbledStr) {
   } catch (e) {
     console.log(`  binary→GBK解码失败: ${e.message}`)
   }
+  try {
+    const utf16leString = Buffer.from(garbledStr, 'latin1').toString('utf16le')
+    if (hasValidChinese(utf16leString)) {
+      console.log(`  ✓ 从乱码恢复文件名(UTF-16LE): "${utf16leString}"`)
+      return utf16leString
+    }
+  } catch (e) {
+    console.log(`  Latin-1→UTF-16LE解码失败: ${e.message}`)
+  }
+  try {
+    const latin1Buffer = Buffer.from(garbledStr, 'latin1')
+    const big5String = iconv.decode(latin1Buffer, 'big5')
+    if (hasValidChinese(big5String)) {
+      console.log(`  ✓ 从乱码恢复文件名(Big5): "${big5String}"`)
+      return big5String
+    }
+  } catch (e) {
+    console.log(`  Latin-1→Big5解码失败: ${e.message}`)
+  }
+  try {
+    const gbkString = iconv.decode(Buffer.from(garbledStr), 'gbk')
+    if (hasValidChinese(gbkString)) {
+      console.log(`  ✓ 从乱码恢复文件名(直接GBK): "${gbkString}"`)
+      return gbkString
+    }
+  } catch (e) {
+    console.log(`  直接GBK解码失败: ${e.message}`)
+  }
+  try {
+    const extracted = garbledStr.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, '').trim()
+    if (extracted && hasValidChinese(extracted)) {
+      console.log(`  ✓ 从乱码中提取有效字符: "${extracted}"`)
+      return extracted
+    }
+  } catch (e) {
+    console.log(`  字符提取失败: ${e.message}`)
+  }
   return null
 }
 
 function extractBrandName(filename) {
   let name = filename
     .replace(/\.xlsx$/i, '')
+    .trim()
   
-  if (/[Ã¤Ã©Ã¨ÃªÃ«]/.test(name) || /[æŠ¥ä»·å°•]/.test(name)) {
+  if (!name) return ''
+  
+  if (hasValidChinese(name)) {
+    return cleanBrandName(name)
+  }
+  
+  if (/^[a-zA-Z0-9]+$/.test(name)) {
+    return cleanBrandName(name)
+  }
+  
+  if (isGarbledText(name)) {
     console.log('  ⚠️ 检测到文件名包含乱码，尝试编码修复...')
     const recovered = fixGarbledFilename(name)
     if (recovered) {
-      name = recovered
-    } else {
-      console.log('  ⚠️ 编码修复失败，回退到字母数字提取...')
-      const match = name.match(/([a-zA-Z0-9]+)/)
-      if (match) {
-        console.log(`  ✓ 提取到品牌名: ${match[1]}`)
-        return match[1]
-      }
-      console.log('  ✗ 无法从乱码中提取有效品牌名')
-      return ''
+      console.log(`  ✓ 编码修复成功，清理后缀...`)
+      return cleanBrandName(recovered)
     }
+    console.log('  ⚠️ 编码修复失败，返回空触发Excel回退')
+    return ''
   }
   
-  return name
+  return cleanBrandName(name)
+}
+
+function cleanBrandName(name) {
+  name = name
     .replace(/报价单/g, '')
     .replace(/手机/g, '')
-    .replace(/\d+$/g, '')
+    .replace(/回收/g, '')
     .trim()
+  
+  if (/^\d+$/.test(name)) {
+    return name
+  }
+  
+  return name.replace(/\d+$/g, '').trim()
 }
 
 function cleanStr(s) {
@@ -288,24 +341,32 @@ async function getOrCreateBrand(brandName, sortOrder) {
     return null
   }
   
-  let brand = await db.Brand.findOne({ where: { name: cleanedName } })
-  if (brand) return brand
-  
   brandName = cleanedName
   const style = BRAND_STYLE_MAP[brandName] || { icon_text: brandName.substring(0, 2), bg_color: 'bg-default' }
-  brand = await db.Brand.create({
-    category_id: 1, name: brandName, code: brandName.toLowerCase(),
-    icon_text: style.icon_text, bg_color: style.bg_color,
-    has_update: 1, sort_order: sortOrder, status: 1
+  const [brand, created] = await db.Brand.findOrCreate({
+    where: { name: brandName },
+    defaults: {
+      category_id: 1,
+      code: brandName.toLowerCase(),
+      icon_text: style.icon_text,
+      bg_color: style.bg_color,
+      has_update: 1,
+      sort_order: sortOrder,
+      status: 1
+    }
   })
+  if (created) {
+    console.log(`  ✓ 新建品牌: "${brandName}"`)
+  }
   return brand
 }
 
 async function getOrCreateCondition(conditionName, sortOrder) {
-  let condition = await db.ProductCondition.findOne({ where: { name: conditionName } })
-  if (condition) return condition
   const code = 'cond_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
-  condition = await db.ProductCondition.create({ name: conditionName, code, sort_order: sortOrder })
+  const [condition] = await db.ProductCondition.findOrCreate({
+    where: { name: conditionName },
+    defaults: { name: conditionName, code, sort_order: sortOrder }
+  })
   return condition
 }
 
@@ -385,8 +446,26 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     }
 
     console.log('正在检测文件编码...')
-    const processedBuffer = detectAndConvertEncoding(req.file.buffer)
-    const wb = XLSX.read(processedBuffer, { type: 'buffer' })
+    const originalBuffer = req.file.buffer
+    
+    let wb
+    try {
+      wb = XLSX.read(originalBuffer, { type: 'buffer' })
+    } catch (xlsxErr) {
+      console.log(`  ⚠️ XLSX标准解析失败: ${xlsxErr.message}`)
+      console.log('  ⚠️ 文件非标准XLSX，尝试转换格式...')
+      const converted = await convertToStandardXLSX(originalBuffer)
+      if (converted) {
+        try {
+          wb = XLSX.read(converted, { type: 'buffer' })
+          console.log('  ✓ 转换后解析成功')
+        } catch (e2) {
+          return error(res, '文件格式无效或已损坏，请重新保存为标准Excel文件后重试', 422, 422)
+        }
+      } else {
+        return error(res, '文件格式无效或已损坏，请重新保存为标准Excel文件后重试', 422, 422)
+      }
+    }
     const ws = wb.Sheets[wb.SheetNames[0]]
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
 
@@ -394,12 +473,33 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       return error(res, '文件中未找到有效数据（数据行不足）', 422, 422)
     }
 
-    const brandName = extractBrandName(req.file.originalname)
+    let brandName = extractBrandName(req.file.originalname)
+
+    if (!brandName) {
+      console.log('  ⚠️ 从文件名无法提取品牌名，尝试从Excel内容匹配...')
+      brandName = extractBrandFromExcelContent(data)
+      if (brandName) {
+        console.log(`  ✓ 从Excel内容匹配到品牌: "${brandName}"`)
+      }
+    }
+
+    if (brandName && !BRAND_STYLE_MAP[brandName]) {
+      console.log(`  ⚠️ 品牌名 "${brandName}" 不在预定义列表中，尝试从Excel内容校正...`)
+      const correctedName = extractBrandFromExcelContent(data)
+      if (correctedName && BRAND_STYLE_MAP[correctedName]) {
+        console.log(`  ✓ 从Excel内容校正品牌: "${brandName}" → "${correctedName}"`)
+        brandName = correctedName
+      }
+    }
+
     const effectiveDate = new Date().toISOString().split('T')[0]
 
     const brand = await getOrCreateBrand(brandName, 0)
     if (!brand) {
       console.log(`  ⚠️ 跳过乱码品牌: ${brandName}`)
+      if (!brandName) {
+        return error(res, '无法从文件名或Excel内容中识别品牌，请检查文件格式', 400, 400)
+      }
       return error(res, `品牌名 "${brandName}" 为乱码或无效，已跳过导入`, 400, 400)
     }
 
@@ -419,11 +519,12 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     }
 
     // ===== Phase 2: 解析所有行（纯内存操作，零DB查询） =====
-    const newProductsData = []
-    const newPricesData = []
-    const newProductPricesData = []   // { tempIdx, ... } 暂存新产品的价格
+    const newProductsMap = new Map()       // key: productName -> tempIdx (插入顺序)
+    const newProductsArr = []              // 按顺序存储产品，供 bulkCreate 使用
+    const newPricesMap = new Map()         // key: `${product_id}:${condition_id}:${effective_date}` -> priceData（去重）
+    const newProductPricesData = []        // { tempIdx, ... } 暂存新产品的价格
     const pricesToUpdate = []
-    const seriesUpdates = []
+    const seriesMap = new Map()            // key: product.id -> series_name（去重）
 
     let currentSeries = null
     let currentConditions = []
@@ -503,11 +604,10 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       }
 
       if (productMap.has(productName)) {
-        // 产品已存在
         const product = productMap.get(productName)
         stats.productsUpdated++
         if (!product.series_name && inferredSeries) {
-          seriesUpdates.push({ id: product.id, series_name: inferredSeries })
+          seriesMap.set(product.id, { id: product.id, series_name: inferredSeries })
         }
 
         for (const cond of currentConditions) {
@@ -517,72 +617,83 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
 
           const condObj = conditionCache[cond.name]
           const key = `${product.id}:${condObj.id}`
-          const existingPrice = priceMap.get(key)
-          if (existingPrice) {
+          if (priceMap.has(key)) {
+            const existingPrice = priceMap.get(key)
             if (existingPrice.price !== priceVal) {
               pricesToUpdate.push({ id: existingPrice.id, price: priceVal })
             }
           } else {
-            newPricesData.push({
-              product_id: product.id, condition_id: condObj.id,
-              price: priceVal, is_available: 1, effective_date: effectiveDate
-            })
+            const priceKey = `${product.id}:${condObj.id}:${effectiveDate}`
+            if (!newPricesMap.has(priceKey)) {
+              newPricesMap.set(priceKey, {
+                product_id: product.id, condition_id: condObj.id,
+                price: priceVal, is_available: 1, effective_date: effectiveDate
+              })
+              stats.prices++
+            }
           }
-          stats.prices++
         }
-      } else {
-        // 新产品：暂存数据，后续批量创建
-        const tempIdx = newProductsData.length
-        newProductsData.push({
+        continue
+      }
+
+      if (!newProductsMap.has(productName)) {
+        const tempIdx = newProductsArr.length
+        newProductsMap.set(productName, tempIdx)
+        newProductsArr.push({
           brand_id: brand.id, category_id: 1, name: productName,
           model_code: modelCode || productName, series_name: inferredSeries,
           sort_order: productSortOrder, status: 1
         })
         stats.products++
+      }
 
-        for (const cond of currentConditions) {
-          const rawVal = row[cond.colIndex]
-          const priceVal = parsePrice(rawVal)
-          if (priceVal === null) continue
+      const tempIdx = newProductsMap.get(productName)
+      for (const cond of currentConditions) {
+        const rawVal = row[cond.colIndex]
+        const priceVal = parsePrice(rawVal)
+        if (priceVal === null) continue
 
-          const condObj = conditionCache[cond.name]
-          newProductPricesData.push({
-            tempIdx, condition_id: condObj.id,
-            price: priceVal, is_available: 1, effective_date: effectiveDate
-          })
-          stats.prices++
-        }
+        const condObj = conditionCache[cond.name]
+        newProductPricesData.push({
+          tempIdx, condition_id: condObj.id,
+          price: priceVal, is_available: 1, effective_date: effectiveDate
+        })
+        // Note: stats.prices 在 Phase 3 newPricesMap 去重後才準確計數
       }
     }
 
     // ===== Phase 3: 批量写入 =====
-    const createdProducts = newProductsData.length > 0
-      ? await db.Product.bulkCreate(newProductsData)
+    const createdProducts = newProductsArr.length > 0
+      ? await db.Product.bulkCreate(newProductsArr)
       : []
 
-    // 将新产品价格中的 tempIdx 映射为真实 product.id
+    // 将新产品价格中的 tempIdx 映射为真实 product.id，并去重
     for (const np of newProductPricesData) {
-      newPricesData.push({
-        product_id: createdProducts[np.tempIdx].id,
-        condition_id: np.condition_id,
-        price: np.price,
-        is_available: 1,
-        effective_date: effectiveDate
-      })
+      const priceKey = `${createdProducts[np.tempIdx].id}:${np.condition_id}:${np.effective_date}`
+      if (!newPricesMap.has(priceKey)) {
+        newPricesMap.set(priceKey, {
+          product_id: createdProducts[np.tempIdx].id,
+          condition_id: np.condition_id,
+          price: np.price,
+          is_available: 1,
+          effective_date: np.effective_date
+        })
+        stats.prices++
+      }
     }
 
-    // 批量创建新价格
-    if (newPricesData.length > 0) {
-      await db.Price.bulkCreate(newPricesData)
+    // 批量创建新价格（已去重）
+    if (newPricesMap.size > 0) {
+      await db.Price.bulkCreate(Array.from(newPricesMap.values()))
     }
 
-    // 并行更新现有价格 + series_name
-    if (pricesToUpdate.length > 0 || seriesUpdates.length > 0) {
+    // 并行更新现有价格 + series_name（已去重）
+    if (pricesToUpdate.length > 0 || seriesMap.size > 0) {
       await Promise.all([
         ...pricesToUpdate.map(p =>
           db.Price.update({ price: p.price }, { where: { id: p.id } })
         ),
-        ...seriesUpdates.map(p =>
+        ...Array.from(seriesMap.values()).map(p =>
           db.Product.update({ series_name: p.series_name }, { where: { id: p.id } })
         )
       ])
@@ -611,12 +722,8 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
 
 function isGarbledText(text) {
   if (!text) return false
-  const garbledPatterns = [
-    /Ã¤/, /Ã©/, /Ã¨/, /Ãª/, /Ã«/, /Ã¯/, /Ã®/, /Ã¼/,
-    /Ã¡/, /Ã³/, /Ãº/, /Ã±/, /Ã§/, /Ã¸/,
-    /â€/ , /â€"/ , /â€"/ , /â€˜/ , /â€™/ , /â€œ/ , /â€/
-  ]
-  return garbledPatterns.some(pattern => pattern.test(text))
+  if (/^[a-zA-Z0-9]+$/.test(text)) return false
+  return !hasValidChinese(text) && /[\x80-\xFF]/.test(text)
 }
 
 function hasValidChinese(text) {
@@ -641,10 +748,8 @@ function isValidProductName(productName) {
     return true
   }
   
-  // 检查是否包含有效中文
   const chineseChars = (productName.match(/[\u4e00-\u9fa5]/g) || []).length
   const totalChars = productName.replace(/[\x00-\u1F]/g, '').length
-  
   return totalChars > 0 && chineseChars / totalChars > 0.1
 }
 
@@ -655,6 +760,29 @@ function cleanGarbledData(data) {
     return null
   }
   return data
+}
+
+function extractBrandFromExcelContent(data) {
+  if (!data || data.length === 0) return null
+  const brandNames = Object.keys(BRAND_STYLE_MAP)
+  const seenTexts = new Set()
+  
+  for (let i = 0; i < Math.min(data.length, 20); i++) {
+    const row = data[i]
+    if (!row) continue
+    for (const cell of row) {
+      const text = String(cell || '').trim()
+      if (!text || seenTexts.has(text)) continue
+      seenTexts.add(text)
+      
+      for (const brandName of brandNames) {
+        if (text.includes(brandName)) {
+          return brandName
+        }
+      }
+    }
+  }
+  return null
 }
 
 async function cleanupGarbageBrands() {
@@ -722,6 +850,35 @@ async function cleanupAllGarbageData() {
   console.log(`  - 清理产品数: ${productsDeleted}`)
   
   return { brandsDeleted, productsDeleted }
+}
+
+function isValidXLSX(buffer) {
+  if (!buffer || buffer.length < 4) return false
+  const pkHeader = buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04
+  if (!pkHeader) return false
+  if (buffer.length > 10 * 1024 * 1024) return false
+  return true
+}
+
+async function convertToStandardXLSX(buffer) {
+  try {
+    const zip = await JSZip.loadAsync(buffer)
+    const stdZip = new JSZip()
+    const promises = []
+    zip.forEach((relativePath, file) => {
+      if (file.dir) return
+      promises.push(file.async('nodebuffer').then(content => {
+        stdZip.file(relativePath, content)
+      }))
+    })
+    await Promise.all(promises)
+    const stdBuffer = await stdZip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } })
+    console.log('  ✓ 成功转换为标准XLSX格式')
+    return stdBuffer
+  } catch (e) {
+    console.log(`  ✗ JSZip解析失败，无法转换: ${e.message}`)
+    return null
+  }
 }
 
 function detectAndConvertEncoding(buffer) {
