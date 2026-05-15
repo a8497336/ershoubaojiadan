@@ -101,7 +101,7 @@
                 <view class="condition-name">{{item.conditionName}}</view>
                 <view class="condition-price {{item.price > 0 ? '' : 'zero'}}">{{item.priceText}}</view>
                 <view class="condition-qty-ctrl">
-                  <view class="qty-btn {{item.quantity <= 1 ? 'disabled' : ''}}" bindtap="decreaseConditionQty" data-index="{{index}}">−</view>
+                  <view class="qty-btn {{item.quantity <= 0 ? 'disabled' : ''}}" bindtap="decreaseConditionQty" data-index="{{index}}">−</view>
                   <text class="qty-num">{{item.quantity}}</text>
                   <view class="qty-btn" bindtap="increaseConditionQty" data-index="{{index}}">+</view>
                 </view>

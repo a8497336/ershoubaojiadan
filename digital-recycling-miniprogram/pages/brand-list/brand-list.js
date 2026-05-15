@@ -237,7 +237,7 @@ Page({
     const idx = e.currentTarget.dataset.index
     const key = 'conditions[' + idx + '].quantity'
     const current = this.data.conditions[idx].quantity
-    if (current > 1) {
+    if (current > 0) {
       this.setData({ [key]: current - 1 })
     }
   },
@@ -259,12 +259,9 @@ Page({
     }
     const promises = items.map(c => {
       return cartApi.add({
-        productId: product.productId || product.id,
-        product_name: product.model || product.name,
-        condition: c.conditionName,
+        product_id: product.productId || product.id,
         condition_id: c.conditionId,
-        quantity: c.quantity,
-        price: c.price
+        quantity: c.quantity
       })
     })
     Promise.all(promises).then(() => {
