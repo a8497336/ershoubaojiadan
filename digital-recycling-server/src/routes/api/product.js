@@ -54,7 +54,7 @@
 const router = require('express').Router()
 const { optionalAuth } = require('../../middlewares/auth')
 const { success } = require('../../utils/response')
-const { Op } = require('sequelize')
+const { Op, fn, col } = require('sequelize')
 const db = require('../../models')
 
 router.get('/', optionalAuth, async (req, res, next) => {
@@ -76,23 +76,18 @@ router.get('/', optionalAuth, async (req, res, next) => {
       where,
       include: [
         { model: db.Brand, as: 'Brand', attributes: ['id', 'name', 'bg_color'] },
-        { model: db.Category, as: 'Category', attributes: ['id', 'name', 'code'] },
-        {
-          model: db.Price,
-          as: 'Prices',
-          attributes: ['price', 'condition_id'],
-          include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
-          where: { effective_date: new Date().toISOString().split('T')[0] },
-          required: false
-        }
+        { model: db.Category, as: 'Category', attributes: ['id', 'name', 'code'] }
       ],
       order: [['sort_order', 'ASC'], ['created_at', 'DESC']],
       offset,
       limit: parseInt(pageSize)
     })
 
+    const productIds = rows.map(p => p.id)
+    const productsWithPrices = await attachPerProductLatestPrices(rows, productIds)
+
     return success(res, {
-      list: rows,
+      list: productsWithPrices,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -117,16 +112,61 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
       return success(res, null)
     }
 
-    const today = new Date().toISOString().split('T')[0]
-    const prices = await db.Price.findAll({
-      where: { product_id: product.id, effective_date: today },
-      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }]
+    const latestDate = await db.Price.findOne({
+      where: { product_id: product.id },
+      attributes: [[fn('MAX', col('effective_date')), 'latest_date']],
+      group: ['product_id'],
+      raw: true
     })
+
+    const prices = latestDate
+      ? await db.Price.findAll({
+          where: { product_id: product.id, effective_date: latestDate.latest_date },
+          include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }]
+        })
+      : []
 
     return success(res, { ...product.toJSON(), prices })
   } catch (err) {
     next(err)
   }
 })
+
+async function attachPerProductLatestPrices(products, productIds) {
+  if (productIds.length === 0) return products.map(p => ({ ...p.toJSON(), Prices: [] }))
+
+  const latestDates = await db.Price.findAll({
+    where: { product_id: { [Op.in]: productIds } },
+    attributes: ['product_id', [fn('MAX', col('effective_date')), 'latest_date']],
+    group: ['product_id'],
+    raw: true
+  })
+
+  const datePairs = latestDates.map(d => ({
+    product_id: d.product_id,
+    effective_date: d.latest_date
+  }))
+
+  const allPrices = datePairs.length > 0
+    ? await db.Price.findAll({
+        where: { [Op.or]: datePairs },
+        include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
+        raw: true,
+        nest: true
+      })
+    : []
+
+  const priceMap = {}
+  for (const price of allPrices) {
+    const pid = price.product_id
+    if (!priceMap[pid]) priceMap[pid] = []
+    priceMap[pid].push(price)
+  }
+
+  return products.map(p => ({
+    ...p.toJSON(),
+    Prices: priceMap[p.id] || []
+  }))
+}
 
 module.exports = router

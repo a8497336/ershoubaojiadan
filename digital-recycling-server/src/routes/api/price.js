@@ -74,7 +74,7 @@
 const router = require('express').Router()
 const { optionalAuth } = require('../../middlewares/auth')
 const { success } = require('../../utils/response')
-const { Op } = require('sequelize')
+const { Op, literal, fn, col } = require('sequelize')
 const db = require('../../models')
 
 router.get('/today', optionalAuth, async (req, res, next) => {
@@ -90,17 +90,54 @@ router.get('/today', optionalAuth, async (req, res, next) => {
       where: productWhere,
       include: [
         { model: db.Brand, as: 'Brand', attributes: ['id', 'name'] },
-        { model: db.Category, as: 'Category', attributes: ['id', 'name'] },
-        {
-          model: db.Price,
-          as: 'Prices',
-          where: { effective_date: today },
-          required: false,
-          include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }]
-        }
+        { model: db.Category, as: 'Category', attributes: ['id', 'name'] }
       ],
       order: [['sort_order', 'ASC']]
     })
+
+    const productIds = products.map(p => p.id)
+    if (productIds.length === 0) {
+      return success(res, {
+        date: today,
+        effectiveDate: null,
+        updateTime: new Date().toISOString(),
+        viewCount: 0,
+        list: []
+      })
+    }
+
+    const latestDates = await db.Price.findAll({
+      where: { product_id: { [Op.in]: productIds } },
+      attributes: ['product_id', [fn('MAX', col('effective_date')), 'latest_date']],
+      group: ['product_id'],
+      raw: true
+    })
+
+    const datePairs = latestDates.map(d => ({
+      product_id: d.product_id,
+      effective_date: d.latest_date
+    }))
+
+    const allPrices = datePairs.length > 0
+      ? await db.Price.findAll({
+          where: { [Op.or]: datePairs },
+          include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
+          raw: true,
+          nest: true
+        })
+      : []
+
+    const priceMap = {}
+    for (const price of allPrices) {
+      const pid = price.product_id
+      if (!priceMap[pid]) priceMap[pid] = []
+      priceMap[pid].push(price)
+    }
+
+    const productList = products.map(p => ({
+      ...p.toJSON(),
+      Prices: priceMap[p.id] || []
+    }))
 
     const todayView = await db.PriceView.findOne({ where: { view_date: today } })
     if (todayView) {
@@ -113,11 +150,14 @@ router.get('/today', optionalAuth, async (req, res, next) => {
       where: { view_date: today }
     })
 
+    const firstDate = datePairs.length > 0 ? datePairs[0].effective_date : null
+
     return success(res, {
-      date: today,
+      date: firstDate || today,
+      effectiveDate: firstDate,
       updateTime: new Date().toISOString(),
       viewCount: viewCount || 0,
-      list: products
+      list: productList
     })
   } catch (err) {
     next(err)
@@ -163,6 +203,7 @@ router.get('/trend/:productId', optionalAuth, async (req, res, next) => {
 
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - parseInt(days))
+    const startDateStr = startDate.toISOString().split('T')[0]
 
     const product = await db.Product.findByPk(productId, {
       include: [
@@ -174,39 +215,82 @@ router.get('/trend/:productId', optionalAuth, async (req, res, next) => {
     const priceHistories = await db.PriceHistory.findAll({
       where: {
         product_id: productId,
-        change_date: { [Op.gte]: startDate.toISOString().split('T')[0] }
+        change_date: { [Op.gte]: startDateStr }
       },
       include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
       order: [['change_date', 'ASC']]
     })
 
-    const currentPrices = await db.Price.findAll({
-      where: { product_id: productId },
-      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }]
+    const allPrices = await db.Price.findAll({
+      where: {
+        product_id: productId,
+        effective_date: { [Op.gte]: startDateStr }
+      },
+      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
+      order: [['effective_date', 'ASC']]
     })
 
     const trendData = {}
-    priceHistories.forEach(h => {
-      const conditionCode = h.Condition?.code || `condition_${h.condition_id}`
-      if (!trendData[conditionCode]) {
-        trendData[conditionCode] = {
-          name: h.Condition?.name || '未知',
-          code: conditionCode,
+
+    // 先從 prices 表構建趨勢數據（每次導入的價格快照）
+    for (const p of allPrices) {
+      const conditionId = p.condition_id
+      if (!trendData[conditionId]) {
+        trendData[conditionId] = {
+          name: p.Condition?.name || '未知',
+          code: p.Condition?.code || `condition_${conditionId}`,
           data: []
         }
       }
-      trendData[conditionCode].data.push({
-        date: h.change_date,
-        price: h.new_price
+      trendData[conditionId].data.push({
+        date: p.effective_date,
+        price: parseFloat(p.price) || 0
       })
-    })
+    }
+
+    // 合併 price_histories（手動修改記錄，同日期同 condition 時覆蓋 prices 數據）
+    for (const h of priceHistories) {
+      const conditionId = h.condition_id
+      if (!trendData[conditionId]) {
+        trendData[conditionId] = {
+          name: h.Condition?.name || '未知',
+          code: h.Condition?.code || `condition_${conditionId}`,
+          data: []
+        }
+      }
+      const existingIdx = trendData[conditionId].data.findIndex(d => d.date === h.change_date)
+      if (existingIdx >= 0) {
+        trendData[conditionId].data[existingIdx].price = parseFloat(h.new_price) || 0
+      } else {
+        trendData[conditionId].data.push({
+          date: h.change_date,
+          price: parseFloat(h.new_price) || 0
+        })
+      }
+    }
+
+    // 按日期排序每個 condition 的數據
+    for (const key of Object.keys(trendData)) {
+      trendData[key].data.sort((a, b) => a.date.localeCompare(b.date))
+    }
+
+    const currentPrices = allPrices.filter(p => !p.effective_date || p.effective_date >= startDateStr)
 
     let maxPrice = 0, minPrice = Infinity, latestPrice = 0
-    currentPrices.forEach(p => {
+    const latestDate = currentPrices.length > 0
+      ? currentPrices.reduce((max, p) => (p.effective_date > max ? p.effective_date : max), '')
+      : ''
+    const latestPrices = currentPrices.filter(p => p.effective_date === latestDate)
+    latestPrices.forEach(p => {
       const price = parseFloat(p.price) || 0
       if (price > maxPrice) maxPrice = price
       if (price < minPrice) minPrice = price
       if (price > latestPrice) latestPrice = price
+    })
+    currentPrices.forEach(p => {
+      const price = parseFloat(p.price) || 0
+      if (price > maxPrice) maxPrice = price
+      if (price < minPrice) minPrice = price
     })
 
     const yesterday = new Date()
@@ -221,7 +305,7 @@ router.get('/trend/:productId', optionalAuth, async (req, res, next) => {
 
     return success(res, {
       product,
-      currentPrices,
+      currentPrices: latestPrices.length > 0 ? latestPrices : currentPrices,
       trendData: Object.values(trendData),
       summary: {
         maxPrice,

@@ -188,7 +188,7 @@ Page({
       }))
 
       this.setData({
-        priceDate: data.date || new Date().toISOString().split('T')[0],
+        priceDate: data.effectiveDate || data.date || '',
         updateTime: data.updateTime ?
           new Date(data.updateTime).toLocaleString('zh-CN', {
             year: 'numeric',
