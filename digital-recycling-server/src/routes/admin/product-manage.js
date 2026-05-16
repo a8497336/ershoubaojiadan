@@ -750,7 +750,7 @@ function isValidProductName(productName) {
   if (!productName) return false
   
   // 如果只包含字母、数字、空格、括号、连字符（如"N6 Pro"、"N7 Lite"、"Q30"），认为是有效的
-  if (/^[a-zA-Z0-9\s\(\)\-]+$/.test(productName)) {
+  if (/^[a-zA-Z0-9\s\(\)\-\/\.]+$/.test(productName)) {
     return true
   }
   
