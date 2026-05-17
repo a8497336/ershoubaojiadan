@@ -56,10 +56,13 @@
         wx:key="id"
         class="matched-item"
         data-id="{{item.id}}"
+        data-brand-id="{{item.Brand.id}}"
+        data-brand="{{item.Brand.name}}"
+        data-category="{{item.Category.name}}"
         bindtap="goToProductDetail"
       >
         <view class="matched-info">
-          <view class="matched-name">{{item.model || item.name}}</view>
+          <view class="matched-name">{{item.model_code || item.name}}</view>
           <view class="matched-brand" wx:if="{{item.Brand && item.Brand.name}}">{{item.Brand.name}}</view>
         </view>
         <view class="matched-price" wx:if="{{item.Prices && item.Prices.length > 0}}">

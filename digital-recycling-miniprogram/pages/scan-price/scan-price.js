@@ -1,4 +1,4 @@
-const { userApi, pointsApi, uploadFile, searchApi } = require('../../utils/api-modules')
+const { userApi, pointsApi, uploadFile, scanApi } = require('../../utils/api-modules')
 
 Page({
   data: {
@@ -141,15 +141,25 @@ Page({
   async searchByImage(imageUrl) {
     this.setData({ loading: true })
     try {
-      const res = await searchApi.search('', { image: imageUrl })
-      const products = res.data?.list || res.data || res || []
-      if (products.length > 0) {
+      const res = await scanApi.recognize({ imageUrl })
+      const products = res.data?.products || []
+      const recognized = res.data?.recognized
+      const message = res.data?.message || ''
+      if (products.length > 0 && recognized) {
         this.setData({
           matchedProducts: products.slice(0, 5),
           showResult: true,
           loading: false
         })
         this.saveScanHistory(products[0])
+        wx.showToast({ title: '识别成功，下滑查看结果！', icon: 'none' })
+      } else if (products.length > 0) {
+        this.setData({
+          matchedProducts: products.slice(0, 5),
+          showResult: true,
+          loading: false
+        })
+        wx.showToast({ title: message || '未识别到匹配产品，为您推荐热门机型', icon: 'none' })
       } else {
         this.setData({
           showResult: true,
@@ -174,7 +184,7 @@ Page({
       let history = wx.getStorageSync('scanHistory') || []
       history.unshift({
         id: product.id,
-        name: product.model || product.name,
+        name: product.model_code || product.name,
         brand: product.Brand?.name || '',
         price: product.Prices?.[0]?.price || '',
         image: this.data.scanResult?.filePath || '',
@@ -191,10 +201,13 @@ Page({
   },
 
   goToProductDetail(e) {
-    const { id } = e.currentTarget.dataset
-    if (id) {
-      wx.navigateTo({ url: `/pages/brand-list/brand-list?productId=${id}` })
-    }
+    const { id, brandId, brand, category } = e.currentTarget.dataset
+    if (!id) return
+    const params = [`productId=${id}`]
+    if (brandId) params.push(`brandId=${brandId}`)
+    if (brand) params.push(`brand=${encodeURIComponent(brand)}`)
+    if (category) params.push(`category=${encodeURIComponent(category)}`)
+    wx.navigateTo({ url: `/pages/price-quote/price-quote?${params.join('&')}` })
   },
 
   clearHistory() {

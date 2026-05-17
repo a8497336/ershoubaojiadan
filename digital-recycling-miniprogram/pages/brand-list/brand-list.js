@@ -114,7 +114,7 @@ Page({
         seriesMap.get(seriesName).push({
           id: p.id,
           name: p.name,
-          model: p.model || p.name,
+          model_code: p.model_code || p.name,
           price: highestPrice,
           highestPrice: highestPrice,
           highestPriceText: highestPrice > 0 ? ('¥' + highestPrice) : '询价',
@@ -145,35 +145,43 @@ Page({
       return
     }
     this.setData({ isSearchMode: true, searchLoading: true, searchResults: [] })
-    searchApi.search(kw).then(res => {
+    searchApi.search(kw, { pageSize: 500 }).then(res => {
       const data = res.data || res || []
       const list = Array.isArray(data) ? data : (data.list || [])
-      const seriesMap = new Map()
+      const categoryMap = new Map()
       list.forEach(p => {
         let highestPrice = 0
         if (p.Prices && p.Prices.length > 0) {
           highestPrice = Math.max(...p.Prices.map(pr => pr.price || 0))
         }
-        const seriesName = p.series_name || '其他'
-        if (!seriesMap.has(seriesName)) {
-          seriesMap.set(seriesName, [])
+        const categoryName = (p.Category && p.Category.name) || '其他分类'
+        const brandName = (p.Brand && p.Brand.name) || '其他品牌'
+        if (!categoryMap.has(categoryName)) {
+          categoryMap.set(categoryName, new Map())
         }
-        seriesMap.get(seriesName).push({
+        const brandMap = categoryMap.get(categoryName)
+        if (!brandMap.has(brandName)) {
+          brandMap.set(brandName, [])
+        }
+        brandMap.get(brandName).push({
           id: p.id,
           name: p.name,
-          model: p.model || p.name,
+          model_code: p.model_code || p.name,
           price: highestPrice,
           highestPrice: highestPrice,
           highestPriceText: highestPrice > 0 ? ('¥' + highestPrice) : '询价',
           series: p.series_name || '',
-          brand: (p.Brand && p.Brand.name) || '',
           image: p.image || '',
           productId: p.id
         })
       })
       const searchResults = []
-      seriesMap.forEach((products, title) => {
-        searchResults.push({ title, products })
+      categoryMap.forEach((brandMap, categoryName) => {
+        const brands = []
+        brandMap.forEach((products, brandName) => {
+          brands.push({ brandName, products })
+        })
+        searchResults.push({ categoryName, brands })
       })
       this.setData({ searchResults, searchLoading: false })
     }).catch(() => {
@@ -227,7 +235,7 @@ Page({
     }
     this.setData({ showModal: false })
     wx.navigateTo({
-      url: '/pages/price-trend/price-trend?productId=' + productId + '&model=' + encodeURIComponent(product.model || product.name || '')
+      url: '/pages/price-trend/price-trend?productId=' + productId + '&model=' + encodeURIComponent(product.model_code || product.name || '')
     })
   },
 

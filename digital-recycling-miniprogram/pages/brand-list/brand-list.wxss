@@ -352,6 +352,32 @@
 }
 .add-cart-btn:active { background: #e62540; }
 
+/* ===== 搜索结果层级标题 ===== */
+.search-category-title {
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 700;
+  padding: 24rpx 12rpx 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.search-category-title::before {
+  content: '';
+  width: 8rpx;
+  height: 28rpx;
+  background: #ff2d4a;
+  border-radius: 4rpx;
+}
+
+.search-brand-title {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 500;
+  padding: 16rpx 20rpx 6rpx;
+  color: #ff2d4a;
+}
+
 /* 全屏加载 */
 .full-loading {
   display: flex;

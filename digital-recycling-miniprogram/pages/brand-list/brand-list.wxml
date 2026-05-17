@@ -17,7 +17,7 @@
       <button class="search-btn" bindtap="doSearch">搜索</button>
     </view>
 
-    <view class="category-tabs" wx:if="{{categories.length > 0}}">
+    <view class="category-tabs" wx:if="{{categories.length > 0 && !isSearchMode}}">
       <view class="category-tab {{index === currentCategoryIndex ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="switchCategory" data-index="{{index}}">
         {{item.name}}
       </view>
@@ -30,14 +30,18 @@
           <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}">
             <loading-spinner wx:if="{{searchLoading}}" size="small" color="gray" />
             <block wx:elif="{{searchResults.length > 0}}">
-              <block wx:for="{{searchResults}}" wx:key="title">
-                <view class="group-title">{{item.title}}</view>
-                <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
-                  <view class="product-info">
-                    <view class="p-name">{{product.model || product.name}}</view>
+              <block wx:for="{{searchResults}}" wx:key="categoryName">
+                <!-- <view class="search-category-title">{{item.categoryName}}</view> -->
+                <block wx:for="{{item.brands}}" wx:for-item="brand" wx:key="brandName">
+               
+                  <view class="product-card" wx:for="{{brand.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
+                    <view class="product-info">
+                      <view class="p-name">{{product.model_code || product.name}}</view>
+                    </view>
+                    <view class="search-brand-title">{{item.categoryName}} ->{{brand.brandName}}</view>
+                    <!-- <view class="product-price">{{product.highestPriceText}}</view> -->
                   </view>
-                  <view class="product-price">{{product.highestPriceText}}</view>
-                </view>
+                </block>
               </block>
             </block>
             <empty-state wx:else text="未找到相关产品" />
@@ -62,7 +66,7 @@
               <view class="group-title">{{item.title}}</view>
               <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
                 <view class="product-info">
-                  <view class="p-name">{{product.model || product.name}}</view>
+                  <view class="p-name">{{product.model_code || product.name}}</view>
                 </view>
                 <view class="product-price">{{product.highestPriceText}}</view>
               </view>
@@ -84,7 +88,7 @@
     <view class="modal-overlay" wx:if="{{showModal}}" bindtap="closeModal">
       <view class="modal-panel" catchtap="nop">
         <view class="modal-header">
-          <view class="modal-title">{{selectedProduct.model || selectedProduct.name || '产品详情'}}</view>
+          <view class="modal-title">{{selectedProduct.model_code || selectedProduct.name || '产品详情'}}</view>
           <view class="modal-close" bindtap="closeModal">×</view>
         </view>
         <view class="modal-image-area">

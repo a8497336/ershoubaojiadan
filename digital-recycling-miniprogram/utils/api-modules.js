@@ -116,6 +116,10 @@ const searchApi = {
   getHotKeywords: () => request({ url: '/search/hot' })
 }
 
+const scanApi = {
+  recognize: (data) => request({ url: '/scan/recognize', method: 'POST', data })
+}
+
 const userStockApi = {
   getList: (data) => request({ url: '/user-stock', data }),
   addStock: (data) => request({ url: '/user-stock', method: 'POST', data }),
@@ -146,6 +150,7 @@ module.exports = {
   feedbackApi,
   contentApi,
   searchApi,
+  scanApi,
   userStockApi,
   settingsApi,
   uploadFile
