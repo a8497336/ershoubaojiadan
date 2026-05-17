@@ -6,7 +6,7 @@ Page = function (options) {
   if (!options.onShareAppMessage) {
     options.onShareAppMessage = function () {
       return {
-        title: '数码回收网 - 专业数码产品回收平台',
+        title: '联赢电子回收网 - 专业数码产品回收平台',
         path: '/pages/index/index'
       }
     }

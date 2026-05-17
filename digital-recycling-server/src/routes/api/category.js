@@ -65,6 +65,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
         as: 'Brands',
         where: { status: 1 },
         required: false,
+        separate: true,
         order: [['sort_order', 'ASC']]
       }]
     })

@@ -61,6 +61,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '数码回收网 - 会员中心', path: '/pages/membership/membership' }
+    return { title: '联赢电子回收网 - 会员中心', path: '/pages/membership/membership' }
   }
 })

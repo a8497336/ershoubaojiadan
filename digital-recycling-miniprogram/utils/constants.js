@@ -14,7 +14,7 @@ const STORE = {
     contact_phone: '18755875222',
     province: '安徽省阜阳市',
     city: '太和县',
-    address: '双浮镇双北路1号数码回收网废旧手机回收中心（五星大桥南50米路）',
+    address: '双浮镇双北路1号联赢电子回收网废旧手机回收中心（五星大桥南50米路）',
     latitude: 33.1624,
     longitude: 115.6218
   }

@@ -129,6 +129,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '数码回收网 - 消息中心', path: '/pages/message-center/message-center' }
+    return { title: '联赢电子回收网 - 消息中心', path: '/pages/message-center/message-center' }
   }
 })

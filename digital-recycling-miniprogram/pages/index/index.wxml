@@ -16,7 +16,7 @@
   <block wx:if="{{!loading && !networkError}}">
     <!-- 顶部导航栏 -->
     <view class="nav-bar" style="padding-top: {{statusBarHeight}}px;">
-      <view class="title">数码回收网报价单</view>
+      <view class="title">联赢电子回收网</view>
     </view>
 
     <!-- Banner轮播 -->
@@ -99,7 +99,7 @@
       </view>
       <view class="store-address" bindtap="openLocation">
         <view class="store-label" style="flex:1;">
-          <text>📍 {{storeInfo.province || '安徽省阜阳市'}}{{storeInfo.city || '太和县'}}{{storeInfo.address || '双浮镇双北路1号数码回收网废旧手机回收中心（五星大桥南50米路）'}}</text>
+          <text>📍 {{storeInfo.province || '安徽省阜阳市'}}{{storeInfo.city || '太和县'}}{{storeInfo.address || '双浮镇双北路1号联赢电子回收网废旧手机回收中心（五星大桥南50米路）'}}</text>
         </view>
         <text class="store-action">导航 ></text>
       </view>

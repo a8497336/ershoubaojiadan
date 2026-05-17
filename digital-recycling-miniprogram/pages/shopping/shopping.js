@@ -157,6 +157,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '数码回收网 - 回收车', path: '/pages/shopping/shopping' }
+    return { title: '联赢电子回收网 - 回收车', path: '/pages/shopping/shopping' }
   }
 })

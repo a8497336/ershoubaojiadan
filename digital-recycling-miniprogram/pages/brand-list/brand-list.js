@@ -24,7 +24,12 @@ Page({
     statusBarHeight: 0,
     isSearchMode: false,
     searchResults: [],
-    searchLoading: false
+    searchLoading: false,
+    productPage: 1,
+    productPageSize: 20,
+    productHasMore: true,
+    productLoadingMore: false,
+    productScrollTop: 0
   },
 
   onLoad(options) {
@@ -94,13 +99,35 @@ Page({
 
   selectBrand(e) {
     const id = e.currentTarget.dataset.id
-    this.setData({ selectedBrandId: id, productsLoading: true })
+    this.setData({
+      selectedBrandId: id,
+      productsLoading: true,
+      productPage: 1,
+      productHasMore: true,
+      productGroups: [],
+      productLoadingMore: false,
+      productScrollTop: 0
+    })
+    this.loadProducts(1)
+  },
 
-    productApi.getProducts({ brand_id: id }).then(res => {
+  loadProducts(page) {
+    const isFirstPage = page === 1
+    this.setData({
+      productsLoading: isFirstPage,
+      productLoadingMore: !isFirstPage
+    })
+
+    productApi.getProducts({
+      brand_id: this.data.selectedBrandId,
+      page: page,
+      pageSize: this.data.productPageSize
+    }).then(res => {
       const data = res.data || {}
       const prods = data.list || data || []
+      const list = Array.isArray(prods) ? prods : []
       const seriesMap = new Map()
-      ;(Array.isArray(prods) ? prods : []).forEach(p => {
+      list.forEach(p => {
         let highestPrice = 0
         if (p.Prices && p.Prices.length > 0) {
           highestPrice = Math.max(...p.Prices.map(pr => pr.price || 0))
@@ -124,13 +151,41 @@ Page({
           productId: p.id
         })
       })
-      const productGroups = []
-      seriesMap.forEach((products, title) => {
-        productGroups.push({ title, products })
+
+      if (isFirstPage) {
+        const newGroups = []
+        seriesMap.forEach((products, title) => {
+          newGroups.push({ title, products })
+        })
+        this.setData({
+          productGroups: newGroups,
+          productsLoading: false
+        })
+      } else {
+        const groups = this.data.productGroups.map(g => ({
+          title: g.title,
+          products: [...g.products]
+        }))
+        seriesMap.forEach((newProducts, title) => {
+          const idx = groups.findIndex(g => g.title === title)
+          if (idx >= 0) {
+            groups[idx].products = [...groups[idx].products, ...newProducts]
+          } else {
+            groups.push({ title, products: newProducts })
+          }
+        })
+        this.setData({
+          productGroups: groups,
+          productLoadingMore: false
+        })
+      }
+
+      this.setData({
+        productPage: page,
+        productHasMore: list.length >= this.data.productPageSize
       })
-      this.setData({ productGroups, productsLoading: false })
     }).catch(() => {
-      this.setData({ productGroups: [], productsLoading: false })
+      this.setData({ productsLoading: false, productLoadingMore: false })
     })
   },
 
@@ -298,5 +353,10 @@ Page({
     wx.navigateBack({ delta: 1 })
   },
 
-  loadMoreProducts() {}
+  loadMoreProducts() {
+    if (!this.data.productHasMore || this.data.productLoadingMore || this.data.productsLoading) return
+    const nextPage = this.data.productPage + 1
+    this.setData({ productPage: nextPage })
+    this.loadProducts(nextPage)
+  }
 })

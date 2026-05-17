@@ -182,6 +182,13 @@
   margin-left: 24rpx;
 }
 
+.no-more {
+  text-align: center;
+  font-size: 24rpx;
+  color: #ccc;
+  padding: 32rpx 0;
+}
+
 /* ===== 浮动回收车按钮 ===== */
 .floating-cart {
   position: fixed;

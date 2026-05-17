@@ -61,7 +61,7 @@
         </view>
 
         <view class="product-list-area">
-          <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMoreProducts">
+          <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMoreProducts" scroll-top="{{productScrollTop}}">
             <block wx:for="{{productGroups}}" wx:key="title">
               <view class="group-title">{{item.title}}</view>
               <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
@@ -73,6 +73,8 @@
             </block>
             <empty-state wx:if="{{productGroups.length === 0 && !productsLoading}}" text="暂无产品，请先选择品牌" />
             <loading-spinner wx:if="{{productsLoading}}" size="small" color="gray" />
+            <loading-spinner wx:if="{{productLoadingMore}}" size="small" color="gray" />
+            <view wx:if="{{!productHasMore && productGroups.length > 0}}" class="no-more">— 已加载全部 —</view>
           </scroll-view>
         </view>
       </view>

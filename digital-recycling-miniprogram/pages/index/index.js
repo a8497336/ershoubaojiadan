@@ -276,7 +276,8 @@ Page({
   fetchBanners() {
     return new Promise(resolve => {
       contentApi.getBanners().then(res => {
-        resolve(res.data || [])
+        const list = (res.data || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        resolve(list)
       }).catch(() => resolve([]))
     })
   },
@@ -342,7 +343,8 @@ Page({
     this.setData({ brandsLoading: true, currentCategorySection: { id: cat.id, name: cat.name, code: cat.code || '' } })
     console.log(this.data.currentCategorySection,this.data.currentBrands)
     if (cat.Brands && cat.Brands.length > 0) {
-      const brands = cat.Brands.map(b => ({
+      const sorted = [...cat.Brands].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      const brands = sorted.map(b => ({
         id: b.id, name: b.name,
         bg_color: b.bg_color || 'bg-apple',
         icon_text: b.icon_text || (b.name ? b.name.substring(0, 2) : ''),
@@ -352,7 +354,9 @@ Page({
       this.setData({ currentBrands: brands, brandsLoading: false })
     } else {
       categoryApi.getCategoryBrands(cat.id).then(res => {
-        const brands = (res.data || res || []).map(b => ({
+        const raw = res.data || res || []
+        const sorted = [...raw].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        const brands = sorted.map(b => ({
           id: b.id, name: b.name,
           bg_color: b.bg_color || 'bg-apple',
           icon_text: b.icon_text || (b.name ? b.name.substring(0, 2) : ''),
@@ -521,7 +525,7 @@ Page({
     wx.openLocation({
       latitude: s.latitude ? Number(s.latitude) : STORE.DEFAULT_STORE.latitude,
       longitude: s.longitude ? Number(s.longitude) : STORE.DEFAULT_STORE.longitude,
-      name: s.name || '数码回收网废旧手机回收中心',
+      name: s.name || '联赢电子回收网废旧手机回收中心',
       address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
     })
   },

@@ -273,11 +273,11 @@ Page({
 
   onShareAppMessage() {
     const { brand, category } = this.data
-    let title = '数码回收网 - 今日回收报价'
+    let title = '联赢电子回收网 - 今日回收报价'
     if (brand) {
-      title = `数码回收网 - ${brand}回收报价`
+      title = `联赢电子回收网 - ${brand}回收报价`
     } else if (category) {
-      title = `数码回收网 - ${category}回收报价`
+      title = `联赢电子回收网 - ${category}回收报价`
     }
     return {
       title,

@@ -197,6 +197,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '数码回收网 - 订单详情', path: '/pages/order-list/order-list' }
+    return { title: '联赢电子回收网 - 订单详情', path: '/pages/order-list/order-list' }
   }
 })

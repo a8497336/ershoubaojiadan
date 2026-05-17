@@ -60,7 +60,7 @@
  *         description: 更新成功
  *   delete:
  *     tags: [管理端-产品管理]
- *     summary: 删除产品(软删除)
+ *     summary: 删除产品(硬删除)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -434,7 +434,7 @@ router.delete('/:id', adminAuth, async (req, res, next) => {
   try {
     const product = await db.Product.findByPk(req.params.id)
     if (!product) return notFound(res, '产品不存在')
-    await product.update({ status: 0 })
+    await product.destroy()
     return success(res, null, '删除成功')
   } catch (err) { next(err) }
 })
@@ -509,7 +509,6 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     const existingProducts = await db.Product.findAll({ where: { brand_id: brand.id } })
     const productMap = new Map(existingProducts.map(p => [p.name, p]))
     const productIds = existingProducts.map(p => p.id)
-    const deletedProductIds = existingProducts.filter(p => p.status === 0).map(p => p.id)
 
     const existingPrices = productIds.length > 0
       ? await db.Price.findAll({ where: { product_id: { [Op.in]: productIds }, effective_date: effectiveDate } })
@@ -698,11 +697,6 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
           db.Product.update({ series_name: p.series_name }, { where: { id: p.id } })
         )
       ])
-    }
-
-    // 恢复已删除产品 status=1（重新导入时自动激活）
-    if (deletedProductIds.length > 0) {
-      await db.Product.update({ status: 1 }, { where: { id: { [Op.in]: deletedProductIds } } })
     }
 
     if (stats.products === 0 && stats.productsUpdated === 0) {

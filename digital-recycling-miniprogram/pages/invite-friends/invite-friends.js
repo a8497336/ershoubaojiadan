@@ -49,7 +49,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: '数码回收网 - 专业数码产品回收平台',
+      title: '联赢电子回收网 - 专业数码产品回收平台',
       path: `/pages/index/index?invite_code=${this.data.inviteCode}`
     }
   }

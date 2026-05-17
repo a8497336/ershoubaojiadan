@@ -1,7 +1,7 @@
 <view class="login-container">
   <view class="login-header" style="padding-top: {{loginHeaderPaddingTop}}px;">
     <image class="logo" src="/images/tabbar/recycle.svg" mode="aspectFit"></image>
-    <view class="brand-name">数码回收网</view>
+    <view class="brand-name">联赢电子回收网</view>
     <view class="slogan">专业回收，放心交易</view>
   </view>
 

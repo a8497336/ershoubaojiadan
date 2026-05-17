@@ -265,6 +265,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '数码回收网 - 拍照查价', path: '/pages/scan-price/scan-price' }
+    return { title: '联赢电子回收网 - 拍照查价', path: '/pages/scan-price/scan-price' }
   }
 })
