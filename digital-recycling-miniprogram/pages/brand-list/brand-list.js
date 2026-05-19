@@ -3,7 +3,6 @@ const contentApi = require('../../utils/api-modules').contentApi
 const categoryApi = require('../../utils/api-modules').categoryApi
 const productApi = require('../../utils/api-modules').productApi
 const cartApi = require('../../utils/api-modules').cartApi
-const searchApi = require('../../utils/api-modules').searchApi
 
 Page({
   data: {
@@ -22,9 +21,6 @@ Page({
     conditionsLoading: false,
     cartCount: 0,
     statusBarHeight: 0,
-    isSearchMode: false,
-    searchResults: [],
-    searchLoading: false,
     productPage: 1,
     productPageSize: 20,
     productHasMore: true,
@@ -33,19 +29,12 @@ Page({
   },
 
   onLoad(options) {
-    if (options.keyword) {
-      this.setData({ searchKeyword: decodeURIComponent(options.keyword || '') })
-    }
     if (options.categoryId) {
       this.setData({ currentCategoryIndex: parseInt(options.categoryId) || 0 })
     }
     this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true })
     this.setData({ statusBarHeight: app.globalData.statusBarHeight })
-    if (this.data.searchKeyword) {
-      this.doSearch()
-    } else {
-      this.loadData()
-    }
+    this.loadData()
   },
 
   onShow() {
@@ -193,56 +182,13 @@ Page({
     this.setData({ searchKeyword: e.detail.value })
   },
 
-  doSearch() {
-    const kw = (this.data.searchKeyword || '').trim()
-    if (!kw) {
-      this.setData({ isSearchMode: false, searchResults: [] })
-      return
+  goToSearch() {
+    const keyword = (this.data.searchKeyword || '').trim()
+    let url = '/pages/product-search/product-search'
+    if (keyword) {
+      url += '?keyword=' + encodeURIComponent(keyword)
     }
-    this.setData({ isSearchMode: true, searchLoading: true, searchResults: [] })
-    searchApi.search(kw, { pageSize: 500 }).then(res => {
-      const data = res.data || res || []
-      const list = Array.isArray(data) ? data : (data.list || [])
-      const categoryMap = new Map()
-      list.forEach(p => {
-        let highestPrice = 0
-        if (p.Prices && p.Prices.length > 0) {
-          highestPrice = Math.max(...p.Prices.map(pr => pr.price || 0))
-        }
-        const categoryName = (p.Category && p.Category.name) || '其他分类'
-        const brandName = (p.Brand && p.Brand.name) || '其他品牌'
-        if (!categoryMap.has(categoryName)) {
-          categoryMap.set(categoryName, new Map())
-        }
-        const brandMap = categoryMap.get(categoryName)
-        if (!brandMap.has(brandName)) {
-          brandMap.set(brandName, [])
-        }
-        brandMap.get(brandName).push({
-          id: p.id,
-          name: p.name,
-          model_code: p.model_code || p.name,
-          price: highestPrice,
-          highestPrice: highestPrice,
-          highestPriceText: highestPrice > 0 ? ('¥' + highestPrice) : '询价',
-          series: p.series_name || '',
-          image: p.image || '',
-          productId: p.id
-        })
-      })
-      const searchResults = []
-      categoryMap.forEach((brandMap, categoryName) => {
-        const brands = []
-        brandMap.forEach((products, brandName) => {
-          brands.push({ brandName, products })
-        })
-        searchResults.push({ categoryName, brands })
-      })
-      this.setData({ searchResults, searchLoading: false })
-    }).catch(() => {
-      this.setData({ searchLoading: false })
-      wx.showToast({ title: '搜索失败，请重试', icon: 'none' })
-    })
+    wx.navigateTo({ url })
   },
 
   openProductDetail(e) {

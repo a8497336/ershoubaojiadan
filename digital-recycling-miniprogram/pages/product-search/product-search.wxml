@@ -1,0 +1,59 @@
+<view class="search-page">
+  <view class="search-section">
+    <view class="search-input-box">
+      <text class="s-icon">🔍</text>
+      <input type="text" placeholder="搜索品牌产品" value="{{searchKeyword}}" bindinput="onSearchInput" bindconfirm="doSearch" />
+    </view>
+    <button class="search-btn" bindtap="doSearch">搜索</button>
+  </view>
+
+  <scroll-view class="results-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <loading-spinner wx:if="{{searchLoading}}" size="small" color="gray" />
+    <block wx:elif="{{searchResults.length > 0}}">
+      <block wx:for="{{searchResults}}" wx:key="categoryName">
+        <block wx:for="{{item.brands}}" wx:for-item="brand" wx:key="brandName">
+          <view class="product-card" wx:for="{{brand.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
+            <view class="product-info">
+              <view class="p-name">{{product.model_code || product.name}}</view>
+            </view>
+            <view class="search-brand-title">{{item.categoryName}} -&gt;{{brand.brandName}}</view>
+          </view>
+        </block>
+      </block>
+    </block>
+    <empty-state wx:elif="{{hasSearched}}" text="未找到相关产品" />
+  </scroll-view>
+
+  <view class="modal-overlay" wx:if="{{showModal}}" bindtap="closeModal">
+    <view class="modal-panel" catchtap="nop">
+      <view class="modal-header">
+        <view class="modal-title">{{selectedProduct.model_code || selectedProduct.name || '产品详情'}}</view>
+        <view class="modal-close" bindtap="closeModal">×</view>
+      </view>
+      <view class="modal-image-area">
+        <image wx:if="{{selectedProduct.image}}" src="{{selectedProduct.image}}" mode="aspectFit" />
+        <text wx:else>📱</text>
+      </view>
+      <view class="trend-btn" bindtap="goToPriceTrend">📈 价格趋势</view>
+      <view class="condition-section">
+        <view class="condition-label">成色价格</view>
+        <loading-spinner wx:if="{{conditionsLoading}}" size="small" color="gray" />
+        <block wx:elif="{{conditions.length > 0}}">
+          <view class="condition-list">
+            <view class="condition-price-row" wx:for="{{conditions}}" wx:key="conditionId">
+              <view class="condition-name">{{item.conditionName}}</view>
+              <view class="condition-price {{item.price > 0 ? '' : 'zero'}}">{{item.priceText}}</view>
+              <view class="condition-qty-ctrl">
+                <view class="qty-btn {{item.quantity <= 0 ? 'disabled' : ''}}" bindtap="decreaseConditionQty" data-index="{{index}}">−</view>
+                <text class="qty-num">{{item.quantity}}</text>
+                <view class="qty-btn" bindtap="increaseConditionQty" data-index="{{index}}">+</view>
+              </view>
+            </view>
+          </view>
+        </block>
+        <view class="condition-empty" wx:else>暂无成色信息</view>
+      </view>
+      <button class="add-cart-btn" bindtap="addToCart">加入回收车</button>
+    </view>
+  </view>
+</view>

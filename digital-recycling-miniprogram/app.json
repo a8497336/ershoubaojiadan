@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/index/index",
     "pages/brand-list/brand-list",
+    "pages/product-search/product-search",
     "pages/price-quote/price-quote",
     "pages/price-trend/price-trend",
     "pages/my-stock/my-stock",

@@ -68,6 +68,12 @@
           <el-table-column prop="Brand.name" label="品牌" width="100" />
           <el-table-column prop="name" label="产品名称" />
           <el-table-column prop="model_code" label="型号" width="120" />
+          <el-table-column label="图片" width="70">
+            <template #default="{ row }">
+              <el-image v-if="row.image" :src="row.image" style="width: 40px; height: 40px" fit="cover" />
+              <span v-else>/</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="sort_order" label="排序" width="80" />
           <el-table-column label="操作" width="160">
             <template #default="{ row }">
@@ -101,6 +107,20 @@
           <el-form-item label="系列"><el-input v-model="formData.series_name" /></el-form-item>
           <el-form-item label="型号"><el-input v-model="formData.model_code" /></el-form-item>
           <el-form-item label="排序"><el-input-number v-model="formData.sort_order" :min="0" /></el-form-item>
+          <el-form-item label="图片">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <el-upload
+                :http-request="handleImageUpload"
+                :before-upload="beforeImageUpload"
+                :show-file-list="false"
+                accept=".jpeg,.jpg,.png,.gif,.webp"
+              >
+                <el-image v-if="formData.image" :src="formData.image" style="width: 80px; height: 80px" fit="cover" />
+                <el-button v-else type="primary">上传</el-button>
+              </el-upload>
+              <el-button v-if="formData.image" type="danger" plain size="small" @click="formData.image = ''">删除</el-button>
+            </div>
+          </el-form-item>
         </template>
       </el-form>
       <template #footer>
@@ -184,7 +204,7 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct, importProducts } from '@/api'
+import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct, importProducts, uploadFile } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const activeTab = ref('category')
@@ -272,6 +292,34 @@ const handleProductBrandChange = (brandId) => {
   const brand = allBrands.value.find(b => b.id === brandId)
   if (brand && brand.category_id) {
     formData.value.category_id = brand.category_id
+  }
+}
+
+const beforeImageUpload = (file) => {
+  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  if (!validTypes.includes(file.type)) {
+    ElMessage.error('只允许上传 jpeg/png/gif/webp 格式的图片')
+    return false
+  }
+  if (file.size / 1024 / 1024 > 5) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
+}
+
+const imageUploading = ref(false)
+
+const handleImageUpload = async (options) => {
+  const fd = new FormData()
+  fd.append('file', options.file)
+  try {
+    const res = await uploadFile(fd)
+    formData.value.image = res.url
+    ElMessage.success('上传成功')
+  } catch (error) {
+    console.error('上传图片失败:', error)
+    ElMessage.error('上传失败')
   }
 }
 

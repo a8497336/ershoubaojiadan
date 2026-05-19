@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "产品搜索",
+  "backgroundColor": "#f5f5f5",
+  "enablePullDownRefresh": false,
+  "disableScroll": true,
+  "usingComponents": {
+    "empty-state": "/components/common/empty-state/empty-state",
+    "loading-spinner": "/components/common/loading-spinner/loading-spinner"
+  }
+}

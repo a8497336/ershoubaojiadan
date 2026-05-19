@@ -12,47 +12,19 @@
     <view class="search-section">
       <view class="search-input-box">
         <text class="s-icon">🔍</text>
-        <input type="text" placeholder="搜索品牌产品" value="{{searchKeyword}}" bindinput="onSearchInput" bindconfirm="doSearch" />
+        <input type="text" placeholder="搜索品牌产品" value="{{searchKeyword}}" bindinput="onSearchInput" bindconfirm="goToSearch" />
       </view>
-      <button class="search-btn" bindtap="doSearch">搜索</button>
+      <button class="search-btn" bindtap="goToSearch">搜索</button>
     </view>
 
-    <view class="category-tabs" wx:if="{{categories.length > 0 && !isSearchMode}}">
+    <view class="category-tabs" wx:if="{{categories.length > 0}}">
       <view class="category-tab {{index === currentCategoryIndex ? 'active' : ''}}" wx:for="{{categories}}" wx:key="id" bindtap="switchCategory" data-index="{{index}}">
         {{item.name}}
       </view>
     </view>
 
-    <!-- 搜索模式 -->
-    <block wx:if="{{isSearchMode}}">
-      <view class="content-row">
-        <view class="product-list-area" style="width: 100%;">
-          <scroll-view class="product-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-            <loading-spinner wx:if="{{searchLoading}}" size="small" color="gray" />
-            <block wx:elif="{{searchResults.length > 0}}">
-              <block wx:for="{{searchResults}}" wx:key="categoryName">
-                <!-- <view class="search-category-title">{{item.categoryName}}</view> -->
-                <block wx:for="{{item.brands}}" wx:for-item="brand" wx:key="brandName">
-               
-                  <view class="product-card" wx:for="{{brand.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
-                    <view class="product-info">
-                      <view class="p-name">{{product.model_code || product.name}}</view>
-                    </view>
-                    <view class="search-brand-title">{{item.categoryName}} ->{{brand.brandName}}</view>
-                    <!-- <view class="product-price">{{product.highestPriceText}}</view> -->
-                  </view>
-                </block>
-              </block>
-            </block>
-            <empty-state wx:else text="未找到相关产品" />
-          </scroll-view>
-        </view>
-      </view>
-    </block>
-
     <!-- 浏览模式 -->
-    <block wx:else>
-      <view wx:if="{{brands.length > 0 || productGroups.length > 0}}" class="content-row">
+    <view wx:if="{{brands.length > 0 || productGroups.length > 0}}" class="content-row">
         <view class="brand-sidebar">
           <scroll-view class="brand-scroll" scroll-y enhanced show-scrollbar="{{false}}">
             <view class="brand-sidebar-item {{item.id === selectedBrandId ? 'active' : ''}}" wx:for="{{brands}}" wx:key="id" bindtap="selectBrand" data-id="{{item.id}}">{{item.name}}</view>
@@ -65,8 +37,12 @@
             <block wx:for="{{productGroups}}" wx:key="title">
               <view class="group-title">{{item.title}}</view>
               <view class="product-card" wx:for="{{item.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
+                <view class="product-image-area">
+                  <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" />
+                  <text wx:else class="product-placeholder">📱</text>
+                </view>
                 <view class="product-info">
-                  <view class="p-name">{{product.model_code || product.name}}</view>
+                  <view class="p-name">{{ product.name || product.model_code}}</view>
                 </view>
                 <view class="product-price">{{product.highestPriceText}}</view>
               </view>
@@ -80,7 +56,6 @@
       </view>
 
       <empty-state wx:else text="暂无数据" />
-    </block>
 
     <view class="floating-cart" bindtap="goToCart" wx:if="{{cartCount > 0}}">
       <text>🛒</text>
