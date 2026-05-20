@@ -315,7 +315,7 @@ const handleImageUpload = async (options) => {
   fd.append('file', options.file)
   try {
     const res = await uploadFile(fd)
-    formData.value.image = res.url
+    formData.value.image = res.data.url
     ElMessage.success('上传成功')
   } catch (error) {
     console.error('上传图片失败:', error)
