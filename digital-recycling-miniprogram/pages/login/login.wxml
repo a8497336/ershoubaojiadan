@@ -1,38 +1,43 @@
-<view class="login-container">
-  <view class="login-header" style="padding-top: {{loginHeaderPaddingTop}}px;">
-    <image class="logo" src="/images/tabbar/recycle.svg" mode="aspectFit"></image>
-    <view class="brand-name">联赢电子回收网</view>
-    <view class="slogan">专业回收，放心交易</view>
+<view class="login-page">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="navigateBack">‹</view>
+    <text class="nav-title">登录</text>
+    <view class="nav-right"></view>
   </view>
 
+  <!-- 内容区域 -->
   <view class="login-content">
-    <view class="login-btn-wrapper">
-      <button 
-        class="login-btn wechat-login" 
-        bindtap="handleWechatLogin"
-        loading="{{loading}}"
-      >
-        <image class="btn-icon" src="/images/icons/wechat.svg" mode="aspectFit"></image>
-        <text class="btn-text">微信一键登录</text>
+    <!-- Logo -->
+    <view class="logo-wrap">
+      <image class="logo-img" src="/images/icons/logo.svg" mode="aspectFit"/>
+    </view>
+
+    <!-- 权限说明 -->
+    <view class="permission-hint">
+      <text class="permission-title">申请获取以下权限</text>
+      <text class="permission-desc">获取您的公开信息(手机号、头像、昵称)</text>
+    </view>
+
+    <!-- 按钮组 -->
+    <view class="btn-group">
+      <button class="auth-login-btn {{loggingIn ? 'btn-disabled' : ''}}"
+              bindtap="handleWechatLogin"
+              disabled="{{loggingIn}}">
+        授权登录
+      </button>
+      <button class="sms-login-btn" bindtap="handleSmsLogin">
+        验证码登录
       </button>
     </view>
-
-    <view class="agreement-wrapper">
-      <view class="checkbox-wrapper" bindtap="toggleAgreement">
-        <image 
-          class="checkbox {{isAgreed ? 'checked' : ''}}" 
-          src="{{isAgreed ? '/images/examples/correct.svg' : '/images/icons/empty.svg'}}" 
-          mode="aspectFit"
-        ></image>
-        <text class="agreement-text">我已阅读并同意</text>
-      </view>
-      <text class="agreement-link" bindtap="openAgreement">《用户服务协议》</text>
-      <text class="agreement-text">和</text>
-      <text class="agreement-link" bindtap="openPrivacy">《隐私政策》</text>
-    </view>
   </view>
 
-  <view class="login-footer">
-    <text class="footer-text">登录即表示您同意我们的服务条款</text>
+  <!-- 协议勾选 -->
+  <view class="agreement-footer safe-area-bottom">
+    <view class="agreement-check {{isAgreed ? 'checked' : ''}}" bindtap="onAgreementChange"></view>
+    <text class="agreement-label">我已阅读并同意</text>
+    <text class="agreement-link">《用户协议》</text>
+    <text class="agreement-label">、</text>
+    <text class="agreement-link">《隐私政策协议》</text>
   </view>
 </view>

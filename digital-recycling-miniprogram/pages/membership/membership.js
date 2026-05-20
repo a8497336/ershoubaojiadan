@@ -2,19 +2,21 @@ const { membershipApi, userApi } = require('../../utils/api-modules')
 
 Page({
   data: {
+    redirectUrl: '',
     plans: [],
-    memberStatus: null,
     userInfo: null,
     loading: true
   },
 
-  onLoad() {
+  onLoad(options) {
+    if (options && options.redirect) {
+      this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
+    }
     this.loadPlans()
-    this.loadMemberStatus()
+    this.loadUserInfo()
   },
 
   loadPlans() {
-    this.setData({ loading: true })
     membershipApi.getPlans().then((res) => {
       this.setData({ plans: res.data || [], loading: false })
     }).catch(() => {
@@ -22,42 +24,21 @@ Page({
     })
   },
 
-  loadMemberStatus() {
-    membershipApi.getStatus().then((res) => {
-      this.setData({ memberStatus: res.data || res })
-    }).catch(() => {})
-
+  loadUserInfo() {
     userApi.getProfile().then((res) => {
       this.setData({ userInfo: res.data || res })
     }).catch(() => {})
   },
 
-  purchasePlan(e) {
-    const planId = e.currentTarget.dataset.id
-    const plan = this.data.plans.find(p => p.id === planId)
-    if (!plan) return
+  goToLogin() {
+    const url = this.data.redirectUrl
+      ? '/pages/login/login?redirect=' + encodeURIComponent(this.data.redirectUrl)
+      : '/pages/login/login'
+    wx.navigateTo({ url })
+  },
 
-    wx.showModal({
-      title: '确认购买',
-      content: `确定购买「${plan.name}」套餐，价格 ¥${plan.price}？`,
-      success: (res) => {
-        if (res.confirm) {
-          membershipApi.purchase(planId).then((res) => {
-            wx.showToast({ title: '订单创建成功', icon: 'success' })
-            setTimeout(() => {
-              membershipApi.payCallback(res.data.orderNo).then(() => {
-                wx.showToast({ title: '会员开通成功', icon: 'success' })
-                this.loadMemberStatus()
-              }).catch(() => {
-                wx.showToast({ title: '支付失败', icon: 'none' })
-              })
-            }, 1000)
-          }).catch(() => {
-            wx.showToast({ title: '购买失败', icon: 'none' })
-          })
-        }
-      }
-    })
+  navigateBack() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
   },
 
   onShareAppMessage() {

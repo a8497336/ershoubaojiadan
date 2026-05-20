@@ -167,7 +167,13 @@ Page({
       { bg: 'bg-sugar', icon: '威士忌', iconStyle: 'font-size:16rpx;', name: '洋酒威士忌' }
     ],
 
-    searchTimer: null
+    searchTimer: null,
+
+    showLocationSheet: false,
+    showPrivacySheet: false,
+    locationAgreed: false,
+    privacyAgreed: false,
+    locationSheetChecked: false
   },
 
   onLoad() {
@@ -176,9 +182,10 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+    if (this.getTabBar) {
       this.getTabBar().setData({ activeTab: 'home' })
     }
+    this.checkPermissionSheets()
   },
 
   onHide() {
@@ -201,31 +208,14 @@ Page({
 
   init() {
     this.setData({ loading: true, networkError: false })
-    this.waitForLogin().then(() => {
-      this.fetchHomeData().then(() => {
-        this.setData({ loading: false })
-        this.startBannerRotation()
-        this.startAnnouncementRotation()
-      }).catch(() => {
-        this.setData({ loading: false, networkError: true })
-      })
+    this.fetchHomeData().then(() => {
+      this.setData({ loading: false })
+      this.startBannerRotation()
+      this.startAnnouncementRotation()
     }).catch(() => {
       this.setData({ loading: false, networkError: true })
     })
     wx.stopPullDownRefresh()
-  },
-
-  waitForLogin() {
-    return new Promise((resolve) => {
-      const check = () => {
-        const token = wx.getStorageSync('token')
-        if (token) return resolve()
-        if (this._loginCheckCount === undefined) this._loginCheckCount = 0
-        if (this._loginCheckCount++ > 25) return resolve()
-        setTimeout(check, 200)
-      }
-      check()
-    })
   },
 
   async fetchHomeData() {
@@ -309,6 +299,13 @@ Page({
   },
 
   processStore(stores) {
+    const fallback = { ...stores[0] }
+    this.setData({ storeInfo: fallback || null })
+  },
+
+  requestStoreLocation() {
+    const stores = this.data.storesData
+    if (!stores || stores.length === 0) return
     wx.getLocation({
       type: 'gcj02',
       success: (res) => {
@@ -320,9 +317,10 @@ Page({
             if (dist < minDist) { minDist = dist; nearest = { ...s, distance: dist.toFixed(2) } }
           }
         })
-        this.setData({ storeInfo: nearest || stores[0] })
-      },
-      fail: () => { this.setData({ storeInfo: stores[0] || null }) }
+        if (nearest) {
+          this.setData({ storeInfo: nearest })
+        }
+      }
     })
   },
 
@@ -485,7 +483,7 @@ Page({
       brandName = e.currentTarget.dataset.name || ''
     }
     if (brandId) {
-      wx.navigateTo({ url: '/pages/price-quote/price-quote?brandId=' + brandId + '&title=' + encodeURIComponent(brandName) })
+      this.requireLogin('/pages/price-quote/price-quote?brandId=' + brandId + '&title=' + encodeURIComponent(brandName))
     } else {
       wx.switchTab({ url: '/pages/brand-list/brand-list' })
     }
@@ -495,7 +493,7 @@ Page({
     const id = e ? e.currentTarget.dataset.id : ''
     const name = e ? e.currentTarget.dataset.name : ''
     if (id) {
-      wx.navigateTo({ url: '/pages/price-quote/price-quote?brandId=' + id + '&title=' + encodeURIComponent(name || '') })
+      this.requireLogin('/pages/price-quote/price-quote?brandId=' + id + '&title=' + encodeURIComponent(name || ''))
     } else {
       wx.switchTab({ url: '/pages/brand-list/brand-list' })
     }
@@ -503,7 +501,7 @@ Page({
 
   goToScanPrice() { wx.switchTab({ url: '/pages/scan-price/scan-price' }) },
   goToInvite() { wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }) },
-  goToPriceQuote() { wx.navigateTo({ url: '/pages/price-quote/price-quote' }) },
+  goToPriceQuote() { this.requireLogin('/pages/price-quote/price-quote') },
   goToVideoList() { wx.navigateTo({ url: '/pages/video-list/video-list' }) },
   goToRecyclingProcess() { wx.navigateTo({ url: '/pages/recycling-process/recycling-process' }) },
 
@@ -522,10 +520,11 @@ Page({
   openLocation() {
     const s = this.data.storeInfo
     if (!s) { this.showToast('暂无门店信息'); return }
+    if (!s.latitude || !s.longitude) { this.showToast('门店坐标未设置，暂时无法导航'); return }
     wx.openLocation({
-      latitude: s.latitude ? Number(s.latitude) : STORE.DEFAULT_STORE.latitude,
-      longitude: s.longitude ? Number(s.longitude) : STORE.DEFAULT_STORE.longitude,
-      name: s.name || '联赢电子回收网废旧手机回收中心',
+      latitude: Number(s.latitude),
+      longitude: Number(s.longitude),
+      name: s.name || '门店位置',
       address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
     })
   },
@@ -533,7 +532,7 @@ Page({
   goToStoreList() {
     const s = this.data.storeInfo
     if (s && s.latitude && s.longitude) { this.openLocation() }
-    else { this.showToast('暂无门店信息') }
+    else { this.showToast('门店坐标未设置，暂时无法导航') }
   },
 
   scrollToTop() { wx.pageScrollTo({ scrollTop: 0, duration: 300 }) },
@@ -580,5 +579,66 @@ Page({
 
   stopAnnouncementRotation() {
     if (this.data.announcementTimer) { clearInterval(this.data.announcementTimer); this.data.announcementTimer = null }
+  },
+
+  checkPermissionSheets() {
+    const locationDone = wx.getStorageSync('location_permission_done')
+    const privacyDone = wx.getStorageSync('privacy_permission_done')
+    if (!locationDone) {
+        setTimeout(() => this.setData({ showLocationSheet: true }), 800)
+    } else if (!privacyDone) {
+        setTimeout(() => this.setData({ showPrivacySheet: true }), 800)
+    }
+  },
+
+  onLocationAllow() {
+    if (!this.data.locationSheetChecked) {
+      this.showToast('请先阅读并接受隐私保护指引')
+      return
+    }
+    wx.getLocation({
+        type: 'gcj02',
+        success: (res) => {
+            wx.setStorageSync('user_location', { latitude: res.latitude, longitude: res.longitude })
+            wx.setStorageSync('location_permission_done', true)
+            this.setData({ showLocationSheet: false, locationAgreed: true })
+            this.requestStoreLocation()
+            setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
+        },
+        fail: () => {
+            wx.setStorageSync('location_permission_done', true)
+            this.setData({ showLocationSheet: false, locationAgreed: false })
+            setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
+        }
+    })
+  },
+
+  onLocationDeny() {
+    wx.setStorageSync('location_permission_done', true)
+    this.setData({ showLocationSheet: false, locationAgreed: false })
+    setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
+  },
+
+  onPrivacyAgree() {
+    wx.setStorageSync('privacy_permission_done', true)
+    this.setData({ showPrivacySheet: false, privacyAgreed: true })
+  },
+
+  onPrivacyDeny() {
+    wx.setStorageSync('privacy_permission_done', true)
+    this.setData({ showPrivacySheet: false, privacyAgreed: false })
+  },
+
+  toggleLocationCheck() {
+    this.setData({ locationSheetChecked: !this.data.locationSheetChecked })
+  },
+
+  requireLogin(targetUrl) {
+    const token = wx.getStorageSync('token')
+    if (token) {
+      wx.navigateTo({ url: targetUrl })
+    } else {
+      wx.navigateTo({ url: '/pages/membership/membership?redirect=' + encodeURIComponent(targetUrl) })
+    }
   }
 })

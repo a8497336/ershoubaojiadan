@@ -19,10 +19,28 @@ Page({
     showSearch: false,
     receiverName: '',
     receiverPhone: '',
-    receiverAddress: ''
+    receiverAddress: '',
+    quoteRemaining: 0,
+    quoteDailyRemaining: 0,
+    isVip: false
   },
 
   onLoad(options) {
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      const currentUrl = '/pages/price-quote/price-quote'
+      const queryParts = []
+      if (options.brandId) queryParts.push('brandId=' + options.brandId)
+      if (options.brand) queryParts.push('brand=' + options.brand)
+      if (options.category) queryParts.push('category=' + options.category)
+      if (options.productId) queryParts.push('productId=' + options.productId)
+      const queryStr = queryParts.length > 0 ? '?' + queryParts.join('&') : ''
+      wx.redirectTo({
+        url: '/pages/login/login?redirect=' + encodeURIComponent(currentUrl + queryStr)
+      })
+      return
+    }
+
     const brandId = options.brandId ? parseInt(options.brandId) : null
     const brand = options.brand ? decodeURIComponent(options.brand) : ''
     const category = options.category ? decodeURIComponent(options.category) : ''
@@ -80,6 +98,24 @@ Page({
       const rawList = data.list || []
       const brandData = brandRes ? (brandRes.data || brandRes) : null
       const quoteConfig = brandData ? (brandData.quote_config || {}) : {}
+
+      const quoteRemaining = data.quoteRemaining !== undefined ? data.quoteRemaining : 0
+      const quoteDailyRemaining = data.quoteDailyRemaining !== undefined ? data.quoteDailyRemaining : 0
+      const isVip = quoteRemaining >= 9999
+
+      this.setData({
+        quoteRemaining,
+        quoteDailyRemaining,
+        isVip
+      })
+
+      if (!isVip && quoteRemaining > 0 && quoteRemaining <= 5) {
+        wx.showToast({
+          title: '剩余' + quoteRemaining + '次免费查看，开通会员无限查看',
+          icon: 'none',
+          duration: 3000
+        })
+      }
 
       const processedList = rawList.map(item => {
         const priceMap = {}
@@ -208,12 +244,28 @@ Page({
         receiverPhone: quoteConfig.receiver_phone || '',
         receiverAddress: quoteConfig.receiver_address || ''
       })
-    }).catch(() => {
-      this.setData({
-        loading: false,
-        isEmpty: true,
-        categoryGroups: []
-      })
+    }).catch((err) => {
+      const statusCode = (err && err.statusCode) || (err && err.code) || 0
+      if (statusCode === 403 || statusCode === 10007) {
+        this.setData({ loading: false, isEmpty: true, categoryGroups: [] })
+        wx.showModal({
+          title: '查看次数已用完',
+          content: '今日免费查看次数已用完，开通会员可无限查看报价单',
+          confirmText: '开通会员',
+          cancelText: '稍后再说',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({ url: '/pages/membership/membership' })
+            }
+          }
+        })
+      } else {
+        this.setData({
+          loading: false,
+          isEmpty: true,
+          categoryGroups: []
+        })
+      }
     })
   },
 

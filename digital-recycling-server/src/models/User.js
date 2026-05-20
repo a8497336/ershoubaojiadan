@@ -15,6 +15,16 @@ module.exports = (sequelize, DataTypes) => {
     phone: {
       type: DataTypes.STRING(20)
     },
+    latitude: {
+      type: DataTypes.DECIMAL(10, 7),
+      allowNull: true,
+      defaultValue: null
+    },
+    longitude: {
+      type: DataTypes.DECIMAL(10, 7),
+      allowNull: true,
+      defaultValue: null
+    },
     nickname: {
       type: DataTypes.STRING(50)
     },
@@ -32,6 +42,17 @@ module.exports = (sequelize, DataTypes) => {
     scan_remaining: {
       type: DataTypes.INTEGER,
       defaultValue: 10
+    },
+    quote_remaining: {
+      type: DataTypes.INTEGER,
+      defaultValue: 100
+    },
+    quote_daily_count: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
+    quote_daily_date: {
+      type: DataTypes.DATEONLY
     },
     membership_id: {
       type: DataTypes.BIGINT

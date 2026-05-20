@@ -65,6 +65,12 @@
           <el-table-column prop="contact_name" label="联系人" width="100" />
           <el-table-column prop="contact_phone" label="电话" width="130" />
           <el-table-column prop="address" label="地址" />
+          <el-table-column label="坐标" width="180">
+            <template #default="{ row }">
+              <span v-if="row.latitude && row.longitude">{{ row.latitude }}, {{ row.longitude }}</span>
+              <span v-else style="color:#999">未设置</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="160">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -165,6 +171,8 @@
           <el-form-item label="电话"><el-input v-model="formData.contact_phone" /></el-form-item>
           <el-form-item label="微信"><el-input v-model="formData.wechat" /></el-form-item>
           <el-form-item label="地址"><el-input v-model="formData.address" /></el-form-item>
+          <el-form-item label="纬度"><el-input v-model="formData.latitude" placeholder="如：31.2304" /></el-form-item>
+          <el-form-item label="经度"><el-input v-model="formData.longitude" placeholder="如：121.4737" /></el-form-item>
         </template>
         <template v-if="activeTab === 'video'">
           <el-form-item label="标题" required><el-input v-model="formData.title" placeholder="请输入视频标题" /></el-form-item>

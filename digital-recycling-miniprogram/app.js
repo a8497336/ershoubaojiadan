@@ -19,7 +19,50 @@ App({
     this.globalData.statusBarHeight = wx.getSystemInfoSync().statusBarHeight
     this.initNetworkListener()
     this.checkApiStatus()
-    this.ensureLogin()
+    this.checkLoginStatus()
+    this.initPrivacyAuthorization()
+  },
+
+  initPrivacyAuthorization() {
+    if (typeof wx.onNeedPrivacyAuthorization === 'function') {
+      wx.onNeedPrivacyAuthorization((resolve, eventInfo) => {
+        this.resolvePrivacyAuthorization(resolve, eventInfo)
+      })
+    }
+  },
+
+  resolvePrivacyAuthorization(resolve, eventInfo) {
+    wx.getPrivacySetting({
+      success: (res) => {
+        if (!res.needAuthorization) {
+          resolve({ button: 'agree', event: eventInfo.event })
+          return
+        }
+        wx.showModal({
+          title: '隐私授权',
+          content: res.privacyContractName
+            ? `在使用服务前，请你仔细阅读并同意《${res.privacyContractName}》，以便我们为你提供相关服务。`
+            : '在使用服务前，请你仔细阅读并同意《用户服务协议》和《隐私政策》，以便我们为你提供相关服务。',
+          showCancel: true,
+          cancelText: '拒绝',
+          confirmText: '同意',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              wx.setStorageSync('privacy_agreed', true)
+              resolve({ button: 'agree', event: eventInfo.event })
+            } else {
+              resolve({ button: 'disagree', event: eventInfo.event })
+            }
+          },
+          fail: () => {
+            resolve({ button: 'disagree', event: eventInfo.event })
+          }
+        })
+      },
+      fail: () => {
+        resolve({ button: 'agree', event: eventInfo.event })
+      }
+    })
   },
 
   initNetworkListener() {
@@ -56,53 +99,17 @@ App({
     }
   },
 
-  ensureLogin() {
+  checkLoginStatus() {
     const token = wx.getStorageSync('token')
-    if (token) {
-      authApi.checkToken().then(() => {
-        this.globalData.token = token
-        this.loadUserInfo()
-        this.loadCartData()
-      }).catch((err) => {
-        console.error('Token验证失败:', err)
-        this.doLogin()
-      })
-    } else {
-      this.doLogin()
-    }
-  },
-
-  doLogin(retryCount) {
-    var count = retryCount || 0
-    if (count >= 3) {
-      console.error('登录失败，已重试3次')
-      wx.showToast({
-        title: '登录失败，请稍后重试',
-        icon: 'none'
-      })
+    if (!token) {
       return
     }
-    wx.login({
-      success: (res) => {
-        if (res.code) {
-          authApi.wxLogin(res.code).then((data) => {
-            wx.setStorageSync('token', data.data.token)
-            this.globalData.token = data.data.token
-            this.globalData.userInfo = data.data.userInfo
-            this.loadCartData()
-          }).catch((err) => {
-            console.error('微信登录失败:', err)
-            setTimeout(() => {
-              this.doLogin(count + 1)
-            }, 2000)
-          })
-        }
-      },
-      fail: () => {
-        setTimeout(() => {
-          this.doLogin(count + 1)
-        }, 2000)
-      }
+    authApi.checkToken().then(() => {
+      this.globalData.token = token
+      this.loadUserInfo()
+      this.loadCartData()
+    }).catch((err) => {
+      console.error('Token验证失败:', err)
     })
   },
 

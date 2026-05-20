@@ -16,7 +16,7 @@ router.post('/wx-login',
   validate,
   async (req, res, next) => {
     try {
-      const { code } = req.body
+      const { code, userInfo, location } = req.body
       let wxData
       try {
         wxData = await wechatUtil.code2Session(code)
@@ -28,15 +28,16 @@ router.post('/wx-login',
       let user = await db.User.findOne({ where: { openid: wxData.openid } })
 
       if (!user) {
-        user = await db.User.create({
+        const userData = {
           openid: wxData.openid,
           union_id: wxData.unionid,
           user_no: generateUserNo(),
-          nickname: '微信用户',
-          avatar: '/images/icons/avatar.svg',
+          nickname: (userInfo && userInfo.nickName) || '微信用户',
+          avatar: (userInfo && userInfo.avatarUrl) || '/images/icons/avatar.svg',
           scan_remaining: 10,
           status: 1
-        })
+        }
+        user = await db.User.create(userData)
         await db.Wallet.create({
           user_id: user.id,
           balance: 0,
@@ -45,7 +46,12 @@ router.post('/wx-login',
           total_withdraw: 0
         })
       } else {
-        await user.update({ last_login_at: new Date() })
+        const updateData = { last_login_at: new Date() }
+        if (userInfo) {
+          if (userInfo.nickName) updateData.nickname = userInfo.nickName
+          if (userInfo.avatarUrl) updateData.avatar = userInfo.avatarUrl
+        }
+        await user.update(updateData)
       }
 
       const token = jwt.sign(

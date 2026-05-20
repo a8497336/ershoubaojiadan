@@ -292,6 +292,8 @@ module.exports = {
       { key: 'service_wechat', value: '15361862828', description: '客服微信', created_at: now, updated_at: now },
       { key: 'membership_phone', value: '16618180111', description: '会员服务电话', created_at: now, updated_at: now },
       { key: 'free_scan_count', value: '10', description: '免费拍照查价次数', created_at: now, updated_at: now },
+      { key: 'free_quote_count', value: '100', description: '新用户免费查看报价单次数', created_at: now, updated_at: now },
+      { key: 'daily_quote_count', value: '10', description: '普通用户每日查看报价单次数', created_at: now, updated_at: now },
       { key: 'sign_points', value: '5', description: '每日签到积分', created_at: now, updated_at: now }
     ], {})
   },

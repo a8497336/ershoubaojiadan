@@ -172,7 +172,14 @@ router.get('/profile', auth, async (req, res, next) => {
       points: user.points,
       scanRemaining: user.scan_remaining,
       membershipExpire: user.membership_expire,
-      membershipId: user.membership_id
+      membershipId: user.membership_id,
+      quoteRemaining: user.quote_remaining,
+      quoteDailyRemaining: (() => {
+        const today = new Date().toISOString().split('T')[0]
+        const dailyDate = user.quote_daily_date
+        if (dailyDate !== today) return 10
+        return Math.max(0, 10 - (parseInt(user.quote_daily_count) || 0))
+      })()
     })
   } catch (err) {
     next(err)

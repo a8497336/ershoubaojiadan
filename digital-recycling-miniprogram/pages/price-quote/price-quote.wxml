@@ -12,6 +12,17 @@
       <text>浏览量：{{viewCount}}</text>
       <text>更新时间：{{updateTime}}</text>
     </view>
+    <view class="header-quota">
+      <block wx:if="{{isVip}}">
+        <text class="quota-text vip">会员无限查看</text>
+      </block>
+      <block wx:elif="{{quoteRemaining > 0}}">
+        <text class="quota-text">剩余免费次数：{{quoteRemaining}} 次</text>
+      </block>
+      <block wx:else>
+        <text class="quota-text">今日剩余：{{quoteDailyRemaining}} 次</text>
+      </block>
+    </view>
     <view class="header-title">{{pageTitle}}</view>
     <!-- <view class="header-info">
       <text>收货地址：{{receiverAddress}}</text>

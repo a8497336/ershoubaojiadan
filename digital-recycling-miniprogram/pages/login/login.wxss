@@ -1,112 +1,187 @@
-.login-container {
+@import '../../styles/design-tokens.wxss';
+
+.login-page {
   min-height: 100vh;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: linear-gradient(180deg, #fff5f6 0%, #ffffff 100%);
 }
 
-.login-header {
+/* 导航栏 */
+.nav-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 32rpx;
+  padding-top: var(--status-bar-height, 44px);
+  position: relative;
 }
 
-.logo {
-  width: 160rpx;
-  height: 160rpx;
-  background: #ff2d4a;
-  border-radius: 40rpx;
-  padding: 20rpx;
-  box-shadow: 0 8rpx 32rpx rgba(255, 45, 74, 0.2);
-}
-
-.brand-name {
-  margin-top: 32rpx;
+.nav-back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 48rpx;
+  color: #333;
+  font-weight: 300;
+}
+
+.nav-title {
+  font-size: 34rpx;
   font-weight: 600;
   color: #333;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.slogan {
-  margin-top: 16rpx;
-  font-size: 28rpx;
-  color: #999;
+.nav-right {
+  width: 60rpx;
 }
 
+/* 内容区域 */
 .login-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  padding-top: 120rpx;
+}
+
+/* Logo */
+.logo-wrap {
+  margin-bottom: 80rpx;
+}
+
+.logo-img {
+  width: 120rpx;
+  height: 120rpx;
+}
+
+/* 权限说明 */
+.permission-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 100rpx;
+}
+
+.permission-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.permission-desc {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 按钮组 */
+.btn-group {
   width: 100%;
-  padding: 0 48rpx;
+  padding: 0 64rpx;
   box-sizing: border-box;
 }
 
-.login-btn-wrapper {
+.auth-login-btn {
   width: 100%;
-  margin-bottom: 48rpx;
-}
-
-.login-btn {
-  width: 100%;
-  height: 96rpx;
-  border-radius: 48rpx;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
+  height: 88rpx;
+  background: #ff2d4a;
+  color: #ffffff;
   font-size: 32rpx;
   font-weight: 500;
+  border-radius: 44rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.auth-login-btn::after {
   border: none;
 }
 
-.login-btn.wechat-login {
-  background: #07c160;
-  color: #fff;
+.auth-login-btn:active {
+  background: #e62640;
 }
 
-.login-btn.wechat-login:active {
-  background: #06ad53;
+.btn-disabled {
+  opacity: 0.6;
 }
 
-.btn-icon {
-  width: 44rpx;
-  height: 44rpx;
-  margin-right: 16rpx;
-}
-
-.btn-text {
-  letter-spacing: 2rpx;
-}
-
-.agreement-wrapper {
+.sms-login-btn {
+  width: 100%;
+  height: 88rpx;
+  background: #ffffff;
+  color: #ff2d4a;
+  font-size: 30rpx;
+  font-weight: 500;
+  border-radius: 44rpx;
+  border: 2rpx solid #ff2d4a;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  flex-wrap: wrap;
   justify-content: center;
 }
 
-.checkbox-wrapper {
+.sms-login-btn::after {
+  border: none;
+}
+
+.sms-login-btn:active {
+  background: #fff5f6;
+}
+
+/* 协议勾选区域 */
+.agreement-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
+  padding: 24rpx 48rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
 }
 
-.checkbox {
+.agreement-check {
   width: 36rpx;
   height: 36rpx;
-  margin-right: 8rpx;
+  border-radius: 50%;
+  border: 2rpx solid #ccc;
+  margin-right: 12rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.checkbox.checked {
-  transform: scale(1.1);
+.agreement-check.checked {
+  background: #ff2d4a;
+  border-color: #ff2d4a;
+  position: relative;
 }
 
-.agreement-text {
+.agreement-check.checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 10rpx;
+  height: 18rpx;
+  border-left: 3rpx solid #ffffff;
+  border-bottom: 3rpx solid #ffffff;
+}
+
+.agreement-label {
   font-size: 24rpx;
   color: #999;
 }
@@ -114,14 +189,4 @@
 .agreement-link {
   font-size: 24rpx;
   color: #ff2d4a;
-  margin: 0 4rpx;
-}
-
-.login-footer {
-  padding: 32rpx 0 60rpx;
-}
-
-.footer-text {
-  font-size: 22rpx;
-  color: #ccc;
 }

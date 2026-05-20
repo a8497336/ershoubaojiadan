@@ -1,126 +1,81 @@
-const { authApi } = require('../../utils/api-modules')
 const app = getApp()
+const authApi = require('../../utils/api-modules').authApi
 
 Page({
   data: {
+    canIUseGetUserProfile: wx.canIUse('getUserProfile'),
     isAgreed: false,
-    loading: false,
     redirectUrl: '',
-    statusBarHeight: 0,
-    loginHeaderPaddingTop: 44
+    loggingIn: false
   },
 
   onLoad(options) {
-    var statusBarHeight = app.globalData.statusBarHeight || 0
-    this.setData({
-      statusBarHeight: statusBarHeight,
-      loginHeaderPaddingTop: statusBarHeight + 44
-    })
-    if (options.redirect) {
+    if (options && options.redirect) {
       this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
     }
   },
 
-  toggleAgreement() {
+  onAgreementChange() {
     this.setData({ isAgreed: !this.data.isAgreed })
   },
 
   handleWechatLogin() {
     if (!this.data.isAgreed) {
-      wx.showModal({
-        title: '提示',
-        content: '请先阅读并同意《用户服务协议》和《隐私政策》',
-        showCancel: false,
-        confirmText: '我已知晓'
-      })
+      wx.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
       return
     }
+    if (this.data.loggingIn) return
+    this.setData({ loggingIn: true })
 
-    this.setData({ loading: true })
-
-    Promise.all([
-      this.wxLogin(),
-      this.getUserProfile()
-    ]).then(([loginRes, profileRes]) => {
-      return authApi.wxLogin(loginRes.code, profileRes.userInfo).then(res => {
-        return {
-          ...res,
-          userInfo: profileRes.userInfo
-        }
-      })
-    }).then(res => {
-      wx.setStorageSync('token', res.data.token)
-      wx.setStorageSync('userInfo', res.data.userInfo)
-      
-      const app = getApp()
-      app.globalData.token = res.data.token
-      app.globalData.userInfo = res.data.userInfo
-      
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success',
-        duration: 1500
-      })
-
-      setTimeout(() => {
-        if (this.data.redirectUrl) {
-          const pages = getCurrentPages()
-          if (pages.length > 1) {
-            wx.navigateBack({ delta: pages.length })
-          } else {
-            wx.switchTab({ url: '/pages/index/index' })
+    wx.getUserProfile({
+      desc: '用于完善用户资料',
+      success: (profileRes) => {
+        wx.login({
+          success: (loginRes) => {
+            if (loginRes.code) {
+              authApi.wxLogin(loginRes.code, profileRes.userInfo)
+                .then((res) => {
+                  const token = res.data.token
+                  const userInfo = res.data.userInfo
+                  wx.setStorageSync('token', token)
+                  app.globalData.token = token
+                  app.globalData.userInfo = userInfo
+                  this.navigateToHome()
+                })
+                .catch((err) => {
+                  wx.showToast({ title: err.message || '登录失败', icon: 'none' })
+                  this.setData({ loggingIn: false })
+                })
+            } else {
+              wx.showToast({ title: '获取登录凭证失败', icon: 'none' })
+              this.setData({ loggingIn: false })
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: '获取登录凭证失败', icon: 'none' })
+            this.setData({ loggingIn: false })
           }
-        } else {
-          wx.switchTab({ url: '/pages/index/index' })
-        }
-      }, 1500)
-    }).catch(err => {
-      console.error('登录失败:', err)
-      wx.showModal({
-        title: '登录失败',
-        content: err.message || '网络错误，请重试',
-        showCancel: false,
-        confirmText: '知道了'
+        })
+      },
+      fail: () => {
+        this.setData({ loggingIn: false })
+      }
+    })
+  },
+
+  handleSmsLogin() {
+    wx.showToast({ title: '验证码登录开发中', icon: 'none' })
+  },
+
+  navigateToHome() {
+    if (this.data.redirectUrl) {
+      wx.redirectTo({ url: this.data.redirectUrl }).catch(() => {
+        wx.switchTab({ url: '/pages/index/index' })
       })
-    }).finally(() => {
-      this.setData({ loading: false })
-    })
-  },
-
-  wxLogin() {
-    return new Promise((resolve, reject) => {
-      wx.login({
-        success: resolve,
-        fail: reject
+    } else {
+      wx.switchTab({ url: '/pages/index/index' }).catch(() => {
+        wx.navigateBack()
       })
-    })
-  },
-
-  getUserProfile() {
-    return new Promise((resolve, reject) => {
-      wx.getUserProfile({
-        desc: '用于完善用户资料',
-        success: resolve,
-        fail: reject
-      })
-    })
-  },
-
-  openAgreement() {
-    wx.showModal({
-      title: '用户服务协议',
-      content: '这里是用户服务协议的内容...\n1. 服务说明\n2. 用户注册\n3. 交易规则\n4. 隐私保护\n5. 免责声明',
-      showCancel: false,
-      confirmText: '关闭'
-    })
-  },
-
-  openPrivacy() {
-    wx.showModal({
-      title: '隐私政策',
-      content: '这里是隐私政策的内容...\n1. 信息收集\n2. 信息使用\n3. 信息保护\n4. 信息共享\n5. 联系我们',
-      showCancel: false,
-      confirmText: '关闭'
-    })
+    }
   }
 })

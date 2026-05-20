@@ -1,7 +1,7 @@
 {
   "pages": [
-    "pages/login/login",
     "pages/index/index",
+    "pages/login/login",
     "pages/brand-list/brand-list",
     "pages/product-search/product-search",
     "pages/price-quote/price-quote",
@@ -52,6 +52,12 @@
       { "pagePath": "pages/shopping/shopping", "text": "回收车" },
       { "pagePath": "pages/profile/profile", "text": "我的" }
     ]
+  },
+  "__usePrivacyCheck__": true,
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于获取您的位置以展示最近的门店信息"
+    }
   },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

@@ -1,7 +1,7 @@
 const { request, uploadFile } = require('./api')
 
 const authApi = {
-  wxLogin: (code) => request({ url: '/auth/wx-login', method: 'POST', data: { code } }),
+  wxLogin: (code, userInfo, location) => request({ url: '/auth/wx-login', method: 'POST', data: { code, userInfo, location } }),
   bindPhone: (code) => request({ url: '/auth/phone-bind', method: 'POST', data: { code } }),
   checkToken: () => request({ url: '/auth/check-token' })
 }

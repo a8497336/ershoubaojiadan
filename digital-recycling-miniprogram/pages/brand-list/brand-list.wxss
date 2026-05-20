@@ -261,8 +261,11 @@
   background: #fff;
   border-radius: 24rpx 24rpx 0 0;
   width: 100%;
-  padding: 32rpx 24rpx 250rpx;
+  padding: 32rpx 24rpx calc(200rpx + env(safe-area-inset-bottom));
   animation: slideUp 0.3s ease;
+  max-height: 70%;
+  display: flex;
+  flex-direction: column;
 }
 @keyframes slideUp {
   from { transform: translateY(100%); }
@@ -274,13 +277,23 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24rpx;
+  height: 50rpx;
+}
+.contant {
+  flex: 1;
+  overflow: scroll;
+}
+.button-list {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .modal-title { font-size: 32rpx; font-weight: 600; color: #333; }
 .modal-close { font-size: 40rpx; color: #999; padding: 8rpx; }
 
 .modal-image-area {
   width: 100%;
-  height: 260rpx;
+  aspect-ratio: 4 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -310,7 +323,7 @@
 
 .condition-section { margin-bottom: 24rpx; }
 .condition-label { font-size: 26rpx; color: #666; margin-bottom: 16rpx; }
-.condition-list { max-height: 480rpx; overflow-y: auto; }
+.condition-list {  overflow-y: auto; }
 .condition-empty { display: flex; justify-content: center; padding: 32rpx 0; }
 
 .condition-price-row {
@@ -368,14 +381,24 @@
 .qty-num { font-size: 36rpx; color: #333; font-weight: 600; min-width: 60rpx; text-align: center; }
 
 .add-cart-btn {
-  width: 100%;
+  width: 45%;
   background: #ff2d4a;
   color: #fff;
   border: none;
   border-radius: 48rpx;
-  padding: 28rpx 0;
-  font-size: 32rpx;
+  padding: 10rpx 0;
+  font-size: 28rpx;
   font-weight: 500;
+}
+.close-cart-btn {
+  width: 45%;
+  color: red;
+  border: none;
+  border-radius: 48rpx;
+  padding: 10rpx 0;
+  font-size: 28rpx;
+  font-weight: 500;
+  border: 1px solid red;
 }
 .add-cart-btn:active { background: #e62540; }
 
@@ -610,4 +633,5 @@
     padding: 20rpx 0;
     font-size: 28rpx;
   }
+
 }

@@ -203,7 +203,7 @@ Page({
         conditionCode: (p.Condition && p.Condition.code) || '',
         price: p.price || 0,
         priceText: p.price > 0 ? ('¥' + p.price) : '/',
-        quantity: 1
+        quantity: 0
       }))
       this.setData({
         selectedProduct: Object.assign({}, product, { image: detail.image || product.image, name: detail.name || product.name }),
@@ -217,7 +217,7 @@ Page({
         conditionCode: (p.Condition && p.Condition.code) || '',
         price: p.price || 0,
         priceText: p.price > 0 ? ('¥' + p.price) : '/',
-        quantity: 1
+        quantity: 0
       }))
       this.setData({ conditions: fallbackConditions, conditionsLoading: false })
     })
@@ -235,9 +235,7 @@ Page({
       return
     }
     this.setData({ showModal: false })
-    wx.navigateTo({
-      url: '/pages/price-trend/price-trend?productId=' + productId + '&model=' + encodeURIComponent(product.model_code || product.name || '')
-    })
+    this.requireLogin('/pages/price-trend/price-trend?productId=' + productId + '&model=' + encodeURIComponent(product.model_code || product.name || ''))
   },
 
   nop() {},
@@ -285,7 +283,7 @@ Page({
   updateCartCount() {
     cartApi.getList().then(res => {
       const items = res.data || res || []
-      const total = items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+      const total = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
       this.setData({ cartCount: total })
       app.globalData.cartCount = total
     }).catch(() => {})
@@ -304,5 +302,14 @@ Page({
     const nextPage = this.data.productPage + 1
     this.setData({ productPage: nextPage })
     this.loadProducts(nextPage)
+  },
+
+  requireLogin(targetUrl) {
+    const token = wx.getStorageSync('token')
+    if (token) {
+      wx.navigateTo({ url: targetUrl })
+    } else {
+      wx.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent(targetUrl) })
+    }
   }
 })

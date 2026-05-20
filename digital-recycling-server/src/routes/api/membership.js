@@ -158,7 +158,8 @@ router.post('/pay-callback', async (req, res, next) => {
       await user.update({
         membership_id: plan.id,
         membership_expire: endDate,
-        scan_remaining: 9999
+        scan_remaining: 9999,
+        quote_remaining: 9999
       }, { transaction: t })
 
       await plan.increment('subscriber_count', { transaction: t })

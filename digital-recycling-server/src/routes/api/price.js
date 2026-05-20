@@ -5,6 +5,8 @@
  *     description: 回收报价查询相关接口
  */
 
+const { optionalAuth } = require('../../middlewares/auth')
+
 /**
  * @openapi
  * /api/prices/today:
@@ -72,19 +74,55 @@
  */
 
 const router = require('express').Router()
-const { optionalAuth } = require('../../middlewares/auth')
-const { success } = require('../../utils/response')
+const { auth } = require('../../middlewares/auth')
+const { success, error } = require('../../utils/response')
 const { Op, literal, fn, col } = require('sequelize')
 const db = require('../../models')
 
-router.get('/today', optionalAuth, async (req, res, next) => {
+router.get('/today', auth, async (req, res, next) => {
   try {
-    const { brand_id, category_id } = req.query
+    const { brand_id, category_id, product_id } = req.query
+    const user = req.user
+    const isVip = user.membership_expire && new Date(user.membership_expire) > new Date()
     const today = new Date().toISOString().split('T')[0]
+
+    let dailyMax = 10
+    if (!isVip) {
+      const dailySetting = await db.Setting.findOne({ where: { key: 'daily_quote_count' } })
+      dailyMax = parseInt(dailySetting?.value || '10')
+
+      let quoteRemaining = parseInt(user.quote_remaining) || 0
+
+      if (quoteRemaining > 0) {
+        quoteRemaining -= 1
+        await user.update({
+          quote_remaining: quoteRemaining,
+          quote_daily_count: (parseInt(user.quote_daily_count) || 0) + 1,
+          quote_daily_date: today
+        })
+      } else {
+        let dailyCount = parseInt(user.quote_daily_count) || 0
+        const dailyDate = user.quote_daily_date
+
+        if (dailyDate !== today) {
+          dailyCount = 1
+          await user.update({
+            quote_daily_count: 1,
+            quote_daily_date: today
+          })
+        } else if (dailyCount < dailyMax) {
+          dailyCount += 1
+          await user.update({ quote_daily_count: dailyCount })
+        } else {
+          return error(res, '今日查看次数已用完，开通会员可无限查看报价', 10007, 403)
+        }
+      }
+    }
 
     const productWhere = { status: 1 }
     if (brand_id) productWhere.brand_id = brand_id
     if (category_id) productWhere.category_id = category_id
+    if (product_id) productWhere.id = product_id
 
     const products = await db.Product.findAll({
       where: productWhere,
@@ -97,12 +135,23 @@ router.get('/today', optionalAuth, async (req, res, next) => {
 
     const productIds = products.map(p => p.id)
     if (productIds.length === 0) {
+      const quotaRes = isVip
+        ? { quoteRemaining: 9999, quoteDailyRemaining: 9999 }
+        : {
+            quoteRemaining: parseInt(user.quote_remaining) || 0,
+            quoteDailyRemaining: (() => {
+              const dailyDate = user.quote_daily_date
+              if (dailyDate !== today) return dailyMax
+              return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
+            })()
+          }
       return success(res, {
         date: today,
         effectiveDate: null,
         updateTime: new Date().toISOString(),
         viewCount: 0,
-        list: []
+        list: [],
+        ...quotaRes
       })
     }
 
@@ -152,12 +201,26 @@ router.get('/today', optionalAuth, async (req, res, next) => {
 
     const firstDate = datePairs.length > 0 ? datePairs[0].effective_date : null
 
+    await user.reload()
+
+    const quotaRes = isVip
+      ? { quoteRemaining: 9999, quoteDailyRemaining: 9999 }
+      : {
+          quoteRemaining: parseInt(user.quote_remaining) || 0,
+          quoteDailyRemaining: (() => {
+            const dailyDate = user.quote_daily_date
+            if (dailyDate !== today) return dailyMax
+            return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
+          })()
+        }
+
     return success(res, {
       date: firstDate || today,
       effectiveDate: firstDate,
       updateTime: new Date().toISOString(),
       viewCount: viewCount || 0,
-      list: productList
+      list: productList,
+      ...quotaRes
     })
   } catch (err) {
     next(err)
