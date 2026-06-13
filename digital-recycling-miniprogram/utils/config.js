@@ -10,8 +10,8 @@ const ENV_CONFIG = {
     env: 'test'
   },
   production: {
-    apiBase: 'https://guanguan.yiw315.cn/api',
-    imageBase: 'https://guanguan.yiw315.cn',
+    apiBase: 'https://wx.lydzhsw.com/api',
+    imageBase: 'https://wx.lydzhsw.com',
     env: 'production'
   }
 }
@@ -25,7 +25,7 @@ const ENV_MAP = {
 const getConfig = () => {
   try {
     const envVersion = wx.getAccountInfoSync().miniProgram.envVersion
-    const env =  'production'
+    const env = 'production'
     return ENV_CONFIG[env]
   } catch (e) {
     return ENV_CONFIG.production

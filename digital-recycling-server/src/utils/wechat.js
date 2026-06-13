@@ -41,8 +41,26 @@ const getPhoneNumber = async (code) => {
   return res.data.phone_info.phoneNumber
 }
 
+const decryptPhone = (encryptedData, iv, sessionKey) => {
+  try {
+    const crypto = require('crypto')
+    const sessionKeyBuffer = Buffer.from(sessionKey, 'base64')
+    const encryptedDataBuffer = Buffer.from(encryptedData, 'base64')
+    const ivBuffer = Buffer.from(iv, 'base64')
+    const decipher = crypto.createDecipheriv('aes-128-cbc', sessionKeyBuffer, ivBuffer)
+    decipher.setAutoPadding(true)
+    let decoded = decipher.update(encryptedDataBuffer, 'binary', 'utf8')
+    decoded += decipher.final('utf8')
+    return JSON.parse(decoded)
+  } catch (err) {
+    console.error('decryptPhone error:', err.message)
+    return null
+  }
+}
+
 module.exports = {
   code2Session,
   getAccessToken,
-  getPhoneNumber
+  getPhoneNumber,
+  decryptPhone
 }

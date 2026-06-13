@@ -1,4 +1,5 @@
-const { cartApi, orderApi } = require('../../utils/api-modules')
+const { cartApi, orderApi, priceApi } = require('../../utils/api-modules')
+const { checkLogin } = require('../../utils/common')
 const app = getApp()
 
 Page({
@@ -24,18 +25,43 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ activeTab: 'shopping' })
     }
+    if (!checkLogin('/pages/shopping/shopping')) return
     this.loadCart()
   },
 
-  formatCartItem(raw) {
+  buildPriceMap(priceData) {
+    const priceMap = {}
+    const rawList = priceData || []
+    rawList.forEach(item => {
+      const productId = item.id
+      ;(item.Prices || []).forEach(p => {
+        const conditionId = p.condition_id || (p.Condition ? p.Condition.id : null)
+        if (conditionId !== null && p.price !== undefined && p.price !== null) {
+          priceMap[`${productId}_${conditionId}`] = parseFloat(p.price)
+        }
+      })
+    })
+    return priceMap
+  },
+
+  formatCartItem(raw, latestPriceMap) {
+    const productId = raw.product_id
+    const conditionId = raw.condition_id
+    const key = `${productId}_${conditionId}`
+    const latestPrice = latestPriceMap && latestPriceMap[key] !== undefined ? latestPriceMap[key] : null
+    const unitPrice = raw.unit_price || 0
+    const displayPrice = latestPrice !== null ? latestPrice : unitPrice
+
     return {
       id: raw.id,
-      productId: raw.product_id,
-      conditionId: raw.condition_id,
+      productId: productId,
+      conditionId: conditionId,
       productName: raw.Product ? raw.Product.name : '未知产品',
       productImage: raw.Product && raw.Product.image ? raw.Product.image : '',
       conditionName: raw.Condition ? raw.Condition.name : '',
-      price: raw.unit_price || 0,
+      price: displayPrice,
+      originalPrice: unitPrice,
+      hasLatestPrice: latestPrice !== null && latestPrice !== unitPrice,
       totalQuantity: raw.quantity || 1,
       selected: !!raw.is_selected
     }
@@ -43,22 +69,51 @@ Page({
 
   loadCart() {
     this.setData({ loading: true })
-    cartApi.getList().then((res) => {
-      const cart = res.data || res || {}
-      const cartItems = (cart.list || []).map(item => this.formatCartItem(item))
-      const allSelected = cartItems.length > 0 && cartItems.every(item => item.selected)
+
+    let cartData = null
+    let priceData = []
+    let cartLoaded = false
+    let priceLoaded = false
+
+    const checkAndProcess = () => {
+      if (!cartLoaded) return
+      const finalPriceData = priceLoaded ? priceData : []
+      const cart = cartData || {}
+      const latestPriceMap = this.buildPriceMap(finalPriceData)
+      const cartItems = (cart.list || []).map(item => this.formatCartItem(item, latestPriceMap))
+      const selectedItems = cartItems.filter(i => i.selected)
+      const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length
+      const totalPrice = selectedItems.reduce((sum, item) => sum + (item.price * item.totalQuantity), 0)
       this.setData({
         cartItems,
         totalItems: cart.totalItems || cartItems.length,
         totalDevices: cart.totalDevices || cartItems.length,
-        selectedCount: cart.selectedCount || cartItems.filter(i => i.selected).length,
-        totalPrice: cart.totalPrice || '0.00',
+        selectedCount: selectedItems.length,
+        totalPrice: totalPrice.toFixed(2),
         isAllSelected: allSelected,
         isEmpty: cartItems.length === 0,
         loading: false
       })
+    }
+
+    cartApi.getList().then((res) => {
+      cartData = res.data || res || {}
+      cartLoaded = true
+      checkAndProcess()
     }).catch(() => {
-      this.setData({ loading: false, isEmpty: true })
+      cartData = {}
+      cartLoaded = true
+      checkAndProcess()
+    })
+
+    priceApi.getTodayPrices().then((res) => {
+      priceData = res.data || []
+      priceLoaded = true
+      if (cartLoaded) checkAndProcess()
+    }).catch(() => {
+      priceData = []
+      priceLoaded = true
+      if (cartLoaded) checkAndProcess()
     })
   },
 

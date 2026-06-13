@@ -159,11 +159,21 @@
 const router = require('express').Router()
 const { auth } = require('../../middlewares/auth')
 const { success, notFound } = require('../../utils/response')
+const { getVipStatus } = require('../../utils/helpers')
 const db = require('../../models')
 
 router.get('/profile', auth, async (req, res, next) => {
   try {
     const user = req.user
+    const vipStatus = await getVipStatus(user)
+    if (!vipStatus.isVip && user.membership_expire !== null) {
+      await user.update({
+        scan_remaining: 10,
+        quote_remaining: 100,
+        quote_daily_count: 0
+      })
+      await user.reload()
+    }
     return success(res, {
       userId: user.user_no,
       phone: user.phone || '',
@@ -173,6 +183,8 @@ router.get('/profile', auth, async (req, res, next) => {
       scanRemaining: user.scan_remaining,
       membershipExpire: user.membership_expire,
       membershipId: user.membership_id,
+      isVip: vipStatus.isVip,
+      planName: vipStatus.planName,
       quoteRemaining: user.quote_remaining,
       quoteDailyRemaining: (() => {
         const today = new Date().toISOString().split('T')[0]

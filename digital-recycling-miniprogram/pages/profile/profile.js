@@ -2,6 +2,7 @@ const app = getApp()
 const userApi = require('../../utils/api-modules').userApi
 const messageApi = require('../../utils/api-modules').messageApi
 const { CONTACT } = require('../../utils/constants')
+const { checkLogin } = require('../../utils/common')
 
 Page({
   data: {
@@ -63,6 +64,7 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ activeTab: 'profile' })
     }
+    if (!checkLogin('/pages/profile/profile')) return
     this.loadData()
   },
 
@@ -81,6 +83,7 @@ Page({
     const user = app.globalData.userInfo || {}
     userApi.getProfile().then(res => {
       const data = (res.data || res || {})
+      data.is_vip = data.isVip || false
       app.globalData.userInfo = data
       this.setData({ userInfo: data })
     }).catch(() => {

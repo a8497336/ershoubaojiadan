@@ -23,11 +23,14 @@
         <el-table-column prop="total_amount" label="累计收益" width="110">
           <template #default="{ row }">¥{{ Number(row.total_amount).toLocaleString() }}</template>
         </el-table-column>
-        <el-table-column prop="membership_expire" label="会员到期" width="170">
+        <el-table-column prop="plan_name" label="会员类型" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.membership_expire && new Date(row.membership_expire) > new Date()" type="warning" size="small">VIP</el-tag>
+            <el-tag v-if="row.plan_name" type="warning" size="small">{{ row.plan_name }}</el-tag>
             <span v-else>-</span>
           </template>
+        </el-table-column>
+        <el-table-column prop="membership_expire" label="会员到期" width="130">
+          <template #default="{ row }">{{ row.membership_expire || '-' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
@@ -86,6 +89,14 @@
         <el-form-item label="手机号"><el-input v-model="editForm.phone" /></el-form-item>
         <el-form-item label="积分"><el-input-number v-model="editForm.points" :min="0" /></el-form-item>
         <el-form-item label="查价次数"><el-input-number v-model="editForm.scan_remaining" :min="0" /></el-form-item>
+        <el-form-item label="会员类型">
+          <el-select v-model="editForm.membership_id" placeholder="选择会员类型" clearable style="width: 100%">
+            <el-option v-for="p in membershipPlans" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="会员到期">
+          <el-date-picker v-model="editForm.membership_expire" type="date" placeholder="选择到期日期" value-format="YYYY-MM-DD" style="width: 100%" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editVisible = false">取消</el-button>
@@ -102,6 +113,7 @@
         <el-descriptions-item label="回收台数">{{ detailData.total_recycled }}</el-descriptions-item>
         <el-descriptions-item label="累计收益">¥{{ Number(detailData.total_amount || 0).toLocaleString() }}</el-descriptions-item>
         <el-descriptions-item label="会员到期">{{ detailData.membership_expire || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="会员类型">{{ detailData.plan_name || '-' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="detailData.status === 1 ? 'success' : 'danger'">{{ detailData.status === 1 ? '正常' : '禁用' }}</el-tag>
         </el-descriptions-item>
@@ -127,7 +139,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders } from '@/api'
+import { getUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders, getMembershipPlans } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
@@ -165,6 +177,7 @@ const addRules = {
 const detailVisible = ref(false)
 const detailData = ref({})
 const userOrders = ref([])
+const membershipPlans = ref([])
 
 const statusMap = {
   shipping: { label: '待发货', type: 'info' },
@@ -285,7 +298,12 @@ const handleViewDetail = async (row) => {
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  getMembershipPlans().then(res => {
+    membershipPlans.value = res.data || []
+  }).catch(() => {})
+})
 </script>
 
 <style scoped>

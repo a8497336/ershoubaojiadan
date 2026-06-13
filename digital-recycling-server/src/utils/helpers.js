@@ -1,3 +1,5 @@
+const db = require('../models')
+
 const generateOrderNo = (prefix = 'ORD') => {
   const now = new Date()
   const year = now.getFullYear()
@@ -40,10 +42,27 @@ const calcDistance = (lat1, lng1, lat2, lng2) => {
   return distance
 }
 
+const getVipStatus = async (user) => {
+  const membershipExpire = user.membership_expire
+  const isVip = membershipExpire && new Date(membershipExpire) > new Date()
+  let planName = null
+  if (isVip && user.membership_id) {
+    try {
+      const plan = await db.MembershipPlan.findByPk(user.membership_id)
+      if (plan) {
+        planName = plan.name
+      }
+    } catch (e) {
+    }
+  }
+  return { isVip, membershipExpire, planName }
+}
+
 module.exports = {
   generateOrderNo,
   generateUserNo,
   formatPrice,
   paginate,
-  calcDistance
+  calcDistance,
+  getVipStatus
 }

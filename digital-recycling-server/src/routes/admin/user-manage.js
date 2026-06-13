@@ -149,13 +149,21 @@ router.get('/', adminAuth, async (req, res, next) => {
     const { count, rows } = await db.User.findAndCountAll({
       where,
       attributes: { exclude: ['openid', 'union_id'] },
+      include: [{ model: db.MembershipPlan, as: 'MembershipPlan', attributes: ['name'] }],
       order: [['created_at', 'DESC']],
       offset,
       limit
     })
 
+    const list = rows.map(user => {
+      const json = user.toJSON()
+      json.plan_name = json.MembershipPlan ? json.MembershipPlan.name : null
+      delete json.MembershipPlan
+      return json
+    })
+
     return success(res, {
-      list: rows,
+      list,
       pagination: { total: count, page: parseInt(page), pageSize: parseInt(pageSize), totalPages: Math.ceil(count / parseInt(pageSize)) }
     })
   } catch (err) { next(err) }
@@ -193,8 +201,8 @@ router.put('/:id', adminAuth, async (req, res, next) => {
   try {
     const user = await db.User.findByPk(req.params.id)
     if (!user) return notFound(res, '用户不存在')
-    const { nickname, phone, points, scan_remaining, status } = req.body
-    await user.update({ nickname, phone, points, scan_remaining, status })
+    const { nickname, phone, points, scan_remaining, status, membership_id, membership_expire } = req.body
+    await user.update({ nickname, phone, points, scan_remaining, status, membership_id, membership_expire })
     return success(res, user, '更新成功')
   } catch (err) { next(err) }
 })

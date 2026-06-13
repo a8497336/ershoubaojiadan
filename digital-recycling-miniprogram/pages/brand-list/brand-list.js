@@ -268,7 +268,8 @@ Page({
       return cartApi.add({
         product_id: product.productId || product.id,
         condition_id: c.conditionId,
-        quantity: c.quantity
+        quantity: c.quantity,
+        unit_price: c.price
       })
     })
     Promise.all(promises).then(() => {

@@ -158,4 +158,14 @@
       <view class="skeleton-line short"></view>
     </view>
   </view>
+
+  <!-- 错误状态 -->
+  <view class="error-container" wx:if="{{isLoading === false && !order}}">
+    <view class="error-content">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">订单加载失败</text>
+      <text class="error-hint">点击下方按钮重新加载</text>
+      <view class="error-btn" bindtap="onRetry">重新加载</view>
+    </view>
+  </view>
 </view>

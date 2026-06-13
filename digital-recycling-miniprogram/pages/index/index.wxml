@@ -97,7 +97,7 @@
         </view>
         <text class="store-action">复制 ></text>
       </view>
-      <view class="store-address" bindtap="openLocation">
+      <view class="store-address" bindtap="goToStoreList">
         <view class="store-label" style="flex:1;">
           <text>📍 {{storeInfo.province || "" }}{{storeInfo.city || "" }}{{storeInfo.address || ""}}</text>
         </view>
@@ -276,43 +276,6 @@
 
     <!-- 返回顶部 -->
     <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">⬆</view>
-
-    <!-- 位置授权弹窗 -->
-    <view class="sheet-mask {{showLocationSheet ? 'show' : ''}}" bindtap="onLocationDeny" catchtap="">
-      <view class="sheet-container animate-slide-up">
-        <view class="sheet-header">
-          <image class="sheet-logo-img" src="/images/icons/logo.svg" mode="aspectFit"/>
-          <text class="sheet-title">数码回收网报价单 申请</text>
-          <text class="sheet-info-icon">ⓘ</text>
-        </view>
-        <view class="sheet-body">
-          <text class="sheet-heading">获取你的位置信息</text>
-          <text class="sheet-desc">将获取你的具体位置信息，用于获取位置信息，推荐附近门店</text>
-        </view>
-        <view class="sheet-actions">
-          <button class="sheet-btn sheet-btn-deny" bindtap="onLocationDeny">拒绝</button>
-          <button class="sheet-btn sheet-btn-allow {{!locationSheetChecked ? 'btn-disabled' : ''}}" bindtap="onLocationAllow">允许</button>
-        </view>
-        <view class="sheet-agreement" catchtap="toggleLocationCheck">
-          <view class="agreement-checkbox {{locationSheetChecked ? 'checked' : ''}}"></view>
-          <text class="agreement-text">已阅读并接受《数码回收网报价单小程序隐私保护指引》</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 隐私保护提示弹窗 -->
-    <view class="sheet-mask {{showPrivacySheet ? 'show' : ''}}" bindtap="onPrivacyDeny" catchtap="">
-      <view class="sheet-container animate-slide-up">
-        <view class="sheet-body privacy-body">
-          <text class="sheet-heading">用户隐私保护提示</text>
-          <text class="sheet-desc privacy-desc">在你使用 数码回收网报价单 服务之前，请仔细阅读《数码回收网报价单小程序隐私保护指引》如你同意该指引，请点击"同意"开始使用本小程序。</text>
-        </view>
-        <view class="sheet-actions">
-          <button class="sheet-btn sheet-btn-deny" bindtap="onPrivacyDeny">拒绝</button>
-          <button class="sheet-btn sheet-btn-allow" bindtap="onPrivacyAgree">同意</button>
-        </view>
-      </view>
-    </view>
   </block>
 
   <custom-tabbar activeTab="home" />

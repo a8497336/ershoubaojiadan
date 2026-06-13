@@ -1,36 +1,54 @@
 <view class="page-container">
-  <view class="invite-header">
-    <view class="invite-title">邀好友 分佣金</view>
-    <view class="invite-desc">每成功邀请一位好友，即可获得佣金奖励</view>
-  </view>
-
-  <view class="stats-card">
-    <view class="stat-item">
-      <view class="stat-value">{{inviteCount}}</view>
-      <view class="stat-label">邀请人数</view>
+  <block wx:if="{{loading}}">
+    <view class="skeleton-wrap">
+      <view class="skeleton-header"></view>
+      <view class="skeleton-card"></view>
+      <view class="skeleton-section"></view>
     </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <view class="stat-value">¥{{totalReward}}</view>
-      <view class="stat-label">累计奖励</view>
-    </view>
-  </view>
+  </block>
 
-  <view class="invite-code-section">
-    <view class="code-label">我的邀请码</view>
-    <view class="code-value">{{inviteCode || '暂无'}}</view>
-    <view class="code-actions">
-      <view class="action-btn copy-btn" bindtap="handleCopyCode">复制邀请码</view>
-      <view class="action-btn share-btn" bindtap="handleShare">分享给好友</view>
+  <block wx:elif="{{networkError}}">
+    <view class="error-state" bindtap="retryLoad">
+      <image class="error-image" src="/images/icons/empty.svg" mode="aspectFit" />
+      <text class="error-text">网络连接失败，点击重新加载</text>
+      <view class="retry-btn">重新加载</view>
     </view>
-  </view>
+  </block>
 
-  <view class="rules-section">
-    <view class="rules-title">邀请规则</view>
-    <view class="rule-item">1、分享邀请码或链接给好友</view>
-    <view class="rule-item">2、好友通过邀请码注册成功</view>
-    <view class="rule-item">3、好友完成首次回收交易</view>
-    <view class="rule-item">4、您即可获得相应佣金奖励</view>
-    <view class="rule-item">5、佣金可提现至微信零钱</view>
-  </view>
+  <block wx:else>
+    <view class="invite-header">
+      <view class="invite-title">邀好友 分佣金</view>
+      <view class="invite-desc">每成功邀请一位好友，即可获得佣金奖励</view>
+    </view>
+
+    <view class="stats-card">
+      <view class="stat-item">
+        <view class="stat-value">{{inviteCount}}</view>
+        <view class="stat-label">邀请人数</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value">¥{{totalReward}}</view>
+        <view class="stat-label">累计奖励</view>
+      </view>
+    </view>
+
+    <view class="invite-code-section">
+      <view class="code-label">我的邀请码</view>
+      <view class="code-value">{{inviteCode || '暂无'}}</view>
+      <view class="code-actions">
+        <view class="action-btn copy-btn" bindtap="handleCopyCode">复制邀请码</view>
+        <button class="action-btn share-btn" open-type="share">分享给好友</button>
+      </view>
+    </view>
+
+    <view class="rules-section">
+      <view class="rules-title">邀请规则</view>
+      <view class="rule-item">1、分享邀请码或链接给好友</view>
+      <view class="rule-item">2、好友通过邀请码注册成功</view>
+      <view class="rule-item">3、好友完成首次回收交易</view>
+      <view class="rule-item">4、您即可获得相应佣金奖励</view>
+      <view class="rule-item">5、佣金可提现至微信零钱</view>
+    </view>
+  </block>
 </view>

@@ -1,4 +1,5 @@
 const { userApi, pointsApi, uploadFile, scanApi } = require('../../utils/api-modules')
+const { checkLogin } = require('../../utils/common')
 
 Page({
   data: {
@@ -21,6 +22,7 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ activeTab: 'scanPrice' })
     }
+    if (!checkLogin('/pages/scan-price/scan-price')) return
   },
 
   loadUserInfo() {

@@ -13,6 +13,7 @@ Page({
   data: {
     order: null,
     isLoading: true,
+    networkError: false,
     timelineExpanded: false,
     orderProcessTimeline: []
   },
@@ -20,59 +21,73 @@ Page({
   onLoad(options) {
     if (options.id) {
       this.loadOrderDetail(options.id)
+    } else {
+      this.setData({ isLoading: false, networkError: true })
+    }
+  },
+
+  onRetry() {
+    const options = this.options
+    if (options && options.id) {
+      this.loadOrderDetail(options.id)
     }
   },
 
   formatOrder(raw) {
-    const items = (raw.Items || []).map(it => ({
-      name: it.product_name || '',
-      condition: it.condition_name || '',
-      price: it.unit_price || 0,
-      quantity: it.quantity || 1
+    const items = ((raw.Items || raw.items) || []).map(it => ({
+      name: it.product_name || it.productName || '',
+      condition: it.condition_name || it.conditionName || '',
+      price: it.unit_price || it.unitPrice || 0,
+      quantity: it.quantity || it.quantity || 1
     }))
 
-    const statusInfo = STATUS_MAP[raw.status] || { text: raw.status, color: '#999' }
-    const totalAmountText = (raw.total_amount || 0).toFixed(2)
+    const status = raw.status || raw.status || ''
+    const statusInfo = STATUS_MAP[status] || { text: status, color: '#999' }
+    const totalAmountText = (raw.total_amount || raw.totalAmount || 0).toFixed(2)
 
     const logistics = {
-      company: raw.logistics_company || '',
-      trackingNo: raw.tracking_no || '',
-      status: raw.logistics_status || '',
-      timeline: (raw.Timelines || []).map(t => ({
+      company: raw.logistics_company || raw.logisticsCompany || '',
+      trackingNo: raw.tracking_no || raw.trackingNo || '',
+      status: raw.logistics_status || raw.logisticsStatus || '',
+      timeline: ((raw.Timelines || raw.timelines) || []).map(t => ({
         desc: t.description || t.desc || '',
-        time: t.happened_at ? t.happened_at.replace('T', ' ').substring(0, 16) : ''
+        time: t.happened_at ? t.happened_at.replace('T', ' ').substring(0, 16) : (t.happenedAt ? t.happenedAt.replace('T', ' ').substring(0, 16) : '')
       }))
     }
 
     return {
       id: raw.id,
-      order_no: raw.order_no || '',
-      status: raw.status,
+      order_no: raw.order_no || raw.orderNo || '',
+      status: status,
       statusInfo,
       items,
       totalAmountText,
       logistics,
-      cancelReason: raw.cancel_reason || '',
-      created_at: raw.created_at ? raw.created_at.replace('T', ' ').substring(0, 16) : '',
-      completed_at: raw.completed_at ? raw.completed_at.replace('T', ' ').substring(0, 16) : '',
-      cancelled_at: raw.cancelled_at ? raw.cancelled_at.replace('T', ' ').substring(0, 16) : ''
+      cancelReason: raw.cancel_reason || raw.cancelReason || '',
+      created_at: raw.created_at ? raw.created_at.replace('T', ' ').substring(0, 16) : (raw.createdAt ? raw.createdAt.replace('T', ' ').substring(0, 16) : ''),
+      completed_at: raw.completed_at ? raw.completed_at.replace('T', ' ').substring(0, 16) : (raw.completedAt ? raw.completedAt.replace('T', ' ').substring(0, 16) : ''),
+      cancelled_at: raw.cancelled_at ? raw.cancelled_at.replace('T', ' ').substring(0, 16) : (raw.cancelledAt ? raw.cancelledAt.replace('T', ' ').substring(0, 16) : '')
     }
   },
 
   loadOrderDetail(id) {
-    this.setData({ isLoading: true })
+    this.setData({ isLoading: true, networkError: false })
     orderApi.getOrderDetail(id).then((res) => {
       const raw = res.data || res
+      if (!raw || !raw.id) {
+        this.setData({ isLoading: false, networkError: true })
+        return
+      }
       const order = this.formatOrder(raw)
       const processTimeline = this.generateOrderProcessTimeline(order)
       this.setData({
         order,
         orderProcessTimeline: processTimeline,
-        isLoading: false
+        isLoading: false,
+        networkError: false
       })
     }).catch(() => {
-      this.setData({ isLoading: false })
-      wx.showToast({ title: '订单不存在', icon: 'none' })
+      this.setData({ isLoading: false, networkError: true })
     })
   },
 

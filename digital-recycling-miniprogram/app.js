@@ -21,6 +21,16 @@ App({
     this.checkApiStatus()
     this.checkLoginStatus()
     this.initPrivacyAuthorization()
+    this.requestPrivacyAuthorization()
+  },
+
+  requestPrivacyAuthorization() {
+    if (typeof wx.requirePrivacyAuthorize === 'function') {
+      wx.requirePrivacyAuthorize({
+        success: () => {},
+        fail: () => {}
+      })
+    }
   },
 
   initPrivacyAuthorization() {
@@ -50,6 +60,14 @@ App({
             if (modalRes.confirm) {
               wx.setStorageSync('privacy_agreed', true)
               resolve({ button: 'agree', event: eventInfo.event })
+              if (this.globalData.pendingLocationRequest) {
+                this.globalData.pendingLocationRequest = false
+                const app = this
+                const page = getCurrentPages().slice(-1)[0]
+                if (page && page.requestStoreLocation) {
+                  setTimeout(() => page.requestStoreLocation(), 50)
+                }
+              }
             } else {
               resolve({ button: 'disagree', event: eventInfo.event })
             }
@@ -109,7 +127,11 @@ App({
       this.loadUserInfo()
       this.loadCartData()
     }).catch((err) => {
-      console.error('Token验证失败:', err)
+      console.warn('Token验证失败，清除无效token:', err.message || err)
+      wx.removeStorageSync('token')
+      wx.removeStorageSync('userInfo')
+      this.globalData.token = null
+      this.globalData.userInfo = null
     })
   },
 
@@ -160,6 +182,7 @@ App({
     isConnected: true,
     networkType: 'wifi',
     apiStatus: 'unknown',
-    statusBarHeight: 0
+    statusBarHeight: 0,
+    pendingLocationRequest: false
   }
 })

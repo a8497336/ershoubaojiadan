@@ -59,6 +59,11 @@
       "desc": "用于获取您的位置以展示最近的门店信息"
     }
   },
+  "requiredPrivateInfos": [
+    "getLocation",
+    "startLocationUpdate",
+    "onLocationChange"
+  ],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

@@ -18,16 +18,68 @@ Page({
 
   loadPlans() {
     membershipApi.getPlans().then((res) => {
-      this.setData({ plans: res.data || [], loading: false })
+      const data = res.data || res
+      const plans = Array.isArray(data) ? data : (data.list || [])
+      this.setData({ plans, loading: false })
     }).catch(() => {
       this.setData({ loading: false })
+      wx.showToast({ title: '加载失败', icon: 'none' })
     })
   },
 
   loadUserInfo() {
     userApi.getProfile().then((res) => {
-      this.setData({ userInfo: res.data || res })
+      const data = res.data || res
+      this.setData({ userInfo: data })
     }).catch(() => {})
+  },
+
+  onPurchase(e) {
+    const planId = e.currentTarget.dataset.planId
+    if (!this.data.userInfo) {
+      wx.navigateTo({
+        url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/membership/membership')
+      })
+      return
+    }
+
+    wx.showModal({
+      title: '确认开通',
+      content: '确认购买此会员套餐？',
+      success: (res) => {
+        if (res.confirm) {
+          this.doPurchase(planId)
+        }
+      }
+    })
+  },
+
+  doPurchase(planId) {
+    wx.showLoading({ title: '创建订单...' })
+    membershipApi.purchase(planId).then((res) => {
+      wx.hideLoading()
+      const data = res.data || res
+      const orderNo = data.orderNo
+      wx.showModal({
+        title: '订单已创建',
+        content: '订单号：' + orderNo + '\n金额：¥' + data.amount,
+        confirmText: '模拟支付',
+        cancelText: '稍后支付',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            membershipApi.payCallback(orderNo).then(() => {
+              wx.showToast({ title: '支付成功', icon: 'success' })
+              this.loadUserInfo()
+            }).catch(() => {
+              wx.showToast({ title: '支付失败', icon: 'none' })
+            })
+          }
+        }
+      })
+    }).catch((err) => {
+      wx.hideLoading()
+      wx.showToast({ title: '创建订单失败', icon: 'none' })
+    })
   },
 
   goToLogin() {

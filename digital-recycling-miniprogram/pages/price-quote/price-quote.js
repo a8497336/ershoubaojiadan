@@ -25,22 +25,10 @@ Page({
     isVip: false
   },
 
-  onLoad(options) {
-    const token = wx.getStorageSync('token')
-    if (!token) {
-      const currentUrl = '/pages/price-quote/price-quote'
-      const queryParts = []
-      if (options.brandId) queryParts.push('brandId=' + options.brandId)
-      if (options.brand) queryParts.push('brand=' + options.brand)
-      if (options.category) queryParts.push('category=' + options.category)
-      if (options.productId) queryParts.push('productId=' + options.productId)
-      const queryStr = queryParts.length > 0 ? '?' + queryParts.join('&') : ''
-      wx.redirectTo({
-        url: '/pages/login/login?redirect=' + encodeURIComponent(currentUrl + queryStr)
-      })
-      return
-    }
+  // 防止重複調用的標記
+  _isLoading: false,
 
+  onLoad(options) {
     const brandId = options.brandId ? parseInt(options.brandId) : null
     const brand = options.brand ? decodeURIComponent(options.brand) : ''
     const category = options.category ? decodeURIComponent(options.category) : ''
@@ -64,12 +52,23 @@ Page({
   },
 
   onPullDownRefresh() {
+    // 如果正在加載中，則跳過此次刷新請求
+    if (this._isLoading) {
+      wx.stopPullDownRefresh()
+      return
+    }
     const { brandId, category } = this.data
     this.loadTodayPrices({ brand_id: brandId, category })
     wx.stopPullDownRefresh()
   },
 
   loadTodayPrices(options = {}) {
+    // 防止重複調用
+    if (this._isLoading) {
+      return
+    }
+    this._isLoading = true
+
     this.setData({ loading: true, isEmpty: false })
 
     const apiData = {}
@@ -101,7 +100,7 @@ Page({
 
       const quoteRemaining = data.quoteRemaining !== undefined ? data.quoteRemaining : 0
       const quoteDailyRemaining = data.quoteDailyRemaining !== undefined ? data.quoteDailyRemaining : 0
-      const isVip = quoteRemaining >= 9999
+      const isVip = data.isVip || false
 
       this.setData({
         quoteRemaining,
@@ -174,7 +173,7 @@ Page({
           ...item,
           prices: conditions.map(c => ({
             val: this.formatPrice(item.priceMap[c.id]),
-            cls: this.getPriceClass(item.priceMap[c.id])
+            cls: this.getPriceClass(item.priceMap[c.id], c.name)
           }))
         })
       })
@@ -205,7 +204,7 @@ Page({
               ...item,
               prices: chunkVisibleConditions.map(c => ({
                 val: this.formatPrice(item.priceMap[c.id]),
-                cls: this.getPriceClass(item.priceMap[c.id])
+                cls: this.getPriceClass(item.priceMap[c.id], c.name)
               }))
             }))
 
@@ -229,9 +228,7 @@ Page({
           new Date(data.updateTime).toLocaleString('zh-CN', {
             year: 'numeric',
             month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: '2-digit'
           }) : '',
         viewCount: data.viewCount || 0,
         priceList: processedList,
@@ -244,7 +241,9 @@ Page({
         receiverPhone: quoteConfig.receiver_phone || '',
         receiverAddress: quoteConfig.receiver_address || ''
       })
+      this._isLoading = false
     }).catch((err) => {
+      this._isLoading = false
       const statusCode = (err && err.statusCode) || (err && err.code) || 0
       if (statusCode === 403 || statusCode === 10007) {
         this.setData({ loading: false, isEmpty: true, categoryGroups: [] })
@@ -276,13 +275,13 @@ Page({
     return num > 0 ? num.toString() : '/'
   },
 
-  getPriceClass(price) {
+  getPriceClass(price, conditionName) {
     if (price === null || price === undefined || price === '') return 'price-none'
     const num = parseFloat(price)
     if (isNaN(num) || num <= 0) return 'price-none'
-    if (num >= 1000) return 'price-high'
-    if (num >= 500) return 'price-mid'
-    return 'price-low'
+    if (conditionName === '开机屏好') return 'price-bootable'
+    if (conditionName === '不开机' || conditionName === '废板-整机') return 'price-dead'
+    return 'price-other'
   },
 
   toggleSearch() {

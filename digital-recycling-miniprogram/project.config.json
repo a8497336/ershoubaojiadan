@@ -19,7 +19,7 @@
     "autoAudits": false,
     "newFeature": false,
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "useIsolateContext": true,
     "nodeModules": false,
     "enhance": true,
@@ -48,7 +48,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.15.2",
-  "appid": "wxefe198adab467cde",
+  "appid": "wxb7cf435c7b2908d2",
   "projectname": "digital-recycling-miniprogram",
   "condition": {},
   "editorSetting": {

@@ -91,7 +91,7 @@
   background: #fff;
   border-radius: 24rpx 24rpx 0 0;
   width: 100%;
-  padding: 32rpx 24rpx 250rpx;
+  padding: 32rpx 24rpx 110rpx;
   animation: slideUp 0.3s ease;
 }
 @keyframes slideUp {
@@ -198,13 +198,34 @@
 .qty-num { font-size: 36rpx; color: #333; font-weight: 600; min-width: 60rpx; text-align: center; }
 
 .add-cart-btn {
-  width: 100%;
+  flex: 1;
   background: #ff2d4a;
   color: #fff;
   border: none;
-  border-radius: 48rpx;
-  padding: 28rpx 0;
-  font-size: 32rpx;
+  border-radius: 22rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
   font-weight: 500;
+  margin: 0;
 }
 .add-cart-btn:active { background: #e62540; }
+
+.modal-btn-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.close-btn {
+  flex: 1;
+  background: #fff;
+  color: #ff2d4a;
+  border: 2rpx solid #ff2d4a;
+  border-radius: 22rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  margin: 0;
+}
+.close-btn:active { background: #fff5f6; }

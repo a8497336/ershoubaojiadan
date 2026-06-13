@@ -7,43 +7,6 @@
   flex-direction: column;
 }
 
-/* 导航栏 */
-.nav-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 32rpx;
-  padding-top: var(--status-bar-height, 44px);
-  position: relative;
-}
-
-.nav-back {
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
-  color: #333;
-  font-weight: 300;
-}
-
-.nav-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #333;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.nav-right {
-  width: 60rpx;
-}
-
-/* 内容区域 */
 .login-content {
   flex: 1;
   display: flex;
@@ -52,9 +15,8 @@
   padding-top: 120rpx;
 }
 
-/* Logo */
 .logo-wrap {
-  margin-bottom: 80rpx;
+  margin-bottom: 40rpx;
 }
 
 .logo-img {
@@ -62,83 +24,89 @@
   height: 120rpx;
 }
 
-/* 权限说明 */
-.permission-hint {
+.welcome-text {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 100rpx;
+  margin-bottom: 60rpx;
 }
 
-.permission-title {
-  font-size: 32rpx;
-  font-weight: 500;
+.welcome-title {
+  font-size: 36rpx;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
-.permission-desc {
+.welcome-desc {
   font-size: 26rpx;
   color: #999;
 }
 
-/* 按钮组 */
+.avatar-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 48rpx;
+}
+
+.avatar-btn {
+  width: 160rpx;
+  height: 160rpx;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  line-height: 1;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.avatar-preview {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+}
+
+.avatar-hint {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
 .btn-group {
   width: 100%;
   padding: 0 64rpx;
   box-sizing: border-box;
 }
 
-.auth-login-btn {
+.login-btn {
   width: 100%;
-  height: 88rpx;
+  height: 96rpx;
   background: #ff2d4a;
   color: #ffffff;
   font-size: 32rpx;
   font-weight: 500;
-  border-radius: 44rpx;
+  border-radius: 48rpx;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 45, 74, 0.3);
 }
 
-.auth-login-btn::after {
+.login-btn::after {
   border: none;
 }
 
-.auth-login-btn:active {
+.login-btn:active {
+  opacity: 0.9;
   background: #e62640;
 }
 
-.btn-disabled {
-  opacity: 0.6;
-}
-
-.sms-login-btn {
-  width: 100%;
-  height: 88rpx;
-  background: #ffffff;
-  color: #ff2d4a;
-  font-size: 30rpx;
-  font-weight: 500;
-  border-radius: 44rpx;
-  border: 2rpx solid #ff2d4a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sms-login-btn::after {
-  border: none;
-}
-
-.sms-login-btn:active {
-  background: #fff5f6;
-}
-
-/* 协议勾选区域 */
 .agreement-footer {
   position: fixed;
   bottom: 0;
@@ -189,4 +157,8 @@
 .agreement-link {
   font-size: 24rpx;
   color: #ff2d4a;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

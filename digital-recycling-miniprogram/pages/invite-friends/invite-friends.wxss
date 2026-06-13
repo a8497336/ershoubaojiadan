@@ -3,6 +3,61 @@
   background: var(--color-background);
 }
 
+.skeleton-wrap {
+  padding: 0 24rpx;
+}
+
+.skeleton-header {
+  height: 360rpx;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.skeleton-card {
+  height: 160rpx;
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  margin-top: -40rpx;
+  box-shadow: var(--shadow-md);
+}
+
+.skeleton-section {
+  height: 400rpx;
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  margin-top: 24rpx;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-6);
+}
+
+.error-image {
+  width: 240rpx;
+  height: 240rpx;
+  margin-bottom: var(--space-4);
+}
+
+.error-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-6);
+}
+
+.retry-btn {
+  padding: var(--space-3) var(--space-8);
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+
 .invite-header {
   background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
   padding: 60rpx 32rpx 80rpx;
@@ -90,6 +145,9 @@
   border-radius: var(--radius-full);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
+  border: none;
+  padding: 0;
+  line-height: 80rpx;
 }
 
 .copy-btn {
@@ -100,6 +158,10 @@
 .share-btn {
   background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
   color: #8B4513;
+}
+
+.share-btn::after {
+  border: none;
 }
 
 .rules-section {

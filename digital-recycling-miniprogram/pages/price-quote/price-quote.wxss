@@ -216,6 +216,9 @@
   .price-high, .price-mid, .price-low {
     font-size: 18rpx;
   }
+  .price-bootable, .price-dead, .price-other {
+    font-size: 18rpx;
+  }
   .price-normal {
     font-size: 16rpx;
   }
@@ -291,6 +294,9 @@
     font-size: 14rpx;
   }
   .price-high, .price-mid, .price-low {
+    font-size: 16rpx;
+  }
+  .price-bootable, .price-dead, .price-other {
     font-size: 16rpx;
   }
   .price-normal {
@@ -399,6 +405,24 @@
 
 .price-low {
   color: var(--color-price-low);
+  font-weight: bold;
+  font-size: 20rpx;
+}
+
+.price-bootable {
+  color: #28b940;
+  font-weight: bold;
+  font-size: 20rpx;
+}
+
+.price-dead {
+  color: #333333;
+  font-weight: bold;
+  font-size: 20rpx;
+}
+
+.price-other {
+  color: #2980b9;
   font-weight: bold;
   font-size: 20rpx;
 }

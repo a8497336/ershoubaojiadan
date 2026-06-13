@@ -120,7 +120,7 @@
 
 .settle-bar {
   position: fixed;
-  bottom: 100rpx;
+  bottom: 230rpx;
   left: 0;
   right: 0;
   background: var(--color-background-white);

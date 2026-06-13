@@ -112,6 +112,7 @@ db.MembershipOrder.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
 db.MembershipOrder.belongsTo(db.MembershipPlan, { foreignKey: 'plan_id', as: 'Plan' })
 
 db.MembershipPlan.hasMany(db.MembershipOrder, { foreignKey: 'plan_id', as: 'Orders' })
+db.User.belongsTo(db.MembershipPlan, { foreignKey: 'membership_id', as: 'MembershipPlan' })
 
 db.Admin.belongsTo(db.Role, { foreignKey: 'role_id', as: 'Role' })
 db.Role.hasMany(db.Admin, { foreignKey: 'role_id', as: 'Admins' })

@@ -14,9 +14,9 @@
         <block wx:for="{{item.brands}}" wx:for-item="brand" wx:key="brandName">
           <view class="product-card" wx:for="{{brand.products}}" wx:for-item="product" wx:key="id" bindtap="openProductDetail" data-item="{{product}}">
             <view class="product-info">
-              <view class="p-name">{{product.model_code || product.name}}</view>
+              <view class="p-name">{{ product.name || product.model_code}}</view>
             </view>
-            <view class="search-brand-title">{{item.categoryName}} -&gt;{{brand.brandName}}</view>
+            <view class="search-brand-title">{{item.categoryName}} -> {{brand.brandName}}</view>
           </view>
         </block>
       </block>
@@ -53,7 +53,10 @@
         </block>
         <view class="condition-empty" wx:else>暂无成色信息</view>
       </view>
-      <button class="add-cart-btn" bindtap="addToCart">加入回收车</button>
+      <view class="modal-btn-row">
+        <button class="close-btn" bindtap="closeModal">关闭</button>
+        <button class="add-cart-btn" bindtap="addToCart">加入回收车</button>
+      </view>
     </view>
   </view>
 </view>

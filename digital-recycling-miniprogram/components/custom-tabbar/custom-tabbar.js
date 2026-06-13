@@ -36,7 +36,7 @@ Component({
       wx.switchTab({
         url: tab.page,
         fail: () => {
-          wx.navigateTo({ url: tab.page })
+          wx.showToast({ title: '页面跳转失败，请重试', icon: 'none' })
         }
       })
       

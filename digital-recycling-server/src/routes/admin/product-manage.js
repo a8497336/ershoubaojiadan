@@ -558,9 +558,10 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
         modelCode = cleanStr(row[modelCodeColIndex])
       } else {
         const firstVal = cleanStr(row[0])
+        // 纯数字就是产品名（如1107、1105、1100），直接作为产品名
         if (/^\d+$/.test(firstVal)) {
-          productName = cleanStr(row[1])
-          nameColIndex = 1
+          productName = firstVal
+          nameColIndex = 0
         } else {
           productName = firstVal
           nameColIndex = 0

@@ -92,11 +92,27 @@ router.get('/plans', async (req, res, next) => {
 router.get('/status', auth, async (req, res, next) => {
   try {
     const user = req.user
-    const isVip = user.membership_expire && new Date(user.membership_expire) > new Date()
+    const now = new Date()
+    const isVip = user.membership_expire && new Date(user.membership_expire) > now
+
+    if (user.membership_expire && new Date(user.membership_expire) <= now) {
+      user.scan_remaining = 10
+      user.quote_remaining = 100
+      user.quote_daily_count = 0
+      await user.save()
+    }
+
+    let planName = null
+    if (user.membership_id) {
+      const plan = await db.MembershipPlan.findByPk(user.membership_id)
+      planName = plan ? plan.name : null
+    }
+
     return success(res, {
       isVip,
       membershipExpire: user.membership_expire,
-      planId: user.membership_id
+      planId: user.membership_id,
+      planName
     })
   } catch (err) {
     next(err)
@@ -141,8 +157,11 @@ router.post('/pay-callback', async (req, res, next) => {
     const now = new Date()
     const user = await db.User.findByPk(order.user_id)
     let startDate = now
-    if (user.membership_expire && new Date(user.membership_expire) > now) {
-      startDate = new Date(user.membership_expire)
+    if (user.membership_expire) {
+      const expireDate = new Date(user.membership_expire)
+      if (expireDate > now) {
+        startDate = expireDate
+      }
     }
     const endDate = new Date(startDate)
     endDate.setDate(endDate.getDate() + plan.duration_days)

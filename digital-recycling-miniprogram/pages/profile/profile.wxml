@@ -19,7 +19,7 @@
       </view>
       <view class="user-details">
         <view class="u-name">{{userInfo.nickname || userInfo.name || '用户'}}</view>
-        <view class="u-id">编号：{{userInfo.id || userInfo.user_id || '--'}}</view>
+        <view class="u-id">编号：{{userInfo.id || userInfo.userId || '--'}}</view>
         <view class="u-phone" wx:if="{{userInfo.phone}}">
           <text class="u-phone-icon">📞</text>
           <text>{{userInfo.phone}}</text>

@@ -1,101 +1,47 @@
 <view class="membership-page">
-  <!-- 导航栏 -->
-  <view class="nav-header">
-    <view class="nav-back" bindtap="navigateBack">‹</view>
-    <text class="nav-title">会员中心</text>
-    <view class="nav-placeholder"></view>
-  </view>
 
   <!-- 主内容区 -->
   <scroll-view scroll-y class="main-scroll" style="height: calc(100vh - 180rpx);">
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view class="user-avatar-wrap">
-        <image class="user-avatar-icon" src="/images/icons/avatar.svg" mode="aspectFit"/>
+        <image class="user-avatar-icon" src="{{userInfo.avatar || '/images/icons/avatar.svg'}}" mode="aspectFit"/>
       </view>
       <view class="user-text-row">
         <text class="user-name">{{userInfo.nickname || '微信用户'}}</text>
-        <text class="user-status">开通{{userInfo.plan_name || '月度'}}报价会员 累计获得收益<span class="income-num">10157</span>元</text>
+        <text class="user-status" wx:if="{{userInfo.isVip}}">会员有效期至 {{userInfo.membershipExpire}}</text>
+        <text class="user-status" wx:else>开通会员享更多特权</text>
       </view>
     </view>
 
-    <!-- 会员专属特权 -->
+    <!-- 选择会员套餐 -->
     <view class="section-block">
-      <view class="section-head">会员专属特权</view>
-      <view class="privilege-grid">
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">免费查看报价 ></text>
+      <view class="section-head">选择会员套餐</view>
+      <view class="plan-list">
+        <view class="plan-card" wx:for="{{plans}}" wx:key="id">
+          <view class="plan-name">{{item.name}}</view>
+          <view class="plan-duration">有效期 {{item.duration_days}} 天</view>
+          <view class="plan-price-row">
+            <text class="plan-price">¥{{item.price}}</text>
+            <text class="plan-original">¥{{item.original_price}}</text>
           </view>
-          <text class="privilege-sub">会员免费无限次查看报价</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">免费查看报价</view>
-            <view class="privilege-badge-icon">🆓</view>
-          </view>
-        </view>
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">行情抢先知道 ></text>
-          </view>
-          <text class="privilege-sub">会员一行行情信息抢先知道</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">行情抢先知道</view>
-            <view class="privilege-badge-icon">📈</view>
-          </view>
-        </view>
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">拍照查价不限次 ></text>
-          </view>
-          <text class="privilege-sub">会员每日不限次数查询</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">拍照查价不限次</view>
-            <view class="privilege-badge-icon">📷</view>
-          </view>
-        </view>
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">专属收藏报价单 ></text>
-          </view>
-          <text class="privilege-sub">常见机型添加，收货更高效</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">专属收藏报价单</view>
-            <view class="privilege-badge-icon">⭐</view>
-          </view>
-        </view>
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">报价短信通知 ></text>
-          </view>
-          <text class="privilege-sub">价格更新更及时、精准</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">报价短信通知</view>
-            <view class="privilege-badge-icon">📱</view>
-          </view>
-        </view>
-        <view class="privilege-card">
-          <view class="privilege-header">
-            <text class="privilege-name">专属VIP服务 ></text>
-          </view>
-          <text class="privilege-sub">会员专享权益</text>
-          <view class="privilege-badge-area">
-            <view class="privilege-badge">专属VIP服务</view>
-            <view class="privilege-badge-icon">👑</view>
-          </view>
+          <view class="plan-subscribers" wx:if="{{item.subscriber_count > 0}}">{{item.subscriber_count}} 人已开通</view>
+          <button class="plan-buy-btn" wx:if="{{item.id === userInfo.membershipId}}" disabled>已开通</button>
+          <button class="plan-buy-btn" wx:else bindtap="onPurchase" data-plan-id="{{item.id}}">立即开通</button>
         </view>
       </view>
     </view>
 
     <!-- 规则说明 -->
-    <view class="section-block rules-block">
+    <view class="section-block rules-block" wx:if="{{!userInfo.isVip}}">
       <text class="rules-intro">可免费查看报价条件：</text>
       <view class="rule-item">1、开通会员，无限次报价查看（开通会员，查看报价更精准，价格更新更及时、使用更方便，还有更多报价单实用功能免费使用，收货更安心，出货更赚钱）；</view>
       <view class="rule-item">2、查看报价次数小于300次可免费查看；</view>
     </view>
   </scroll-view>
 
-  <!-- 底部操作栏 -->
-  <view class="bottom-bar safe-area-bottom">
+  <!-- 底部操作栏：仅未登录用户可见 -->
+  <view class="bottom-bar safe-area-bottom" wx:if="{{!userInfo}}">
     <button class="login-free-btn" bindtap="goToLogin">登录免费查看</button>
   </view>
 </view>

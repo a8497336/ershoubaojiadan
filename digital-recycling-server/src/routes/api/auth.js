@@ -7,7 +7,7 @@ const validate = require('../../middlewares/validator')
 const { success, error, unauthorized } = require('../../utils/response')
 const db = require('../../models')
 const wechatUtil = require('../../utils/wechat')
-const { generateUserNo } = require('../../utils/helpers')
+const { generateUserNo, getVipStatus } = require('../../utils/helpers')
 
 router.post('/wx-login',
   [
@@ -16,13 +16,22 @@ router.post('/wx-login',
   validate,
   async (req, res, next) => {
     try {
-      const { code, userInfo, location } = req.body
+      const { code, userInfo, location, encryptedData, iv } = req.body
       let wxData
       try {
         wxData = await wechatUtil.code2Session(code)
       } catch (e) {
         console.error('微信登录失败:', e.message)
         return error(res, '微信登录失败: ' + e.message, 10001, 400)
+      }
+
+      let phone = userInfo && (userInfo.phone || req.body.phone)
+
+      if (encryptedData && iv && wxData.sessionKey) {
+        const decrypted = wechatUtil.decryptPhone(encryptedData, iv, wxData.sessionKey)
+        if (decrypted && decrypted.phoneNumber) {
+          phone = decrypted.phoneNumber
+        }
       }
 
       let user = await db.User.findOne({ where: { openid: wxData.openid } })
@@ -32,8 +41,9 @@ router.post('/wx-login',
           openid: wxData.openid,
           union_id: wxData.unionid,
           user_no: generateUserNo(),
-          nickname: (userInfo && userInfo.nickName) || '微信用户',
-          avatar: (userInfo && userInfo.avatarUrl) || '/images/icons/avatar.svg',
+          nickname: (userInfo && (userInfo.nickName || userInfo.nickname)) || '微信用户',
+          avatar: (userInfo && (userInfo.avatarUrl || userInfo.avatar)) || '/images/icons/avatar.svg',
+          phone: phone || null,
           scan_remaining: 10,
           status: 1
         }
@@ -48,11 +58,16 @@ router.post('/wx-login',
       } else {
         const updateData = { last_login_at: new Date() }
         if (userInfo) {
-          if (userInfo.nickName) updateData.nickname = userInfo.nickName
-          if (userInfo.avatarUrl) updateData.avatar = userInfo.avatarUrl
+          const nick = userInfo.nickName || userInfo.nickname
+          const ava = userInfo.avatarUrl || userInfo.avatar
+          if (nick) updateData.nickname = nick
+          if (ava) updateData.avatar = ava
         }
+        if (phone) updateData.phone = phone
         await user.update(updateData)
       }
+
+      const vipStatus = await getVipStatus(user)
 
       const token = jwt.sign(
         { id: user.id, type: 'user' },
@@ -77,7 +92,10 @@ router.post('/wx-login',
           phone: user.phone,
           points: user.points,
           scanRemaining: user.scan_remaining,
-          membershipExpire: user.membership_expire
+          membershipExpire: user.membership_expire,
+          isVip: vipStatus.isVip,
+          planName: vipStatus.planName,
+          membershipId: user.membership_id
         }
       })
     } catch (err) {
@@ -117,6 +135,8 @@ router.post('/phone-login',
         await user.update({ last_login_at: new Date() })
       }
 
+      const vipStatus = await getVipStatus(user)
+
       if (user.status !== 1) {
         return error(res, '账号已被禁用', 10006, 403)
       }
@@ -144,7 +164,10 @@ router.post('/phone-login',
           phone: user.phone,
           points: user.points,
           scanRemaining: user.scan_remaining,
-          membershipExpire: user.membership_expire
+          membershipExpire: user.membership_expire,
+          isVip: vipStatus.isVip,
+          planName: vipStatus.planName,
+          membershipId: user.membership_id
         }
       })
     } catch (err) {
@@ -170,6 +193,28 @@ router.post('/phone-bind',
       }
 
       await req.user.update({ phone })
+      return success(res, { phone })
+    } catch (err) {
+      next(err)
+    }
+  }
+)
+
+router.post('/phone-bind-nologin',
+  [
+    body('code').notEmpty().withMessage('手机号授权code不能为空')
+  ],
+  validate,
+  async (req, res, next) => {
+    try {
+      const { code } = req.body
+      let phone
+      try {
+        phone = await wechatUtil.getPhoneNumber(code)
+      } catch (e) {
+        return error(res, '获取手机号失败: ' + e.message, 10002, 400)
+      }
+
       return success(res, { phone })
     } catch (err) {
       next(err)

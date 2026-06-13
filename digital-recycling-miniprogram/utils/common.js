@@ -42,6 +42,13 @@ const copyToClipboard = (data, successMsg = '已复制') => {
     data,
     success: () => {
       wx.showToast({ title: successMsg, icon: 'success' })
+    },
+    fail: () => {
+      wx.showModal({
+        title: '复制内容',
+        content: data,
+        showCancel: false
+      })
     }
   })
 }
@@ -175,6 +182,46 @@ const getDebugInfo = () => {
   }
 }
 
+const checkLogin = (redirectUrl = '') => {
+  const token = wx.getStorageSync('token')
+  if (!token) {
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+    const currentPath = currentPage ? currentPage.route : ''
+    const fullRedirect = redirectUrl || ('/' + currentPath)
+    const encodedRedirect = encodeURIComponent(fullRedirect)
+    const loginUrl = `/pages/login/login?redirect=${encodedRedirect}`
+
+    const attemptNavigation = () => {
+      wx.navigateTo({
+        url: loginUrl,
+        fail: () => {
+          wx.redirectTo({
+            url: loginUrl,
+            fail: () => {
+              wx.reLaunch({
+                url: loginUrl,
+                fail: () => {
+                  wx.showModal({
+                    title: '提示',
+                    content: '请重新打开小程序完成登录',
+                    showCancel: false,
+                    confirmText: '知道了'
+                  })
+                }
+              })
+            }
+          })
+        }
+      })
+    }
+
+    setTimeout(attemptNavigation, 50)
+    return false
+  }
+  return true
+}
+
 const clearAllData = () => {
   return new Promise((resolve) => {
     wx.clearStorage({
@@ -210,5 +257,6 @@ module.exports = {
   getSystemInfo,
   logger,
   getDebugInfo,
+  checkLogin,
   clearAllData
 }

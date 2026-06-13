@@ -167,13 +167,7 @@ Page({
       { bg: 'bg-sugar', icon: '威士忌', iconStyle: 'font-size:16rpx;', name: '洋酒威士忌' }
     ],
 
-    searchTimer: null,
-
-    showLocationSheet: false,
-    showPrivacySheet: false,
-    locationAgreed: false,
-    privacyAgreed: false,
-    locationSheetChecked: false
+    searchTimer: null
   },
 
   onLoad() {
@@ -182,10 +176,16 @@ Page({
   },
 
   onShow() {
-    if (this.getTabBar) {
-      this.getTabBar().setData({ activeTab: 'home' })
+    const tabBar = this.getTabBar && this.getTabBar()
+    if (tabBar) {
+      tabBar.setData({ activeTab: 'home' })
     }
-    this.checkPermissionSheets()
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      this.requestLocationPermission()
+    } else {
+      this.loadHomeData()
+    }
   },
 
   onHide() {
@@ -216,6 +216,17 @@ Page({
       this.setData({ loading: false, networkError: true })
     })
     wx.stopPullDownRefresh()
+  },
+
+  loadHomeData() {
+    this.setData({ loading: true, networkError: false })
+    this.fetchHomeData().then(() => {
+      this.setData({ loading: false })
+      this.startBannerRotation()
+      this.startAnnouncementRotation()
+    }).catch(() => {
+      this.setData({ loading: false, networkError: true })
+    })
   },
 
   async fetchHomeData() {
@@ -517,22 +528,23 @@ Page({
     wx.setClipboardData({ data: wxid, success: () => this.showToast('微信号已复制') })
   },
 
-  openLocation() {
-    const s = this.data.storeInfo
-    if (!s) { this.showToast('暂无门店信息'); return }
-    if (!s.latitude || !s.longitude) { this.showToast('门店坐标未设置，暂时无法导航'); return }
-    wx.openLocation({
-      latitude: Number(s.latitude),
-      longitude: Number(s.longitude),
-      name: s.name || '门店位置',
-      address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
-    })
-  },
+
+    openLocation() {
+      const s = this.data.storeInfo
+      if (!s) { this.showToast('暂无门店信息'); return }
+      wx.openLocation({
+        latitude: s.latitude ? Number(s.latitude) : STORE.DEFAULT_STORE.latitude,
+        longitude: s.longitude ? Number(s.longitude) : STORE.DEFAULT_STORE.longitude,
+        name: s.name || '联赢电子回收网废旧手机回收中心',
+        address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
+      })
+    },
 
   goToStoreList() {
     const s = this.data.storeInfo
-    if (s && s.latitude && s.longitude) { this.openLocation() }
-    else { this.showToast('门店坐标未设置，暂时无法导航') }
+    this.openLocation()
+    // if (s && s.latitude && s.longitude) { this.openLocation() }
+    // else { this.showToast('门店坐标未设置，暂时无法导航') }
   },
 
   scrollToTop() { wx.pageScrollTo({ scrollTop: 0, duration: 300 }) },
@@ -582,55 +594,130 @@ Page({
   },
 
   checkPermissionSheets() {
-    const locationDone = wx.getStorageSync('location_permission_done')
-    const privacyDone = wx.getStorageSync('privacy_permission_done')
-    if (!locationDone) {
-        setTimeout(() => this.setData({ showLocationSheet: true }), 800)
-    } else if (!privacyDone) {
-        setTimeout(() => this.setData({ showPrivacySheet: true }), 800)
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      setTimeout(() => this.requestLocationPermission(), 1000)
     }
   },
 
-  onLocationAllow() {
-    if (!this.data.locationSheetChecked) {
-      this.showToast('请先阅读并接受隐私保护指引')
-      return
-    }
-    wx.getLocation({
-        type: 'gcj02',
-        success: (res) => {
-            wx.setStorageSync('user_location', { latitude: res.latitude, longitude: res.longitude })
-            wx.setStorageSync('location_permission_done', true)
-            this.setData({ showLocationSheet: false, locationAgreed: true })
-            this.requestStoreLocation()
-            setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
-        },
-        fail: () => {
-            wx.setStorageSync('location_permission_done', true)
-            this.setData({ showLocationSheet: false, locationAgreed: false })
-            setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
+  requestLocationPermission() {
+    const token = wx.getStorageSync('token')
+    wx.getSetting({
+      success: (res) => {
+        if (res.authSetting['scope.userLocation']) {
+          this.fetchLocationAndStores()
+          if (!token) this.navigateToLogin()
+          else this.loadHomeData()
+        } else {
+          this.askForLocationPermission()
         }
+      },
+      fail: () => {
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      }
     })
   },
 
+  askForLocationPermission() {
+    wx.authorize({
+      scope: 'scope.userLocation',
+      success: () => {
+        this.fetchLocationAndStores()
+      },
+      fail: (err) => {
+        const errMsg = err.errMsg || ''
+        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
+          wx.showModal({
+            title: '定位服务未开启',
+            content: '手机定位服务未开启，请前往系统设置开启定位服务后重试',
+            confirmText: '去开启',
+            cancelText: '取消',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                wx.openAppAuthorizeSetting ? wx.openAppAuthorizeSetting() : wx.showToast({ title: '请在系统设置中开启定位', icon: 'none' })
+              }
+            }
+          })
+        }
+        const token = wx.getStorageSync('token')
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      }
+    })
+  },
+
+  fetchLocationAndStores() {
+    const app = getApp()
+    wx.getLocation({
+      type: 'gcj02',
+      success: (locationRes) => {
+        const latitude = locationRes.latitude
+        const longitude = locationRes.longitude
+        app.globalData.latitude = latitude
+        app.globalData.longitude = longitude
+        wx.setStorageSync('location_permission_done', true)
+        const token = wx.getStorageSync('token')
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      },
+      fail: (err) => {
+        const errMsg = err.errMsg || ''
+        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
+          wx.showModal({
+            title: '定位服务未开启',
+            content: '手机定位服务未开启，请前往系统设置开启定位服务后重试',
+            confirmText: '去开启',
+            cancelText: '取消',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                wx.openAppAuthorizeSetting ? wx.openAppAuthorizeSetting() : wx.showToast({ title: '请在系统设置中开启定位', icon: 'none' })
+              }
+            }
+          })
+        }
+        const token = wx.getStorageSync('token')
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      }
+    })
+  },
+
+  navigateToLogin() {
+    wx.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/index/index') })
+  },
+
+  toggleLocationCheck() {
+    this.setData({ locationSheetChecked: !this.data.locationSheetChecked })
+  },
+
   onLocationDeny() {
-    wx.setStorageSync('location_permission_done', true)
     this.setData({ showLocationSheet: false, locationAgreed: false })
-    setTimeout(() => this.setData({ showPrivacySheet: true }), 300)
+    wx.setStorageSync('location_permission_done', true)
+    const token = wx.getStorageSync('token')
+    if (!token) this.navigateToLogin()
+    else this.loadHomeData()
+  },
+
+  onLocationAllow() {
+    this.setData({ locationAgreed: true })
+  },
+
+  onPrivacyDeny() {
+    this.setData({ showPrivacySheet: false })
+    wx.setStorageSync('privacy_permission_done', true)
+    wx.showToast({ title: '部分功能可能无法使用', icon: 'none' })
+    const token = wx.getStorageSync('token')
+    if (!token) this.navigateToLogin()
+    else this.loadHomeData()
   },
 
   onPrivacyAgree() {
     wx.setStorageSync('privacy_permission_done', true)
     this.setData({ showPrivacySheet: false, privacyAgreed: true })
-  },
-
-  onPrivacyDeny() {
-    wx.setStorageSync('privacy_permission_done', true)
-    this.setData({ showPrivacySheet: false, privacyAgreed: false })
-  },
-
-  toggleLocationCheck() {
-    this.setData({ locationSheetChecked: !this.data.locationSheetChecked })
+    const token = wx.getStorageSync('token')
+    if (!token) this.navigateToLogin()
+    else this.loadHomeData()
   },
 
   requireLogin(targetUrl) {
