@@ -1,0 +1,35 @@
+<view class="store-list-page">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-wrap">
+    <text class="loading-text">加载中…</text>
+  </view>
+
+  <!-- 加载失败 -->
+  <view wx:elif="{{loadError}}" class="error-wrap">
+    <text class="error-text">门店列表加载失败</text>
+    <button class="retry-btn" bindtap="onRetry">重新加载</button>
+  </view>
+
+  <!-- 列表 -->
+  <view wx:elif="{{list.length > 0}}" class="store-list">
+    <view
+      wx:for="{{list}}"
+      wx:key="id"
+      class="store-item"
+      data-index="{{index}}"
+      bindtap="onItemTap"
+    >
+      <view class="store-item-header">
+        <text class="store-name">{{item.name || item.title || '门店'}}</text>
+        <text wx:if="{{item.distance}}" class="store-distance">{{item.distance}} km</text>
+      </view>
+      <view wx:if="{{item.address}}" class="store-address">📍 {{item.address}}</view>
+      <view wx:if="{{item.tel}}" class="store-tel">📞 {{item.tel}}</view>
+    </view>
+  </view>
+
+  <!-- 空列表 -->
+  <view wx:else class="empty-wrap">
+    <text class="empty-text">暂无门店信息</text>
+  </view>
+</view>

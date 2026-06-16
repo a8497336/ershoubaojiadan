@@ -170,9 +170,21 @@
           <el-form-item label="联系人"><el-input v-model="formData.contact_name" /></el-form-item>
           <el-form-item label="电话"><el-input v-model="formData.contact_phone" /></el-form-item>
           <el-form-item label="微信"><el-input v-model="formData.wechat" /></el-form-item>
-          <el-form-item label="地址"><el-input v-model="formData.address" /></el-form-item>
-          <el-form-item label="纬度"><el-input v-model="formData.latitude" placeholder="如：31.2304" /></el-form-item>
-          <el-form-item label="经度"><el-input v-model="formData.longitude" placeholder="如：121.4737" /></el-form-item>
+          <el-form-item label="地址">
+            <el-input v-model="formData.address" placeholder="请输入门店地址（失焦后自动获取经纬度）" @blur="autoGeocodeStoreAddress" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" plain :loading="geocoding" :disabled="!formData.address" @click="autoGeocodeStoreAddress">
+              📍 自动获取坐标
+            </el-button>
+            <span style="margin-left: 12px; color: #999; font-size: 12px;">地址失焦或点击此按钮，根据地址自动调用腾讯地图解析</span>
+          </el-form-item>
+          <el-form-item label="纬度">
+            <el-input v-model="formData.latitude" :readonly="true" placeholder="填写地址后自动生成" />
+          </el-form-item>
+          <el-form-item label="经度">
+            <el-input v-model="formData.longitude" :readonly="true" placeholder="填写地址后自动生成" />
+          </el-form-item>
         </template>
         <template v-if="activeTab === 'video'">
           <el-form-item label="标题" required><el-input v-model="formData.title" placeholder="请输入视频标题" /></el-form-item>
@@ -237,7 +249,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getBanners, createBanner, updateBanner, deleteBanner, getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, getStores, createStore, updateStore, deleteStore, getVideos, createVideo, updateVideo, deleteVideo, broadcastMessage, sendMessage as sendMsg } from '@/api'
+import { getBanners, createBanner, updateBanner, deleteBanner, getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, getStores, createStore, updateStore, deleteStore, getVideos, createVideo, updateVideo, deleteVideo, broadcastMessage, sendMessage as sendMsg, geocodeAddress } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const activeTab = ref('banner')
@@ -249,6 +261,7 @@ const total = ref(0)
 const formVisible = ref(false)
 const formId = ref(null)
 const formData = ref({})
+const geocoding = ref(false)
 const msgForm = ref({ type: 'system', isBroadcast: true, title: '', content: '', user_id: '' })
 
 const videoUploading = ref(false)
@@ -375,10 +388,42 @@ const loadData = async () => {
 
 const handleAdd = () => {
   formId.value = null
-  formData.value = { sort_order: 0, status: 1 }
+  formData.value = { sort_order: 0, status: 1, latitude: null, longitude: null }
   videoUploading.value = false
   videoUploadPercent.value = 0
   formVisible.value = true
+}
+
+const autoGeocodeStoreAddress = async () => {
+  const address = (formData.value.address || '').toString().trim()
+  if (!address) {
+    ElMessage.warning('请先填写地址')
+    return false
+  }
+  if (geocoding.value) return false
+  geocoding.value = true
+  try {
+    const res = await geocodeAddress({
+      address,
+      province: formData.value.province || '',
+      city: formData.value.city || '',
+      district: formData.value.district || ''
+    })
+    const payload = (res && res.data) || res || {}
+    if (payload && Number.isFinite(payload.lat) && Number.isFinite(payload.lng)) {
+      formData.value.latitude = Number(payload.lat)
+      formData.value.longitude = Number(payload.lng)
+      ElMessage.success(`已根据地址自动生成经纬度 (${payload.lat.toFixed(4)}, ${payload.lng.toFixed(4)})`)
+      return true
+    }
+    ElMessage.error('地址解析失败，请检查地址是否准确')
+    return false
+  } catch (e) {
+    ElMessage.error('地址解析失败：' + (e?.message || '网络错误'))
+    return false
+  } finally {
+    geocoding.value = false
+  }
 }
 
 const handleEdit = (row) => {
@@ -422,6 +467,22 @@ const handleSave = async () => {
   if (videoUploading.value) {
     ElMessage.warning('视频正在上传中，请稍候')
     return
+  }
+  if (activeTab.value === 'store') {
+    const lat = Number(formData.value.latitude)
+    const lng = Number(formData.value.longitude)
+    const latLngMissing = !Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0
+    if (latLngMissing) {
+      if (!formData.value.address) {
+        ElMessage.warning('请先填写门店地址以自动获取经纬度')
+        return
+      }
+      const ok = await autoGeocodeStoreAddress()
+      if (!ok) {
+        ElMessage.error('请先填写地址或手动录入经纬度')
+        return
+      }
+    }
   }
   try {
     const api = apiMap[activeTab.value]

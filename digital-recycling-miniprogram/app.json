@@ -33,7 +33,8 @@
     "pages/ad-recording/ad-recording",
     "pages/my-favorites/my-favorites",
     "pages/price-changes/price-changes",
-    "pages/sms-notify/sms-notify"
+    "pages/sms-notify/sms-notify",
+    "pages/store-list/store-list"
   ],
   "window": {
     "backgroundTextStyle": "light",

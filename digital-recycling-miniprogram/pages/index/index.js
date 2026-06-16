@@ -1,8 +1,6 @@
 const app = getApp()
-const contentApi = require('../../utils/api-modules').contentApi
-const categoryApi = require('../../utils/api-modules').categoryApi
-const priceApi = require('../../utils/api-modules').priceApi
-const searchApi = require('../../utils/api-modules').searchApi
+const { contentApi, categoryApi, priceApi, searchApi, userApi, placesApi } = require('../../utils/api-modules')
+const { haversineDistance } = require('../../utils/distance')
 const { CONTACT, STORE } = require('../../utils/constants')
 
 Page({
@@ -12,6 +10,8 @@ Page({
     announcements: [],
     storesData: [],
     storeInfo: null,
+    showDevTestBar: true,
+    devTestResult: '',
     categories: [],
 
     searchKeyword: '',
@@ -41,6 +41,11 @@ Page({
     displayAnnouncements: [],
     announcementTimer: null,
     bannerTimer: null,
+
+    showLocationSheet: false,
+    locationAgreed: false,
+    locationSheetChecked: false,
+    locationPrompted: false,
 
     phoneBrands: [
       { bg: 'bg-xiaomi', icon: '📱', iconStyle: 'font-size:20rpx;', name: '热门老年机' },
@@ -180,9 +185,13 @@ Page({
     if (tabBar) {
       tabBar.setData({ activeTab: 'home' })
     }
+    // 无论登录与否，进入首页都请求定位（除非本次会话内已提示过）
+    const prompted = wx.getStorageSync('location_prompt_done')
     const token = wx.getStorageSync('token')
-    if (!token) {
+    if (!prompted) {
       this.requestLocationPermission()
+    } else if (!token) {
+      this.navigateToLogin()
     } else {
       this.loadHomeData()
     }
@@ -257,9 +266,21 @@ Page({
 
       if (storeRes.length > 0) {
         this.setData({ storesData: storeRes })
-        this.processStore(storeRes)
+        // 关键：先读 lat/lng 缓存，再传给 processStore（同步算距离）
+        const cachedLat = app.globalData.latitude
+        const cachedLng = app.globalData.longitude
+        this.processStore(storeRes, cachedLat, cachedLng)
+        // 异步增强：腾讯地图驾车矩阵（失败也无害）
+        if (typeof cachedLat === 'number' && typeof cachedLng === 'number') {
+          this._fetchNearbyStores(cachedLat, cachedLng)
+        }
       } else {
         this.setData({ storeInfo: STORE.DEFAULT_STORE })
+        const cachedLat = app.globalData.latitude
+        const cachedLng = app.globalData.longitude
+        if (typeof cachedLat === 'number' && typeof cachedLng === 'number') {
+          this._fetchNearbyStores(cachedLat, cachedLng)
+        }
       }
 
       if (catRes.length > 0) {
@@ -309,39 +330,284 @@ Page({
     })
   },
 
-  processStore(stores) {
-    const fallback = { ...stores[0] }
-    this.setData({ storeInfo: fallback || null })
-  },
+  processStore(stores, lat, lng) {
+    if (!stores || stores.length === 0) {
+      this.setData({ storeInfo: null })
+      return
+    }
 
-  requestStoreLocation() {
-    const stores = this.data.storesData
-    if (!stores || stores.length === 0) return
-    wx.getLocation({
-      type: 'gcj02',
-      success: (res) => {
-        let nearest = null
-        let minDist = Infinity
-        stores.forEach(s => {
-          if (s.latitude && s.longitude) {
-            const dist = this.haversineDistance(res.latitude, res.longitude, Number(s.latitude), Number(s.longitude))
-            if (dist < minDist) { minDist = dist; nearest = { ...s, distance: dist.toFixed(2) } }
-          }
-        })
-        if (nearest) {
-          this.setData({ storeInfo: nearest })
+    const hasLocation = typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)
+
+    if (!hasLocation) {
+      const fallback = { ...stores[0] }
+      delete fallback.distance
+      this.setData({ storeInfo: fallback })
+      return
+    }
+
+    let nearest = null
+    let minDist = Infinity
+    stores.forEach(s => {
+      if (s.latitude && s.longitude) {
+        const dist = haversineDistance(lat, lng, Number(s.latitude), Number(s.longitude))
+        if (dist < minDist) {
+          minDist = dist
+          nearest = { ...s, distance: dist.toFixed(2) }
         }
       }
     })
+
+    if (nearest) {
+      this.setData({ storeInfo: nearest })
+    } else {
+      const fallback = { ...stores[0] }
+      delete fallback.distance
+      this.setData({ storeInfo: fallback })
+    }
   },
 
-  haversineDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371
-    const dLat = ((lat2 - lat1) * Math.PI) / 180
-    const dLng = ((lng2 - lng1) * Math.PI) / 180
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
+  requestStoreLocation(lat, lng) {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return
+    this._fetchNearbyStores(lat, lng)
+  },
+
+  _fetchNearbyStores(lat, lng) {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return
+
+    const apply = (item, source) => {
+      if (!item) return false
+      const distMeters = typeof item.distance === 'number' ? item.distance : null
+      const distanceKm = distMeters !== null ? Number((distMeters / 1000).toFixed(2)) : null
+      const storeInfo = {
+        id: item.id,
+        name: item.name || item.title,
+        title: item.title || item.name,
+        address: item.address,
+        tel: item.phone || item.tel || item.contact_phone,
+        phone: item.phone || item.tel || item.contact_phone,
+        contact_name: item.contact_name,
+        wechat: item.wechat,
+        latitude: typeof item.latitude === 'number' ? item.latitude : parseFloat(item.latitude),
+        longitude: typeof item.longitude === 'number' ? item.longitude : parseFloat(item.longitude),
+        distance: distanceKm,
+        distanceRaw: distMeters,
+        duration: item.duration,
+        source: source || 'qqmap:matrix',
+        nearbyList: undefined
+      }
+      this.setData({ storeInfo })
+      console.log('[home] nearby ->', {
+        source,
+        nearestTitle: storeInfo.name,
+        distanceKm,
+        distanceRaw: distMeters
+      })
+      return true
+    }
+
+    // 前端 haversine 兜底：当后端 list 全部 distance 为 null 时（腾讯地图驾车矩阵失败），
+    // 用 haversineDistance 重新算直线距离（km），按距离升序排序
+    const haversineFallback = (list) => {
+      if (!Array.isArray(list) || list.length === 0) return null
+      const withCoords = []
+      const withoutCoords = []
+      list.forEach(item => {
+        const latNum = typeof item.latitude === 'number' ? item.latitude : parseFloat(item.latitude)
+        const lngNum = typeof item.longitude === 'number' ? item.longitude : parseFloat(item.longitude)
+        if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+          const distKm = Number(haversineDistance(lat, lng, latNum, lngNum).toFixed(2))
+          withCoords.push({ ...item, distance: distKm, distanceRaw: distKm * 1000, source: 'haversine:fallback' })
+        } else {
+          withoutCoords.push({ ...item, distance: null, distanceRaw: null })
+        }
+      })
+      withCoords.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+      const sorted = withCoords.concat(withoutCoords)
+      if (withCoords.length === 0) {
+        // 所有门店都无坐标，走本地 fallback
+        console.log('[home] nearest-fallback ->', { reason: 'all_distance_null', candidateCount: 0, nearestDistance: null })
+        this._fallbackStoreToLocal()
+        return true
+      }
+      console.log('[home] nearest-fallback ->', { reason: 'all_distance_null', candidateCount: withCoords.length, nearestDistance: withCoords[0].distance })
+      return apply(sorted[0], 'haversine:fallback')
+    }
+
+    // 1) 优先调后端腾讯地图距离矩阵 API（驾车距离）
+    placesApi.getNearestStore({ lat, lng, mode: 'driving' }).then((res) => {
+      const payload = (res && res.data) || res || {}
+      const list = Array.isArray(payload.list) ? payload.list : []
+      const source = payload.source || 'qqmap:matrix'
+      console.log('[home] nearest-store ->', { source, listLength: list.length, first: list[0] ? { title: list[0].name, distance: list[0].distance } : null })
+      if (list.length > 0) {
+        // 检测：list 全部 distance 为 null → 腾讯地图驾车距离不可用，前端 haversine 兜底
+        const allNull = list.every(item => item == null || item.distance == null || typeof item.distance !== 'number')
+        if (allNull) {
+          haversineFallback(list)
+          return
+        }
+        apply(list[0], source)
+        return
+      }
+      // 2) 兜底到旧的 nearby-by-stores（基于 stores 名称搜腾讯地图 POI）
+      this._fallbackToNearbyByStores(lat, lng, apply)
+    }).catch((err) => {
+      console.warn('[home] getNearestStore failed', err)
+      this._fallbackToNearbyByStores(lat, lng, apply)
+    })
+  },
+
+  _fallbackToNearbyByStores(lat, lng, apply) {
+    const stores = this.data.storesData || []
+    const storeKeywords = stores.map(s => s && (s.name || s.title)).filter(Boolean)
+
+    if (storeKeywords.length === 0) {
+      // storesData 为空：用通用关键字 "回收"
+      placesApi.getNearby({ lat, lng, keyword: '回收', radius: 5000, limit: 20 }).then((res) => {
+        const payload = (res && res.data) || res || {}
+        const list = Array.isArray(payload.list) ? payload.list : []
+        if (list.length > 0) {
+          apply(list[0], 'qqmap:回收')
+          return
+        }
+        this._fallbackStoreToLocal()
+      }).catch(() => this._fallbackStoreToLocal())
+      return
+    }
+
+    placesApi.getNearbyByStores({ lat, lng, stores, radius: 5000, limit: 20 }).then((res) => {
+      const payload = (res && res.data) || res || {}
+      const list = Array.isArray(payload.list) ? payload.list : []
+      if (list.length > 0) {
+        apply(list[0], 'qqmap:stores')
+        return
+      }
+      this._fallbackStoreToLocal()
+    }).catch(() => this._fallbackStoreToLocal())
+  },
+
+  _fallbackStoreToLocal() {
+    const stores = this.data.storesData
+    if (stores && stores.length > 0) {
+      // 保留 stores[0].distance（如果之前 processStore 已用 haversine 写入）
+      // 不再 delete fallback.distance，避免误伤
+      this.setData({ storeInfo: { ...stores[0] } })
+    } else if (STORE.DEFAULT_STORE) {
+      this.setData({ storeInfo: { ...STORE.DEFAULT_STORE } })
+    }
+  },
+
+  /**
+   * 开发测试：手动触发 wx.getLocation
+   * 只读探针：不写 app.globalData、不触发 _fetchNearbyStores / requestStoreLocation、不污染 storeInfo
+   * 修复点：complete 回调 + 10秒安全超时 + 隐私协议先检查（覆盖 wx.getLocation 不会触发 success/fail 的场景）
+   */
+  onDevTestGetLocation() {
+    // 1) 取消旧 timer，避免多次点击多个 timer 打架
+    if (this._devTestTimeout) {
+      clearTimeout(this._devTestTimeout)
+      this._devTestTimeout = null
+    }
+    // 2) 防御性 hideLoading：万一上次 loading 卡住，先清掉
+    wx.hideLoading()
+    // 3) 清空旧摘要
+    this.setData({ devTestResult: '' })
+    // 4) 显示新的 loading
+    wx.showLoading({ title: '定位中...', mask: true })
+
+    // 5) 隐私协议先检查（仅当 app.json 开了 __usePrivacyCheck__ 且 API 可用）
+    if (typeof wx.requirePrivacyAuthorize === 'function') {
+      wx.requirePrivacyAuthorize({
+        success: () => {
+          // 用户已同意隐私协议 → 进入定位
+          this._devTestDoGetLocation()
+        },
+        fail: () => {
+          // 用户拒绝隐私协议 → 立即收起 loading + 提示
+          wx.hideLoading()
+          this.setData({ devTestResult: '失败: 用户拒绝隐私协议' })
+          console.warn('[dev-test] requirePrivacyAuthorize fail')
+          wx.showModal({
+            title: '需要隐私协议',
+            content: '请先同意《小程序用户隐私保护指引》后再测试位置。',
+            confirmText: '我知道了',
+            showCancel: false
+          })
+        }
+      })
+    } else {
+      // 旧版基础库：无 requirePrivacyAuthorize API → 直接走定位
+      this._devTestDoGetLocation()
+    }
+  },
+
+  /**
+   * 实际调用 wx.getLocation
+   * 必须提供 success / fail / complete 三回调；complete 兜底 hideLoading
+   * 启动 10 秒安全超时，防止 complete 也不触发的极端情况
+   */
+  _devTestDoGetLocation() {
+    // 启动 10 秒兜底 timer
+    this._devTestTimeout = setTimeout(() => {
+      this._devTestTimeout = null
+      wx.hideLoading()
+      // 仅当 success/fail 都没触发（devTestResult 仍空）时弹超时
+      if (!this.data.devTestResult) {
+        this.setData({ devTestResult: '超时: wx.getLocation 10秒未响应' })
+        console.warn('[dev-test] getLocation timeout ->', { reason: 'no callback in 10s' })
+        wx.showModal({
+          title: '位置超时',
+          content: 'wx.getLocation 10秒未返回任何回调。\n可能原因：\n1. 隐私协议未接受\n2. 系统位置授权未开启\n3. 微信位置服务被禁用',
+          confirmText: '我知道了',
+          showCancel: false
+        })
+      }
+    }, 10000)
+
+    wx.getLocation({
+      type: 'gcj02',
+      success: (res) => {
+        const summary = `lat=${(res.latitude || 0).toFixed(6)}, lng=${(res.longitude || 0).toFixed(6)}, acc=${res.accuracy || 0}m`
+        this.setData({ devTestResult: summary })
+        console.log('[dev-test] getLocation success ->', res)
+        wx.showModal({
+          title: '位置成功',
+          content: `latitude: ${res.latitude}\nlongitude: ${res.longitude}\naccuracy: ${res.accuracy}m\nspeed: ${res.speed || '-'}\naltitude: ${res.altitude || '-'}\nerrMsg: ${res.errMsg}`,
+          confirmText: '复制 lat,lng',
+          cancelText: '关闭',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              wx.setClipboardData({
+                data: `${res.latitude},${res.longitude}`,
+                success: () => {
+                  wx.showToast({ title: '已复制', icon: 'success' })
+                }
+              })
+            }
+          }
+        })
+      },
+      fail: (err) => {
+        const errMsg = (err && err.errMsg) || '未知错误'
+        this.setData({ devTestResult: `失败: ${errMsg}` })
+        console.warn('[dev-test] getLocation fail ->', err)
+        wx.showModal({
+          title: '位置失败',
+          content: `errMsg: ${errMsg}\n\n（测试按钮不会写入 app.globalData，也不会触发 _fetchNearbyStores）`,
+          confirmText: '我知道了',
+          showCancel: false
+        })
+      },
+      complete: () => {
+        // 关键：complete 永远会触发（success / fail / 异常路径之后）→ 确保 loading 一定消失
+        if (this._devTestTimeout) {
+          clearTimeout(this._devTestTimeout)
+          this._devTestTimeout = null
+        }
+        wx.hideLoading()
+        console.log('[dev-test] getLocation complete -> loading hidden')
+      }
+    })
   },
 
   fetchCategoryBrands() {
@@ -512,9 +778,44 @@ Page({
 
   goToScanPrice() { wx.switchTab({ url: '/pages/scan-price/scan-price' }) },
   goToInvite() { wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }) },
-  goToPriceQuote() { this.requireLogin('/pages/price-quote/price-quote') },
+  goToPriceQuote() { this._precheckQuoteAndNavigate('/pages/price-quote/price-quote') },
   goToVideoList() { wx.navigateTo({ url: '/pages/video-list/video-list' }) },
   goToRecyclingProcess() { wx.navigateTo({ url: '/pages/recycling-process/recycling-process' }) },
+
+  _precheckQuoteAndNavigate(targetUrl) {
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      this.requireLogin(targetUrl)
+      return
+    }
+    userApi.getProfile().then((res) => {
+      const profile = (res && res.data) || res || {}
+      const isVip = !!profile.isVip
+      const quoteRemaining = parseInt(profile.quoteRemaining) || 0
+      const quoteDailyRemaining = parseInt(profile.quoteDailyRemaining) || 0
+
+      if (isVip || quoteRemaining > 0 || quoteDailyRemaining > 0) {
+        wx.navigateTo({ url: targetUrl })
+        return
+      }
+
+      wx.showModal({
+        title: '提示',
+        content: '查看该报价单需要开通报价会员，您未开通会员或者会员已到期，请开通',
+        confirmText: '开通会员',
+        cancelText: '取消',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            wx.navigateTo({
+              url: '/pages/membership/membership?redirect=' + encodeURIComponent(targetUrl)
+            })
+          }
+        }
+      })
+    }).catch(() => {
+      this.requireLogin(targetUrl)
+    })
+  },
 
   makePhoneCall(e) {
     const phone = e.currentTarget.dataset.phone || this.data.storeInfo.phone || this.data.storeInfo.contact_phone || ''
@@ -529,22 +830,31 @@ Page({
   },
 
 
-    openLocation() {
-      const s = this.data.storeInfo
-      if (!s) { this.showToast('暂无门店信息'); return }
-      wx.openLocation({
-        latitude: s.latitude ? Number(s.latitude) : STORE.DEFAULT_STORE.latitude,
-        longitude: s.longitude ? Number(s.longitude) : STORE.DEFAULT_STORE.longitude,
-        name: s.name || '联赢电子回收网废旧手机回收中心',
-        address: (s.province || '') + (s.city || '') + (s.district || '') + (s.address || '')
-      })
-    },
+  openLocation() {
+    const s = this.data.storeInfo
+    if (!s) { this.showToast('暂无门店信息'); return }
+    const lat = Number(s.latitude)
+    const lng = Number(s.longitude)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) {
+      this.showToast('门店坐标未设置，暂时无法导航')
+      return
+    }
+    const fullAddress = [s.province, s.city, s.district, s.address]
+      .filter(Boolean)
+      .map(p => String(p).trim())
+      .filter(Boolean)
+      .join('')
+    wx.openLocation({
+      latitude: Number(lat.toFixed(6)),
+      longitude: Number(lng.toFixed(6)),
+      name: s.name || s.title || '回收门店',
+      address: fullAddress || s.address || '',
+      scale: 16
+    })
+  },
 
   goToStoreList() {
-    const s = this.data.storeInfo
-    this.openLocation()
-    // if (s && s.latitude && s.longitude) { this.openLocation() }
-    // else { this.showToast('门店坐标未设置，暂时无法导航') }
+    wx.navigateTo({ url: '/pages/store-list/store-list' })
   },
 
   scrollToTop() { wx.pageScrollTo({ scrollTop: 0, duration: 300 }) },
@@ -609,7 +919,8 @@ Page({
           if (!token) this.navigateToLogin()
           else this.loadHomeData()
         } else {
-          this.askForLocationPermission()
+          // 未授权 / 曾经拒绝 → 显示自定义隐私授权弹窗
+          this.setData({ showLocationSheet: true, locationPrompted: true })
         }
       },
       fail: () => {
@@ -624,25 +935,37 @@ Page({
       scope: 'scope.userLocation',
       success: () => {
         this.fetchLocationAndStores()
+        wx.setStorageSync('location_prompt_done', true)
       },
       fail: (err) => {
         const errMsg = err.errMsg || ''
         if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
-          wx.showModal({
-            title: '定位服务未开启',
-            content: '手机定位服务未开启，请前往系统设置开启定位服务后重试',
-            confirmText: '去开启',
-            cancelText: '取消',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                wx.openAppAuthorizeSetting ? wx.openAppAuthorizeSetting() : wx.showToast({ title: '请在系统设置中开启定位', icon: 'none' })
-              }
-            }
-          })
+          this._showLocationServiceModal()
         }
+        wx.setStorageSync('location_prompt_done', true)
         const token = wx.getStorageSync('token')
         if (!token) this.navigateToLogin()
         else this.loadHomeData()
+      }
+    })
+  },
+
+  _showLocationServiceModal() {
+    wx.showModal({
+      title: '定位服务未开启',
+      content: '手机定位服务未开启，无法为您展示离您最近的门店。请前往系统设置开启定位服务后重试。',
+      confirmText: '去开启',
+      cancelText: '取消',
+      success: (modalRes) => {
+        if (modalRes.confirm) {
+          if (typeof wx.openAppAuthorizeSetting === 'function') {
+            wx.openAppAuthorizeSetting()
+          } else if (typeof wx.openSetting === 'function') {
+            wx.openSetting()
+          } else {
+            this.showToast('请在系统设置中开启定位')
+          }
+        }
       }
     })
   },
@@ -657,25 +980,21 @@ Page({
         app.globalData.latitude = latitude
         app.globalData.longitude = longitude
         wx.setStorageSync('location_permission_done', true)
+        this.requestStoreLocation(latitude, longitude)
+        // 同步重算 processStore：保证 storeInfo 立即有距离（不依赖异步后端）
+        if (this.data.storesData && this.data.storesData.length > 0) {
+          this.processStore(this.data.storesData, latitude, longitude)
+        } else {
+          this.setData({ storeInfo: STORE.DEFAULT_STORE })
+        }
         const token = wx.getStorageSync('token')
         if (!token) this.navigateToLogin()
         else this.loadHomeData()
       },
-      fail: (err) => {
-        const errMsg = err.errMsg || ''
-        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
-          wx.showModal({
-            title: '定位服务未开启',
-            content: '手机定位服务未开启，请前往系统设置开启定位服务后重试',
-            confirmText: '去开启',
-            cancelText: '取消',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                wx.openAppAuthorizeSetting ? wx.openAppAuthorizeSetting() : wx.showToast({ title: '请在系统设置中开启定位', icon: 'none' })
-              }
-            }
-          })
-        }
+      fail: () => {
+        // 统一提示开启手机定位服务（不再依赖具体 errMsg 关键字）
+        this._showLocationServiceModal()
+        wx.setStorageSync('location_prompt_done', true)
         const token = wx.getStorageSync('token')
         if (!token) this.navigateToLogin()
         else this.loadHomeData()
@@ -692,7 +1011,8 @@ Page({
   },
 
   onLocationDeny() {
-    this.setData({ showLocationSheet: false, locationAgreed: false })
+    this.setData({ showLocationSheet: false, locationAgreed: false, locationSheetChecked: false })
+    wx.setStorageSync('location_prompt_done', true)
     wx.setStorageSync('location_permission_done', true)
     const token = wx.getStorageSync('token')
     if (!token) this.navigateToLogin()
@@ -700,7 +1020,31 @@ Page({
   },
 
   onLocationAllow() {
-    this.setData({ locationAgreed: true })
+    if (!this.data.locationSheetChecked) {
+      this.showToast('请先勾选并阅读隐私协议')
+      return
+    }
+    this.setData({ showLocationSheet: false, locationAgreed: true })
+    wx.setStorageSync('location_prompt_done', true)
+    wx.authorize({
+      scope: 'scope.userLocation',
+      success: () => {
+        this.fetchLocationAndStores()
+        const token = wx.getStorageSync('token')
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      },
+      fail: (err) => {
+        const errMsg = err.errMsg || ''
+        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
+          this._showLocationServiceModal()
+        }
+        wx.setStorageSync('location_permission_done', true)
+        const token = wx.getStorageSync('token')
+        if (!token) this.navigateToLogin()
+        else this.loadHomeData()
+      }
+    })
   },
 
   onPrivacyDeny() {

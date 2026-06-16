@@ -138,6 +138,12 @@ const userStockApi = {
   getStats: () => request({ url: '/user-stock/stats' })
 }
 
+const placesApi = {
+  getNearby: (data) => request({ url: '/places/nearby', data }),
+  getNearbyByStores: (data) => request({ url: '/places/nearby-by-stores', method: 'POST', data }),
+  getNearestStore: (data) => request({ url: '/places/nearest-store', data })
+}
+
 const settingsApi = {
   getQuoteConfig: () => request({ url: '/settings/quote' }),
   getContactInfo: () => request({ url: '/settings/contact' })
@@ -161,6 +167,7 @@ module.exports = {
   searchApi,
   scanApi,
   userStockApi,
+  placesApi,
   settingsApi,
   uploadFile
 }

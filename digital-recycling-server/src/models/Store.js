@@ -1,3 +1,8 @@
+const { geocodeStore } = require('../utils/qqmap')
+const logger = require('../utils/logger')
+
+const ADDRESS_FIELDS = ['province', 'city', 'district', 'address']
+
 module.exports = (sequelize, DataTypes) => {
   const Store = sequelize.define('Store', {
     id: {
@@ -51,7 +56,36 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'stores',
     timestamps: true,
     createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    updatedAt: 'updated_at',
+    hooks: {
+      beforeCreate: async (store, options) => {
+        if (options && options.autoGeocode === false) return
+        const hasLatLng = store.latitude !== null && store.latitude !== undefined &&
+                          store.longitude !== null && store.longitude !== undefined
+        if (hasLatLng) return
+        const coords = await geocodeStore(store)
+        if (coords) {
+          store.latitude = coords.lat
+          store.longitude = coords.lng
+          logger.info('[Store] beforeCreate 自动 geocode', { id: store.id, name: store.name, lat: coords.lat, lng: coords.lng })
+        } else {
+          logger.warn('[Store] beforeCreate geocode 失败', { name: store.name })
+        }
+      },
+      beforeUpdate: async (store, options) => {
+        if (options && options.autoGeocode === false) return
+        const changed = ADDRESS_FIELDS.some(f => store.changed(f))
+        if (!changed) return
+        const coords = await geocodeStore(store)
+        if (coords) {
+          store.latitude = coords.lat
+          store.longitude = coords.lng
+          logger.info('[Store] beforeUpdate 自动 geocode', { id: store.id, name: store.name, lat: coords.lat, lng: coords.lng })
+        } else {
+          logger.warn('[Store] beforeUpdate geocode 失败', { name: store.name })
+        }
+      }
+    }
   })
   return Store
 }

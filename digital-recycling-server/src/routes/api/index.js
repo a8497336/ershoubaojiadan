@@ -21,5 +21,6 @@ router.use('/search', require('./search'))
 router.use('/user-stock', require('./userStock'))
 router.use('/settings', require('./settings'))
 router.use('/scan', require('./scan'))
+router.use('/places', require('./places'))
 
 module.exports = router

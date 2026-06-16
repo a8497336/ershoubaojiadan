@@ -172,7 +172,7 @@ Page({
         wx.makePhoneCall({ phoneNumber: CONTACT.PHONE })
         break
       case 2:
-        wx.switchTab({ url: '/pages/index/index' })
+        wx.navigateTo({ url: '/pages/store-list/store-list' })
         break
     }
   },

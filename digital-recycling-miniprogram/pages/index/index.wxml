@@ -97,12 +97,17 @@
         </view>
         <text class="store-action">复制 ></text>
       </view>
-      <view class="store-address" bindtap="goToStoreList">
+      <view class="store-address" bindtap="openLocation">
         <view class="store-label" style="flex:1;">
           <text>📍 {{storeInfo.province || "" }}{{storeInfo.city || "" }}{{storeInfo.address || ""}}</text>
         </view>
         <text class="store-action">导航 ></text>
       </view>
+    </view>
+    <!-- 开发测试：手动触发获取位置（不依赖自动流程） -->
+    <view class="dev-test-bar" wx:if="{{showDevTestBar}}">
+      <button class="dev-test-btn" bindtap="onDevTestGetLocation" type="default" size="mini">🧪 测试获取位置</button>
+      <text class="dev-test-hint" wx:if="{{devTestResult}}">{{devTestResult}}</text>
     </view>
     <!-- 常用报价 -->
     <view class="common-quote-header">
@@ -276,6 +281,23 @@
 
     <!-- 返回顶部 -->
     <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">⬆</view>
+
+    <!-- 定位隐私授权弹窗 -->
+    <view class="location-sheet" wx:if="{{showLocationSheet}}">
+      <view class="sheet-mask" bindtap="onLocationDeny"></view>
+      <view class="sheet-content">
+        <view class="sheet-title">开启位置服务</view>
+        <view class="sheet-desc">为了展示离您最近的门店，需要获取您的位置信息。请在下方勾选并点击「允许」。</view>
+        <view class="sheet-checkbox-row" bindtap="toggleLocationCheck">
+          <view class="checkbox {{locationSheetChecked ? 'checked' : ''}}">{{locationSheetChecked ? '✓' : ''}}</view>
+          <text class="sheet-checkbox-label">已阅读并同意《隐私协议》</text>
+        </view>
+        <view class="sheet-buttons">
+          <view class="sheet-btn sheet-btn-cancel" bindtap="onLocationDeny">取消</view>
+          <view class="sheet-btn sheet-btn-allow {{locationSheetChecked ? 'enabled' : 'disabled'}}" bindtap="onLocationAllow">允许</view>
+        </view>
+      </view>
+    </view>
   </block>
 
   <custom-tabbar activeTab="home" />
