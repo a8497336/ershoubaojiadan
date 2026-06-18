@@ -71,7 +71,7 @@ const router = require('express').Router()
 const { success, error } = require('../../utils/response')
 const { Op } = require('sequelize')
 const db = require('../../models')
-const { searchNearby, searchNearbyByKeywords, distanceMatrix, geocodeStore, geocode } = require('../../utils/qqmap')
+const { searchNearby, searchNearbyByKeywords, distanceMatrix } = require('../../utils/qqmap')
 
 router.get('/nearby', async (req, res, next) => {
   try {
@@ -209,34 +209,6 @@ router.get('/nearest-store', async (req, res, next) => {
       source: distances.length > 0 ? 'qqmap:matrix' : 'stores:no-matrix',
       query: { lat, lng, mode: safeMode, storeCount: stores.length }
     })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.post('/geocode', async (req, res, next) => {
-  try {
-    const body = req.body || {}
-    const address = (body.address || '').toString().trim()
-    if (!address) {
-      return error(res, 'address 必填', 422, 10001)
-    }
-    const store = {
-      province: (body.province || '').toString().trim(),
-      city: (body.city || '').toString().trim(),
-      district: (body.district || '').toString().trim(),
-      address
-    }
-    const result = await geocodeStore(store)
-    if (result && Number.isFinite(result.lat) && Number.isFinite(result.lng)) {
-      return success(res, {
-        lat: result.lat,
-        lng: result.lng,
-        formatted: result.formatted || '',
-        source: 'qqmap:geocoder'
-      })
-    }
-    return error(res, '地址解析失败', 404, 10001)
   } catch (err) {
     next(err)
   }

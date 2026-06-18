@@ -198,10 +198,31 @@ Page({
       content: `确定提交 ${this.data.selectedCount} 台设备的回收订单吗？`,
       success: (res) => {
         if (res.confirm) {
-          orderApi.createOrder({}).then((res) => {
+          // 构造订单负载：仅提交用户已选中的商品（C-4 修复）
+          const items = this.data.cartItems
+            .filter(item => item.selected)
+            .map(item => ({
+              product_id: item.productId,
+              condition_id: item.conditionId,
+              quantity: item.totalQuantity,
+              unit_price: item.price,
+              product_name: item.productName
+            }))
+          if (items.length === 0) {
+            wx.showToast({ title: '未选中任何商品', icon: 'none' })
+            return
+          }
+          const contact = wx.getStorageSync('contact') || ''
+          const addressId = wx.getStorageSync('defaultAddressId') || null
+          orderApi.createOrder({ items, contact, address_id: addressId, source: 'shopping_cart' }).then((res) => {
             wx.showToast({ title: '订单创建成功', icon: 'success' })
+            const orderId = res && (res.data && (res.data.orderId || res.data.id) || res.orderId || res.id)
             setTimeout(() => {
-              wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${res.data.orderId}` })
+              if (orderId) {
+                wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${orderId}` })
+              } else {
+                wx.switchTab({ url: '/pages/index/index' })
+              }
             }, 1500)
           }).catch(() => {
             wx.showToast({ title: '订单创建失败', icon: 'none' })

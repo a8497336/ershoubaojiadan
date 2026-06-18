@@ -59,14 +59,14 @@
         <text class="func-title">拍照查价</text>
       </view>
       <view class="func-item" bindtap="goToInvite">
-        <text class="func-item-icon-em">👥</text>
+        <text class="func-item-icon-em">📞</text>
         <text class="func-title">邀请好友</text>
       </view>
     </view>
 
     <!-- 公告栏 -->
     <view class="notice-bar" wx:if="{{displayAnnouncements.length > 0}}">
-      <view class="notice-tag">📢 公告</view>
+      <view class="notice-tag">🔔 公告</view>
       <view class="notice-scroll-wrapper">
         <view class="notice-scroll-inner" style="transform: translateY(-{{currentAnnouncementIndex * 40}}rpx);">
           <view class="notice-scroll-item" wx:for="{{displayAnnouncements}}" wx:key="index">
@@ -81,13 +81,12 @@
     <view class="store-card" wx:if="{{storeInfo}}">
       <view class="store-header">
         <text class="store-tag">附近门店</text>
-        <text class="store-name">{{storeInfo.name || '安徽门店'}}</text>
-        <text class="store-distance" wx:if="{{storeInfo.distance}}">{{storeInfo.distance}}km</text>
-        <!-- <text class="store-distance" wx:else>52.11km</text> -->
+        <text class="store-name">{{storeInfo.name || '联赢门店'}}</text>
+        <text class="store-distance">{{storeInfo.distance ? '距离 ' + storeInfo.distance + ' km' : '距离 获取中…'}}</text>
       </view>
       <view class="store-info-row" bindtap="makePhoneCall" data-phone="{{storeInfo.phone || '18755875222'}}">
         <view class="store-label">
-          <text>📞 {{storeInfo.contact_name || '范凯旋'}} {{storeInfo.phone || storeInfo.contact_phone || '18755875222'}}</text>
+          <text>📞 {{storeInfo.contact_name || '联系人'}} {{storeInfo.phone || storeInfo.contact_phone || '18755875222'}}</text>
         </view>
         <text class="store-action">拨打 ></text>
       </view>
@@ -105,10 +104,10 @@
       </view>
     </view>
     <!-- 开发测试：手动触发获取位置（不依赖自动流程） -->
-    <view class="dev-test-bar" wx:if="{{showDevTestBar}}">
+    <!-- <view class="dev-test-bar" wx:if="{{showDevTestBar}}">
       <button class="dev-test-btn" bindtap="onDevTestGetLocation" type="default" size="mini">🧪 测试获取位置</button>
       <text class="dev-test-hint" wx:if="{{devTestResult}}">{{devTestResult}}</text>
-    </view>
+    </view> -->
     <!-- 常用报价 -->
     <view class="common-quote-header">
       <text class="active">常用报价</text>
@@ -172,7 +171,7 @@
         </view>
       </view>
 
-      <view class="section-title">电子产品杂货铺报价</view>
+      <view class="section-title">电子产品杂货回收报价</view>
       <view class="brand-grid">
         <view class="brand-item" wx:for="{{electronicsBrands}}" wx:key="index" bindtap="onBrandTap">
           <view class="update-tag">今日更新</view>
@@ -190,7 +189,7 @@
         </view>
       </view>
 
-      <view class="section-title">靓机回收报价</view>
+      <view class="section-title">国机回收报价</view>
       <view class="brand-grid">
         <view class="brand-item" wx:for="{{goodPhoneBrands}}" wx:key="index" bindtap="onBrandTap">
           <view class="update-tag">今日更新</view>
@@ -210,7 +209,7 @@
     </view>
 
     <!-- 手机回收教程 -->
-    
+
     <view class="video-section" wx:if="{{videos.length > 0}}">
       <view class="video-header">
         <text class="video-title">手机回收教程</text>
@@ -223,7 +222,7 @@
         <view class="video-card" wx:for="{{filteredVideos}}" wx:key="id" bindtap="onVideoTap" data-index="{{index}}">
           <view class="video-thumb">
             <image wx:if="{{item.cover_image || item.cover}}" src="{{item.cover_image || item.cover}}" class="video-cover" mode="aspectFill" />
-            <text wx:else class="video-default-icon">📱</text>
+            <text wx:else class="video-default-icon">🎬</text>
             <view class="video-play-btn">▶</view>
           </view>
           <text class="video-name">{{item.title}}</text>
@@ -233,10 +232,10 @@
 
     <!-- 服务流程 -->
     <view class="service-flow">
-      <view class="flow-title">发货下单 → 到货验机 → 确认报价 → 成交收款</view>
+      <view class="flow-title">发货下单 → 到货验机 → 确认报价 → 完成收款</view>
       <view class="flow-steps">
         <view class="flow-step">
-          <text class="flow-icon-em">🛡️</text>
+          <text class="flow-icon-em">🪝🌳</text>
           <text class="flow-step-text">报价精准</text>
         </view>
         <view class="flow-step">
@@ -244,12 +243,12 @@
           <text class="flow-step-text">专业质检</text>
         </view>
         <view class="flow-step">
-          <text class="flow-icon-em">💰</text>
+          <text class="flow-icon-em">🌵</text>
           <text class="flow-step-text">快速提现</text>
         </view>
         <view class="flow-step">
-          <text class="flow-icon-em">⭐</text>
-          <text class="flow-step-text">高质服务</text>
+          <text class="flow-icon-em">🚀</text>
+          <text class="flow-step-text">优质服务</text>
         </view>
       </view>
     </view>
@@ -261,8 +260,8 @@
 
     <!-- 底部信息 -->
     <view class="footer-info">
-      <text class="footer-title">数码网·真诚服务好每一位客户</text>
-      <text class="footer-desc">耕耘十余年始终为您提供最新最可靠的回收报价</text>
+      <text class="footer-title">数码回收真诚服务好每一位客户</text>
+      <text class="footer-desc">深耕十余年始终为您提供最新最可靠的回收报价</text>
       <view class="footer-actions">
         <view class="footer-action" bindtap="copyWechat">
           <text>💬 添加微信</text>
@@ -271,7 +270,7 @@
           <text>📞 客服电话</text>
         </view>
         <view class="footer-action" bindtap="goToStoreList">
-          <text>🏪 门店列表</text>
+          <text>🗧 门店列表</text>
         </view>
       </view>
     </view>
@@ -280,14 +279,14 @@
     <view class="custom-toast {{toastVisible ? 'show' : ''}}">{{toastMsg}}</view>
 
     <!-- 返回顶部 -->
-    <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">⬆</view>
+    <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">🚀</view>
 
     <!-- 定位隐私授权弹窗 -->
     <view class="location-sheet" wx:if="{{showLocationSheet}}">
       <view class="sheet-mask" bindtap="onLocationDeny"></view>
       <view class="sheet-content">
         <view class="sheet-title">开启位置服务</view>
-        <view class="sheet-desc">为了展示离您最近的门店，需要获取您的位置信息。请在下方勾选并点击「允许」。</view>
+        <view class="sheet-desc">为了展示离您最近的门店，需要获取您的位置信息。请在下方勾选并点击「允许」</view>
         <view class="sheet-checkbox-row" bindtap="toggleLocationCheck">
           <view class="checkbox {{locationSheetChecked ? 'checked' : ''}}">{{locationSheetChecked ? '✓' : ''}}</view>
           <text class="sheet-checkbox-label">已阅读并同意《隐私协议》</text>
@@ -298,7 +297,29 @@
         </view>
       </view>
     </view>
+
+    <!-- 悬浮三按钮：电话 / 客服 / 问题 -->
+    <view class="fab-stack">
+      <view class="fab-item" bindtap="onFabPhoneCall" hover-class="fab-item-hover">
+        <text class="fab-item-icon">📞</text>
+        <text class="fab-item-label">电话</text>
+      </view>
+      <view class="fab-divider"></view>
+      <button
+        class="fab-item"
+        open-type="contact"
+        bindcontact="onContactTap"
+        hover-class="fab-item-hover"
+        session-from="home_page">
+        <text class="fab-item-icon">🎧</text>
+        <text class="fab-item-label">客服</text>
+      </button>
+      <view class="fab-divider"></view>
+      <view class="fab-item" bindtap="onFabQuestion" hover-class="fab-item-hover">
+        <text class="fab-item-icon">?</text>
+        <text class="fab-item-label">问题</text>
+      </view>
+    </view>
   </block>
 
-  <custom-tabbar activeTab="home" />
 </view>

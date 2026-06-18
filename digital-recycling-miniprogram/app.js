@@ -21,7 +21,6 @@ App({
     this.checkApiStatus()
     this.checkLoginStatus()
     this.initPrivacyAuthorization()
-    this.requestPrivacyAuthorization()
   },
 
   requestPrivacyAuthorization() {
@@ -127,12 +126,45 @@ App({
       this.loadUserInfo()
       this.loadCartData()
     }).catch((err) => {
-      console.warn('Token验证失败，清除无效token:', err.message || err)
+      // 仅在明确的鉴权失败（401 / 403）时才清空 token；
+      // 网络错误或 5xx 等服务端异常保留 token，避免误登出（M-3 修复）
+      const status = err && (err.statusCode || err.status)
+      if (status === 401 || status === 403) {
+        console.warn('Token失效，清除并提示重新登录:', err.message || err)
+        wx.removeStorageSync('token')
+        wx.removeStorageSync('userInfo')
+        this.globalData.token = null
+        this.globalData.userInfo = null
+      } else {
+        console.warn('Token校验暂不可用，保留本地 token:', err.message || err)
+      }
+    })
+  },
+
+  /**
+   * 401 / 403 处理器（C-1 修复）
+   * 业务层 401 触发入口，清除本地登录态并跳转登录页
+   */
+  ensureLogin() {
+    try {
       wx.removeStorageSync('token')
       wx.removeStorageSync('userInfo')
       this.globalData.token = null
       this.globalData.userInfo = null
-    })
+    } catch (e) {
+      console.error('ensureLogin 清理本地态失败:', e)
+    }
+    if (typeof wx.showToast === 'function') {
+      wx.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
+    }
+    setTimeout(() => {
+      wx.navigateTo({
+        url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/index/index'),
+        fail: () => {
+          wx.switchTab({ url: '/pages/index/index' })
+        }
+      })
+    }, 300)
   },
 
   loadUserInfo() {
@@ -183,6 +215,8 @@ App({
     networkType: 'wifi',
     apiStatus: 'unknown',
     statusBarHeight: 0,
-    pendingLocationRequest: false
+    pendingLocationRequest: false,
+    latitude: null,
+    longitude: null
   }
 })

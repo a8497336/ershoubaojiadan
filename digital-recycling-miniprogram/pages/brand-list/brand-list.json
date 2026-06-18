@@ -4,7 +4,6 @@
   "enablePullDownRefresh": false,
   "disableScroll": true, 
   "usingComponents": {
-    "custom-tabbar": "/components/custom-tabbar/custom-tabbar",
     "empty-state": "/components/common/empty-state/empty-state",
     "loading-spinner": "/components/common/loading-spinner/loading-spinner"
   }

@@ -81,6 +81,4 @@
       </view>
     </view>
   </view>
-
-  <custom-tabbar activeTab="shopping" />
 </view>

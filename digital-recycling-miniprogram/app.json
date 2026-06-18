@@ -56,14 +56,12 @@
   },
   "__usePrivacyCheck__": true,
   "permission": {
-    "scope.userLocation": {
-      "desc": "用于获取您的位置以展示最近的门店信息"
+    "scope.userFuzzyLocation": {
+      "desc": "用于获取您的模糊位置以展示最近的门店信息"
     }
   },
   "requiredPrivateInfos": [
-    "getLocation",
-    "startLocationUpdate",
-    "onLocationChange"
+    "getFuzzyLocation"
   ],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

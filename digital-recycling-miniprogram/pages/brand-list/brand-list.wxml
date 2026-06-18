@@ -100,6 +100,4 @@
       </view>
     </view>
   </block>
-
-  <custom-tabbar activeTab="priceList" />
 </view>

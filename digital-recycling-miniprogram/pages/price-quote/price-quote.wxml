@@ -95,7 +95,4 @@
     <text>4. 废板整机指主板损坏无法开机的完整机器</text>
     <text>5. 价格随市场行情波动，请以实际交易为准</text>
   </view>
-
-  <!-- 自定义TabBar -->
-  <custom-tabbar activeTab="priceList" />
 </view>

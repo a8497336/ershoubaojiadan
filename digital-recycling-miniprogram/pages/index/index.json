@@ -4,7 +4,6 @@
   "enablePullDownRefresh": false,
   "onReachBottomDistance": 100,
   "usingComponents": {
-    "custom-tabbar": "/components/custom-tabbar/custom-tabbar",
     "loading-spinner": "/components/common/loading-spinner/loading-spinner"
   }
 }

@@ -170,7 +170,4 @@
       <text class="btn-icon-text">❓</text> 帮助中心
     </button>
   </view>
-
-  <!-- 自定义TabBar -->
-  <custom-tabbar activeTab="scanPrice" />
 </view>

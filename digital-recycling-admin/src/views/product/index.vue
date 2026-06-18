@@ -55,11 +55,17 @@
       </template>
 
       <template v-if="activeTab === 'product'">
-        <div style="margin-bottom: 16px; display: flex; gap: 12px">
+        <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
           <el-select v-model="filterBrandId" placeholder="选择品牌" clearable style="width: 160px" @change="loadData">
             <el-option v-for="b in allBrands" :key="b.id" :label="b.name" :value="b.id" />
           </el-select>
           <el-input v-model="keyword" placeholder="搜索产品名称" clearable style="width: 200px" @clear="loadData" @keyup.enter="loadData" />
+          <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 120px" @change="loadData">
+            <el-option label="全部" value="all" />
+            <el-option label="启用" value="enabled" />
+            <el-option label="禁用" value="disabled" />
+          </el-select>
+          <el-checkbox v-model="filterHasImage" @change="loadData">仅无图片</el-checkbox>
           <el-button type="primary" @click="loadData">搜索</el-button>
           <el-button type="success" @click="handleImportDialogOpen">导入</el-button>
         </div>
@@ -86,46 +92,58 @@
       </template>
     </el-card>
 
-    <el-dialog v-model="formVisible" :title="formId ? '编辑' : '新增'" width="500px">
-      <el-form :model="formData" label-width="80px">
-        <template v-if="activeTab === 'category'">
-          <el-form-item label="名称"><el-input v-model="formData.name" /></el-form-item>
-          <el-form-item label="编码"><el-input v-model="formData.code" /></el-form-item>
-          <el-form-item label="排序"><el-input-number v-model="formData.sort_order" :min="0" /></el-form-item>
-        </template>
-        <template v-if="activeTab === 'brand'">
-          <el-form-item label="分类"><el-select v-model="formData.category_id" style="width: 100%"><el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" /></el-select></el-form-item>
-          <el-form-item label="名称"><el-input v-model="formData.name" /></el-form-item>
-          <el-form-item label="图标文字"><el-input v-model="formData.icon_text" /></el-form-item>
-          <el-form-item label="背景色"><el-input v-model="formData.bg_color" /></el-form-item>
-          <el-form-item label="排序"><el-input-number v-model="formData.sort_order" :min="0" /></el-form-item>
-        </template>
-        <template v-if="activeTab === 'product'">
-          <el-form-item label="分类"><el-select v-model="formData.category_id" placeholder="请选择分类" style="width: 100%"><el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" /></el-select></el-form-item>
-          <el-form-item label="品牌"><el-select v-model="formData.brand_id" placeholder="请选择品牌" style="width: 100%" @change="handleProductBrandChange"><el-option v-for="b in allBrands" :key="b.id" :label="b.name" :value="b.id" /></el-select></el-form-item>
-          <el-form-item label="名称"><el-input v-model="formData.name" /></el-form-item>
-          <el-form-item label="系列"><el-input v-model="formData.series_name" /></el-form-item>
-          <el-form-item label="型号"><el-input v-model="formData.model_code" /></el-form-item>
-          <el-form-item label="排序"><el-input-number v-model="formData.sort_order" :min="0" /></el-form-item>
-          <el-form-item label="图片">
-            <div style="display: flex; align-items: center; gap: 8px">
-              <el-upload
-                :http-request="handleImageUpload"
-                :before-upload="beforeImageUpload"
-                :show-file-list="false"
-                accept=".jpeg,.jpg,.png,.gif,.webp"
-              >
-                <el-image v-if="formData.image" :src="formData.image" style="width: 80px; height: 80px" fit="cover" />
-                <el-button v-else type="primary">上传</el-button>
-              </el-upload>
-              <el-button v-if="formData.image" type="danger" plain size="small" @click="formData.image = ''">删除</el-button>
-            </div>
-          </el-form-item>
-        </template>
+    <el-dialog v-model="categoryFormVisible" :title="categoryFormId ? '编辑分类' : '新增分类'" width="500px">
+      <el-form :model="categoryFormData" label-width="80px">
+        <el-form-item label="名称"><el-input v-model="categoryFormData.name" /></el-form-item>
+        <el-form-item label="编码"><el-input v-model="categoryFormData.code" /></el-form-item>
+        <el-form-item label="排序"><el-input-number v-model="categoryFormData.sort_order" :min="0" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button @click="categoryFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="categoryFormLoading" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="brandFormVisible" :title="brandFormId ? '编辑品牌' : '新增品牌'" width="500px">
+      <el-form :model="brandFormData" label-width="80px">
+        <el-form-item label="分类"><el-select v-model="brandFormData.category_id" style="width: 100%"><el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" /></el-select></el-form-item>
+        <el-form-item label="名称"><el-input v-model="brandFormData.name" /></el-form-item>
+        <el-form-item label="图标文字"><el-input v-model="brandFormData.icon_text" /></el-form-item>
+        <el-form-item label="背景色"><el-input v-model="brandFormData.bg_color" /></el-form-item>
+        <el-form-item label="排序"><el-input-number v-model="brandFormData.sort_order" :min="0" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="brandFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="brandFormLoading" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="productFormVisible" :title="productFormId ? '编辑产品' : '新增产品'" width="500px">
+      <el-form :model="productFormData" label-width="80px">
+        <el-form-item label="分类"><el-select v-model="productFormData.category_id" placeholder="请选择分类" style="width: 100%"><el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" /></el-select></el-form-item>
+        <el-form-item label="品牌"><el-select v-model="productFormData.brand_id" placeholder="请选择品牌" style="width: 100%" @change="handleProductBrandChange"><el-option v-for="b in allBrands" :key="b.id" :label="b.name" :value="b.id" /></el-select></el-form-item>
+        <el-form-item label="名称"><el-input v-model="productFormData.name" /></el-form-item>
+        <el-form-item label="系列"><el-input v-model="productFormData.series_name" /></el-form-item>
+        <el-form-item label="型号"><el-input v-model="productFormData.model_code" /></el-form-item>
+        <el-form-item label="排序"><el-input-number v-model="productFormData.sort_order" :min="0" /></el-form-item>
+        <el-form-item label="图片">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <el-upload
+              :http-request="handleImageUpload"
+              :before-upload="beforeImageUpload"
+              :show-file-list="false"
+              accept=".jpeg,.jpg,.png,.gif,.webp"
+            >
+              <el-image v-if="productFormData.image" :src="productFormData.image" style="width: 80px; height: 80px" fit="cover" />
+              <el-button v-else type="primary" :loading="imageUploading">上传</el-button>
+            </el-upload>
+            <el-button v-if="productFormData.image" type="danger" plain size="small" @click="productFormData.image = ''">删除</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="productFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="productFormLoading" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
 
@@ -196,7 +214,59 @@
       </el-upload>
       <template #footer>
         <el-button @click="importDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="importLoading" :disabled="!importFileReady" @click="handleImportSubmit">确认导入</el-button>
+        <el-button type="primary" :loading="importLoading" :disabled="!importFileReady" @click="handleImportPreview">预览导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="previewDialogVisible" title="导入预览" width="640px" :close-on-click-modal="false">
+      <div v-loading="importLoading">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="品牌">{{ previewData.brandName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="将被跳过">
+            <el-tag :type="(previewData.willSkip?.length || 0) > 0 ? 'warning' : 'success'" size="small">
+              {{ previewData.willSkip?.length || 0 }} 条
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+        <div v-if="previewData.willSkip && previewData.willSkip.length" style="margin-top: 16px">
+          <div style="font-weight: bold; margin-bottom: 8px;">跳过的产品名样本（前 20 条）</div>
+          <el-table :data="previewData.willSkip.slice(0, 20)" max-height="280" size="small" border>
+            <el-table-column prop="rowIndex" label="行号" width="80" />
+            <el-table-column prop="name" label="产品名" />
+            <el-table-column prop="reason" label="原因" />
+          </el-table>
+        </div>
+        <el-empty v-else description="没有将被跳过的产品，可以放心导入" />
+      </div>
+      <template #footer>
+        <el-button @click="previewDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importLoading" @click="handleImportConfirm">确认导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="importResultDialogVisible" title="导入结果" width="720px" :close-on-click-modal="false">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="品牌">{{ importResult.brandName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="新增产品">{{ importResult.products || 0 }} 个</el-descriptions-item>
+        <el-descriptions-item label="更新产品">{{ importResult.productsUpdated || 0 }} 个</el-descriptions-item>
+        <el-descriptions-item label="写入价格">{{ importResult.prices || 0 }} 条</el-descriptions-item>
+        <el-descriptions-item label="跳过数量" :span="2">
+          <el-tag :type="(importResult.skippedNames?.length || 0) > 0 ? 'warning' : 'success'" size="small">
+            {{ importResult.skippedNames?.length || 0 }} 条
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div v-if="importResult.skippedNames && importResult.skippedNames.length" style="margin-top: 16px">
+        <div style="font-weight: bold; margin-bottom: 8px;">跳过的产品名（最多 20 条）</div>
+        <el-table :data="importResult.skippedNames.slice(0, 20)" max-height="280" size="small" border>
+          <el-table-column prop="rowIndex" label="行号" width="80" />
+          <el-table-column prop="name" label="产品名" />
+          <el-table-column prop="reason" label="原因" />
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="handleImportAgain">重新导入</el-button>
+        <el-button type="primary" @click="handleImportViewList">查看产品列表</el-button>
       </template>
     </el-dialog>
   </div>
@@ -204,7 +274,7 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct, importProducts, uploadFile } from '@/api'
+import { getCategories, createCategory, updateCategory, deleteCategory, getBrands, createBrand, updateBrand, deleteBrand, getProducts, createProduct, updateProduct, deleteProduct, importProducts, previewProducts, uploadFile } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const activeTab = ref('category')
@@ -215,11 +285,28 @@ const pageSize = ref(20)
 const total = ref(0)
 const keyword = ref('')
 const filterBrandId = ref('')
+const filterHasImage = ref(false)
+const filterStatus = ref('all')
 const categories = ref([])
 const allBrands = ref([])
-const formVisible = ref(false)
-const formId = ref(null)
-const formData = ref({})
+
+// Category form
+const categoryFormVisible = ref(false)
+const categoryFormId = ref(null)
+const categoryFormData = ref({})
+const categoryFormLoading = ref(false)
+
+// Brand form
+const brandFormVisible = ref(false)
+const brandFormId = ref(null)
+const brandFormData = ref({})
+const brandFormLoading = ref(false)
+
+// Product form
+const productFormVisible = ref(false)
+const productFormId = ref(null)
+const productFormData = ref({})
+const productFormLoading = ref(false)
 
 const quoteConfigVisible = ref(false)
 const quoteForm = ref({})
@@ -232,6 +319,12 @@ const importFileReady = ref(false)
 const importFileList = ref([])
 const importUploadRef = ref(null)
 
+const previewDialogVisible = ref(false)
+const previewData = ref({ brandName: '', willSkip: [] })
+
+const importResultDialogVisible = ref(false)
+const importResult = ref({ brandName: '', products: 0, productsUpdated: 0, prices: 0, skippedNames: [] })
+
 const loadData = async () => {
   loading.value = true
   try {
@@ -243,7 +336,16 @@ const loadData = async () => {
       tableData.value = res.data.list
       total.value = res.data.pagination.total
     } else {
-      const res = await getProducts({ brand_id: filterBrandId.value, keyword: keyword.value, page: page.value, pageSize: pageSize.value })
+      // TODO: 後端 may not yet support filterHasImage / filterStatus
+      const statusParam = filterStatus.value && filterStatus.value !== 'all' ? filterStatus.value : undefined
+      const res = await getProducts({
+        brand_id: filterBrandId.value,
+        keyword: keyword.value,
+        page: page.value,
+        pageSize: pageSize.value,
+        hasImage: filterHasImage.value ? false : undefined,
+        status: statusParam
+      })
       tableData.value = res.data.list
       total.value = res.data.pagination.total
     }
@@ -256,7 +358,9 @@ const loadData = async () => {
 }
 
 const refreshWithDelay = async (delay = 300) => {
-  formVisible.value = false
+  categoryFormVisible.value = false
+  brandFormVisible.value = false
+  productFormVisible.value = false
   quoteConfigVisible.value = false
   await nextTick()
   setTimeout(() => loadData(), delay)
@@ -283,15 +387,25 @@ const loadBrands = async () => {
 }
 
 const handleAdd = () => {
-  formId.value = null
-  formData.value = { sort_order: 0 }
-  formVisible.value = true
+  if (activeTab.value === 'category') {
+    categoryFormId.value = null
+    categoryFormData.value = { sort_order: 0 }
+    categoryFormVisible.value = true
+  } else if (activeTab.value === 'brand') {
+    brandFormId.value = null
+    brandFormData.value = { sort_order: 0 }
+    brandFormVisible.value = true
+  } else {
+    productFormId.value = null
+    productFormData.value = { sort_order: 0 }
+    productFormVisible.value = true
+  }
 }
 
 const handleProductBrandChange = (brandId) => {
   const brand = allBrands.value.find(b => b.id === brandId)
   if (brand && brand.category_id) {
-    formData.value.category_id = brand.category_id
+    productFormData.value.category_id = brand.category_id
   }
 }
 
@@ -313,20 +427,33 @@ const imageUploading = ref(false)
 const handleImageUpload = async (options) => {
   const fd = new FormData()
   fd.append('file', options.file)
+  imageUploading.value = true
   try {
     const res = await uploadFile(fd)
-    formData.value.image = res.data.url
+    productFormData.value.image = res.data.url
     ElMessage.success('上传成功')
   } catch (error) {
     console.error('上传图片失败:', error)
     ElMessage.error('上传失败')
+  } finally {
+    imageUploading.value = false
   }
 }
 
 const handleEdit = (row) => {
-  formId.value = row.id
-  formData.value = { ...row }
-  formVisible.value = true
+  if (activeTab.value === 'category') {
+    categoryFormId.value = row.id
+    categoryFormData.value = { ...row }
+    categoryFormVisible.value = true
+  } else if (activeTab.value === 'brand') {
+    brandFormId.value = row.id
+    brandFormData.value = { ...row }
+    brandFormVisible.value = true
+  } else {
+    productFormId.value = row.id
+    productFormData.value = { ...row }
+    productFormVisible.value = true
+  }
 }
 
 const handleDelete = async (row) => {
@@ -346,16 +473,46 @@ const handleDelete = async (row) => {
 
 const handleSave = async () => {
   try {
-    const fns = {
-      category: { create: createCategory, update: updateCategory },
-      brand: { create: createBrand, update: updateBrand },
-      product: { create: createProduct, update: updateProduct }
+    if (activeTab.value === 'category') {
+      categoryFormLoading.value = true
+      try {
+        if (categoryFormId.value) {
+          await updateCategory(categoryFormId.value, categoryFormData.value)
+        } else {
+          await createCategory(categoryFormData.value)
+        }
+        ElMessage.success('保存成功')
+        await refreshWithDelay()
+      } finally {
+        categoryFormLoading.value = false
+      }
+    } else if (activeTab.value === 'brand') {
+      brandFormLoading.value = true
+      try {
+        if (brandFormId.value) {
+          await updateBrand(brandFormId.value, brandFormData.value)
+        } else {
+          await createBrand(brandFormData.value)
+        }
+        ElMessage.success('保存成功')
+        await refreshWithDelay()
+      } finally {
+        brandFormLoading.value = false
+      }
+    } else {
+      productFormLoading.value = true
+      try {
+        if (productFormId.value) {
+          await updateProduct(productFormId.value, productFormData.value)
+        } else {
+          await createProduct(productFormData.value)
+        }
+        ElMessage.success('保存成功')
+        await refreshWithDelay()
+      } finally {
+        productFormLoading.value = false
+      }
     }
-    const fn = formId.value ? fns[activeTab.value].update : fns[activeTab.value].create
-    const id = formId.value
-    await id ? fn(id, formData.value) : fn(formData.value)
-    ElMessage.success('保存成功')
-    await refreshWithDelay()
   } catch (error) {
     console.error('保存失败:', error)
     ElMessage.error(error?.message || '保存失败，请重试')
@@ -425,7 +582,7 @@ const handleImportFileRemove = () => {
   importFileReady.value = false
 }
 
-const handleImportSubmit = async () => {
+const handleImportPreview = async () => {
   if (!importFileReady.value) return
   importLoading.value = true
   try {
@@ -435,15 +592,45 @@ const handleImportSubmit = async () => {
       importLoading.value = false
       return
     }
-    const formData = new FormData()
-    formData.append('file', file)
-    const res = await importProducts(formData)
-    const stats = res.data
-    ElMessage.success(
-      `导入成功！品牌：${stats.brandName}，新增产品：${stats.products}个，写入价格：${stats.prices}条`
-    )
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await previewProducts(fd)
+    previewData.value = {
+      brandName: res.data?.brandName || '',
+      willSkip: res.data?.willSkip || []
+    }
     importDialogVisible.value = false
-    loadData()
+    previewDialogVisible.value = true
+  } catch (err) {
+    console.error('预览导入失败:', err)
+    const msg = err?.response?.data?.message || err?.message || '预览失败，请检查文件格式'
+    ElMessage.error(msg)
+  } finally {
+    importLoading.value = false
+  }
+}
+
+const handleImportConfirm = async () => {
+  importLoading.value = true
+  try {
+    const file = importFileList.value[0]?.raw
+    if (!file) {
+      ElMessage.error('请选择文件')
+      importLoading.value = false
+      return
+    }
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await importProducts(fd)
+    importResult.value = {
+      brandName: res.data?.brandName || '',
+      products: res.data?.products || 0,
+      productsUpdated: res.data?.productsUpdated || 0,
+      prices: res.data?.prices || 0,
+      skippedNames: res.data?.skippedNames || []
+    }
+    previewDialogVisible.value = false
+    importResultDialogVisible.value = true
   } catch (err) {
     console.error('导入失败:', err)
     const msg = err?.response?.data?.message || err?.message || '导入失败，请检查文件格式'
@@ -451,6 +638,19 @@ const handleImportSubmit = async () => {
   } finally {
     importLoading.value = false
   }
+}
+
+const handleImportAgain = () => {
+  importResultDialogVisible.value = false
+  importDialogVisible.value = true
+  importLoading.value = false
+  importFileReady.value = false
+  importFileList.value = []
+}
+
+const handleImportViewList = () => {
+  importResultDialogVisible.value = false
+  loadData()
 }
 
 watch(activeTab, () => {
