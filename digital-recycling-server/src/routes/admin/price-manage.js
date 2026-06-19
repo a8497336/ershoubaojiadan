@@ -125,6 +125,7 @@ const { adminAuth } = require('../../middlewares/adminAuth')
 const { success, notFound, paginate, error } = require('../../utils/response')
 const db = require('../../models')
 const { Op } = require('sequelize')
+const { getPriceTrendData } = require('../../utils/priceTrend')
 
 router.get('/', adminAuth, async (req, res, next) => {
   try {
@@ -344,122 +345,8 @@ router.delete('/conditions/:id', adminAuth, async (req, res, next) => {
 router.get('/trend/:productId', adminAuth, async (req, res, next) => {
   try {
     const { days = 15 } = req.query
-    const productId = req.params.productId
-
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - parseInt(days))
-    const startDateStr = startDate.toISOString().split('T')[0]
-
-    const product = await db.Product.findByPk(productId, {
-      include: [
-        { model: db.Brand, as: 'Brand' },
-        { model: db.Category, as: 'Category' }
-      ]
-    })
-
-    const priceHistories = await db.PriceHistory.findAll({
-      where: {
-        product_id: productId,
-        change_date: { [Op.gte]: startDateStr }
-      },
-      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
-      order: [['change_date', 'ASC']]
-    })
-
-    const allPrices = await db.Price.findAll({
-      where: {
-        product_id: productId,
-        effective_date: { [Op.gte]: startDateStr }
-      },
-      include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
-      order: [['effective_date', 'ASC']]
-    })
-
-    const trendData = {}
-    
-    // 先從 prices 表構建趨勢數據（每次導入的價格快照）
-    for (const p of allPrices) {
-      const conditionId = p.condition_id
-      if (!trendData[conditionId]) {
-        trendData[conditionId] = {
-          name: p.Condition?.name || '未知',
-          code: p.Condition?.code || `condition_${conditionId}`,
-          data: []
-        }
-      }
-      trendData[conditionId].data.push({
-        date: p.effective_date,
-        price: parseFloat(p.price) || 0
-      })
-    }
-
-    // 合併 price_histories（手動修改記錄，同日期同 condition 時覆蓋 prices 數據）
-    for (const h of priceHistories) {
-      const conditionId = h.condition_id
-      if (!trendData[conditionId]) {
-        trendData[conditionId] = {
-          name: h.Condition?.name || '未知',
-          code: h.Condition?.code || `condition_${conditionId}`,
-          data: []
-        }
-      }
-      const existingIdx = trendData[conditionId].data.findIndex(d => d.date === h.change_date)
-      if (existingIdx >= 0) {
-        trendData[conditionId].data[existingIdx].price = parseFloat(h.new_price) || 0
-      } else {
-        trendData[conditionId].data.push({
-          date: h.change_date,
-          price: parseFloat(h.new_price) || 0
-        })
-      }
-    }
-
-    // 按日期排序每個 condition 的數據
-    for (const key of Object.keys(trendData)) {
-      trendData[key].data.sort((a, b) => a.date.localeCompare(b.date))
-    }
-
-    const currentPrices = allPrices.filter(p => !p.effective_date || p.effective_date >= startDateStr)
-
-    let maxPrice = 0, minPrice = Infinity, latestPrice = 0
-    const latestDate = currentPrices.length > 0
-      ? currentPrices.reduce((max, p) => (p.effective_date > max ? p.effective_date : max), '')
-      : ''
-    const latestPrices = currentPrices.filter(p => p.effective_date === latestDate)
-    latestPrices.forEach(p => {
-      const price = parseFloat(p.price) || 0
-      if (price > maxPrice) maxPrice = price
-      if (price < minPrice) minPrice = price
-      if (price > latestPrice) latestPrice = price
-    })
-    currentPrices.forEach(p => {
-      const price = parseFloat(p.price) || 0
-      if (price > maxPrice) maxPrice = price
-      if (price < minPrice) minPrice = price
-    })
-
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
-
-    const yesterdayPriceHist = priceHistories.find(h => h.change_date === yesterdayStr)
-    const yesterdayPrice = yesterdayPriceHist ? parseFloat(yesterdayPriceHist.new_price) : latestPrice
-
-    const priceChange = latestPrice - yesterdayPrice
-    const priceChangePercent = yesterdayPrice > 0 ? ((priceChange / yesterdayPrice) * 100).toFixed(2) : 0
-
-    return success(res, {
-      product,
-      currentPrices: latestPrices.length > 0 ? latestPrices : currentPrices,
-      trendData: Object.values(trendData),
-      summary: {
-        maxPrice,
-        minPrice,
-        latestPrice,
-        priceChange,
-        priceChangePercent
-      }
-    })
+    const data = await getPriceTrendData(req.params.productId, parseInt(days))
+    return success(res, data)
   } catch (err) { next(err) }
 })
 

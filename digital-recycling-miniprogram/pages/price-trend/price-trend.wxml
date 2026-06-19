@@ -1,6 +1,6 @@
 <view class="price-trend-page">
-  <!-- 头部信息 -->
-  <view class="header-card" wx:if="{{trendData}}">
+  <!-- 头部信息：仅当有趋势数据时展示 -->
+  <view class="header-card" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
     <view class="product-info">
       <text class="product-brand">{{trendData.product && trendData.product.Brand ? trendData.product.Brand.name : ''}}</text>
       <text class="product-model">{{trendData.product ? trendData.product.model : model}}</text>
@@ -25,8 +25,8 @@
     </view>
   </view>
 
-  <!-- 时间选择 -->
-  <view class="time-selector">
+  <!-- 时间选择：仅当有趋势数据时展示 -->
+  <view class="time-selector" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
     <view class="time-item {{days === 7 ? 'active' : ''}}" bindtap="selectDays" data-days="7">7天</view>
     <view class="time-item {{days === 15 ? 'active' : ''}}" bindtap="selectDays" data-days="15">15天</view>
     <view class="time-item {{days === 30 ? 'active' : ''}}" bindtap="selectDays" data-days="30">30天</view>
@@ -90,8 +90,8 @@
     </view>
   </view>
 
-  <!-- 操作按钮 -->
-  <view class="action-buttons" wx:if="{{trendData}}">
+  <!-- 操作按钮：仅当有趋势数据时展示 -->
+  <view class="action-buttons" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
     <button class="btn btn-outline" bindtap="addToStock">加入压货</button>
     <button class="btn btn-primary" bindtap="goToOrder">立即回收</button>
   </view>
@@ -101,8 +101,8 @@
     <loading-skeleton></loading-skeleton>
   </view>
 
-  <!-- 空状态 -->
-  <view class="empty-container" wx:if="{{isLoading === false && !trendData}}">
+  <!-- 空状态：trendData 为空，或没有任何有效趋势数据 -->
+  <view class="empty-container" wx:if="{{isLoading === false && (!trendData || !trendData.trendData || trendData.trendData.length === 0)}}">
     <empty-state title="暂无价格数据" desc="该机型暂无价格历史数据"></empty-state>
   </view>
 </view>

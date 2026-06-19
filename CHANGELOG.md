@@ -2,6 +2,390 @@
 
 > 项目根目录下的汇总变更日志。所有需求变更完成后第一时间更新本文档。
 
+## 2026-06-19
+
+### fix-dev-test-privacy-popup — 修复开发者调试场景下原生隐私声明弹窗不弹
+
+#### 关键问题
+
+调试场景下点 dev-test-bar 的 [2] 申请隐私授权 / [3] 获取模糊位置 / [4] 一键完整流程,**微信原生隐私授权弹窗不弹**——`wx.requirePrivacyAuthorize` 直接 success,只显示「✓ 已同意隐私协议」日志,无任何弹窗。
+
+#### 根因
+
+[digital-recycling-miniprogram/app.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/app.js) 注册了 `wx.onNeedPrivacyAuthorization` 全局监听器(`initPrivacyAuthorization`),**微信 API 行为**:一旦注册,所有 `wx.requirePrivacyAuthorize` 调用都触发 callback,**微信不再弹原生弹窗**。
+
+旧实现 [app.js#L26-L82](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.js#L26-L82) `resolvePrivacyAuthorization` 在首页 `resolve({ button: 'agree' })`,意图是"让原生弹窗弹"——**这是对微信 API 的误解**。`resolve agree` 会让 `requirePrivacyAuthorize` 走 success,**不弹**原生弹窗。
+
+参考 [dom/app.js#L11-L15](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/dom/app.js#L11-L15) 注释明确「**故意不在此处监听 wx.onNeedPrivacyAuthorization**」——这是正确做法。
+
+#### 修改范围（一个文件）
+
+**删除** [digital-recycling-miniprogram/app.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.js) 约 60 行:
+- L23: `this.initPrivacyAuthorization()` 调用
+- L26-L32: `initPrivacyAuthorization()` 方法
+- L34-L82: `resolvePrivacyAuthorization()` 方法(含 `_isOnIndexPage` 内部函数)
+
+**新增** [app.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.js#L23-L25) `onLaunch` 末尾 3 行注释(对齐 dom 风格):
+```js
+// 注意：故意不在此处监听 wx.onNeedPrivacyAuthorization
+// 原因：注册后 wx.requirePrivacyAuthorize 不再弹原生弹窗
+//      保留原生行为，让 requirePrivacyAuthorize 自然弹出原生弹窗（与 dom 一致）
+```
+
+#### 行为变化
+
+| 场景 | 修复前 | 修复后 |
+|---|---|---|
+| 调试 [2] 申请隐私授权 | `requirePrivacyAuthorize` → 触发 app.js 回调 → `resolve agree` → success,**无原生弹窗** | `requirePrivacyAuthorize` → 微信**弹原生授权弹窗**(与 dom 一致) |
+| 调试 [3] 获取模糊位置 | 内部 `requirePrivacyAuthorize` 被全局回调拦截,跳过原生弹窗,可能因隐私未真正登记而 fail | 内部 `requirePrivacyAuthorize` 弹原生弹窗 → 用户同意 → `wx.getFuzzyLocation` 成功 |
+| 调试 [4] 一键完整流程 | 同上,弹不出原生弹窗 | 弹出原生弹窗,串行执行隐私预检 → 授权 → 定位 |
+| 业务「查找附近门店」 | `showLocationSheet` 自定义 sheet(不调 `requirePrivacyAuthorize`) | **无变化** |
+| 业务 `onLocationAllow` | 不调 `requirePrivacyAuthorize`(`requirePrivacyAuthorize` 是 `requirePrivacyAuthorize` 的死代码引用) | **无变化** |
+| 业务 `checkLocationWithPrivacy` | 当前是**死代码**(无 caller) | **无变化** |
+
+#### 兼容性 / 限制
+
+- **未修改** `app.json`(`__usePrivacyCheck__: true` + `requiredPrivateInfos: [getFuzzyLocation]` 不变)
+- **未修改** `pages/index/index.js`(调试条 / 业务定位逻辑不变)
+- **未修改** `pages/index/index.wxml`(API 兼容性行是静态展示文本)
+- **未修改** `dom` 项目
+- 后端 server / admin / app / 数据库 schema:**全部未触碰**
+
+#### 验证
+
+- `node --check digital-recycling-miniprogram/app.js` exit 0 ✅
+- `grep -r 'initPrivacyAuthorization|resolvePrivacyAuthorization' digital-recycling-miniprogram/` 零匹配 ✅
+- `grep -r 'onNeedPrivacyAuthorization' digital-recycling-miniprogram/` 仅剩 3 处(app.js 注释 + wxml API 兼容性行 + index.js 历史注释)✅
+- GetDiagnostics 零错误 ✅
+- 待真机/开发工具实测:
+  - [ ] 点调试 [2] → 弹微信原生隐私授权弹窗(关键验收点)
+  - [ ] 点调试 [3] → 弹原生弹窗 → 用户同意 → `wx.getFuzzyLocation` 成功
+  - [ ] 点调试 [4] 一键完整流程 → 弹原生弹窗 → 用户同意 → 成功
+  - [ ] 业务场景「查找附近门店」→ `showLocationSheet` 仍正常显示(无破坏)
+
+#### 影响面
+
+- 仅 `app.js` 一个文件
+- 仅删除 60 行代码 + 3 行注释
+- 无新增业务逻辑
+- 数据库模型/迁移:**未修改**(不涉及 schema 变更)
+- 后端 server / admin / app:**未触碰**
+- 依赖:**未新增**
+
+### integrate-dom-debug-into-index — 参考 dom 整合定位调试面板到主项目首页
+
+#### 关键问题
+
+主项目 [digital-recycling-miniprogram/pages/index/index.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.js) 当前的开发者调试条（`dev-test-bar`，仅 `envVersion === 'develop'` 可见）只暴露 2 个按钮（`调用 wx.getFuzzyLocation` / `清除定位缓存`）和 1 行结果摘要，遇到定位失败时排查链路（隐私预检 / 隐私授权 / 隐私回调 / 错误码分类）全部要靠 vConsole console，调试效率低且对开发同事不友好。
+
+[dom](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/dom) 项目已完成独立 demo，提供完整的 5 按钮调试面板 + 系统信息 + API 兼容性 + Console 日志 + 错误码速查表。本次目标：**把 dom 的调试能力"搬运"到主项目首页的 dev-test-bar**。
+
+#### 修改范围（三个文件）
+
+##### 1. `digital-recycling-miniprogram/pages/index/index.js`
+
+- **data 字段扩展**：新增 8 个字段 `systemInfo` / `sdkVersion` / `apiCheckText` / `privacyStatus` / `privacyStatusClass` / `locationResult` / `locationResultClass` / `consoleLogs`，保留 `devTestResult` / `showDevTestBar` 字段
+- **新增方法**：
+  - `_loadSystemInfoDevTest()` — onLoad 时加载 `wx.getSystemInfoSync()` 结果 + 检测 3 个核心 API 可用性
+  - `_logDevTest(msg, level)` — 调试日志工具（同步输出 `console.log` + 写入 `consoleLogs` FIFO 10 条）
+  - `onDevTestCheckPrivacy()` — [1] 检测隐私设置，调 `wx.getPrivacySetting`
+  - `onDevTestRequirePrivacy()` — [2] 申请隐私授权，调 `wx.requirePrivacyAuthorize`
+  - `onDevTestFullFlow()` — [4] 一键完整流程，串行执行隐私预检 → 授权 → 定位
+  - `onDevTestCopyLocation()` — 长按 [3] 复制 lat,lng 到剪贴板
+- **调整方法**：
+  - `onDevTestGetLocation()` — 顶部加 `_logDevTest`；超时 / 隐私预检关键节点加 `_logDevTest`
+  - `_devTestAfterPrivacy.fail` — 加 `_logDevTest('失败: 用户拒绝隐私协议', 'error')`
+  - `_devTestDoGetLocation.showSuccessModal` — 同步写入 `locationResult` + `_logDevTest`
+  - `_devTestDoGetLocation.showFailModal` — 同步写入 `locationResult` + `locationResultClass` + `_logDevTest`
+  - `onDevTestClearCache()` — 顶部加 `_logDevTest`；同时清空 `privacyStatus` / `locationResult` 字段
+- **onLoad** 中调用 `this._loadSystemInfoDevTest()`
+- **未修改** `processStore` / `_fetchNearbyStores` / `_fallbackStoreToLocal` / `_lastUserLat/_lastUserLng` / `onFindNearbyStore` / `onLocationAllow` / `onLocationDeny` 等业务定位逻辑
+
+##### 2. `digital-recycling-miniprogram/pages/index/index.wxml`
+
+- **dev-test-bar 卡片化结构**（L117-L195 替换）：标题 + 7 张子卡片（系统信息 / 5 按钮 / 隐私状态 / 定位结果 / Console 日志 / API 兼容性 / 错误码速查表）
+- 5 按钮按 [1] [2] [3] [4] [5] 顺序竖排
+- [3] 按钮带 `bindlongtap="onDevTestCopyLocation"`
+- 隐私状态 / 定位结果用 `{{privacyStatusClass}}` / `{{locationResultClass}}` 动态类
+- Console 日志用 `wx:for="{{consoleLogs}}"` 列表渲染 + 空态「暂无日志」
+- **store-card 末尾追加**：`<view class="store-debug-hint" wx:if="{{showDevTestBar}}">调试场景：可在下方 dev-test-bar 单独测试定位</view>`
+
+##### 3. `digital-recycling-miniprogram/pages/index/index.wxss`
+
+- **保留**现有 `.dev-test-bar` / `.dev-test-title` / `.dev-test-row` / `.dev-test-btn` / `.dev-test-result` / `.dev-test-hint` 基础样式
+- **新增** 7 组样式：
+  - `.dev-test-card` / `.dev-test-card-title` / `.dev-test-card-content` / `.dev-test-card-content.mono`（卡片化）
+  - `.status-success`（绿加粗）/ `.status-error`（红加粗）
+  - `.dev-test-log-list`（浅黑底 + 滚动）/ `.dev-test-log-empty` / `.dev-test-log-item` / `.log-info` / `.log-warn` / `.log-error`（级别着色）
+  - `.dev-test-api-row`（API 兼容性行 + 虚线分隔）
+  - `.dev-test-err-table`（错误码速查表）
+  - `.dev-test-btn-secondary`（[4] 一键流程）/ `.dev-test-btn-ghost`（[5] 清除缓存）
+  - `.store-debug-hint`（门店调试提示，仅 dev-test-bar 可见时显示）
+- **注释掉** L1266-1294 的旧 dev-test-bar 样式（与新样式重复）
+
+#### 行为
+
+- **开发版首页**：dev-test-bar 完整显示，包含 7 张子卡片 + 5 按钮
+  - 点 [1] → 隐私状态卡片显示 `needAuthorization=true/false | privacyContractName=...`
+  - 点 [2] → 弹原生隐私授权弹窗 + 隐私状态卡片显示 `✓ 已同意隐私协议` 或 `✗ 拒绝: ...`
+  - 点 [3] → 10s 超时兜底 + 定位结果卡片显示 `lat=... | lng=... | acc=...m | speed=... | altitude=...`
+  - 点 [4] → 串行执行隐私预检 → 授权 → 定位，每步写入 Console 日志
+  - 点 [5] → 清空 storage / globalData / 隐私状态 / 定位结果
+  - 长按 [3] → 复制 lat,lng 到剪贴板
+- **生产版首页**：dev-test-bar 不可见，所有调试方法虽存在但不会被触发
+- **门店展示 / 距离展示**：保持现状（已由 `add-find-store-button` + `fix-store-distance-display` 覆盖，本次不修改）
+- **门店卡片末尾**（开发版）：显示小字「调试场景：可在下方 dev-test-bar 单独测试定位」
+
+#### 兼容性 / 限制
+
+- **未修改** `app.json` / `app.js` / `utils/distance.js`
+- **未修改** `index.json`（无新增组件）
+- **未修改** 后端 server / admin / app / 数据库 schema
+- 调试条仅 `envVersion === 'develop'` 可见（`showDevTestBar` 字段控制）
+- 调试操作不污染生产 `storeInfo` / `processStore` / `app.globalData`（沿用 dom 的「只读探针」原则，[3] 定位成功仅写入 `app.globalData.lastLocation` 用于长按复制）
+
+#### 验证
+
+- `node --check pages/index/index.js` exit 0 ✅
+- GetDiagnostics 零错误 ✅
+- 待真机/开发工具实测：
+  - [ ] 点 [1] → 隐私状态显示 needAuthorization
+  - [ ] 点 [2] → 弹原生隐私授权弹窗
+  - [ ] 点 [3] → 定位结果卡片显示 lat/lng
+  - [ ] 点 [4] → 串行执行 3 步
+  - [ ] 点 [5] → 清空所有缓存
+  - [ ] 长按 [3] → 复制 lat,lng 到剪贴板
+  - [ ] Console 日志面板随按钮更新（最多 10 条）
+  - [ ] API 兼容性 / 错误码速查表正常显示
+  - [ ] 门店卡片 + 距离展示未变化
+  - [ ] 业务入口「查找附近门店」行为未变
+
+#### 影响面
+
+- 仅前端小程序 `pages/index/index.{js,wxml,wxss}` 三个文件
+- 数据库模型/迁移：**未修改**（不涉及 schema 变更，不生成迁移文件）
+- 后端 server / admin / app：**未触碰**
+- 依赖：**未新增**
+
+### fix-index-location-privacy-sheet — 首页「查找附近门店」隐私 sheet 不弹 + 定位失败修复
+
+#### 关键问题
+
+用户反馈首页（[digital-recycling-miniprogram/pages/index/index.wxml#L117-L130](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.wxml#L117-L130) 的开发者调试条所在的代码区域）出现两个相关 bug：
+
+1. **自定义隐私声明弹窗（`showLocationSheet`）弹不出来**：用户点首页「查找附近门店」按钮，本应弹出带「已阅读并同意《隐私协议》」勾选项的自定义 sheet，但实际上**完全不弹**，直接走 `wx.authorize` 系统弹窗或直接 fail。
+2. **定位失败**：开发者点击调试条「调用 wx.getFuzzyLocation」测试定位也失败，10s 超时后弹"可能原因"modal。
+
+#### 根因（共享同一条链路）
+
+- **A. `app.js` 的 `resolvePrivacyAuthorization` 在首页 `resolve({ button: 'disagree' })`**（[app.js#L34-L51](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/app.js#L34-L51)）：导致 `wx.requirePrivacyAuthorize` 在首页直接 fail，调试条无法弹出原生隐私声明弹窗。
+- **B. `showLocationSheet` 唯一触发点是死代码**：`pages/index/index.js` 的 `requestLocationPermission()`（L1090）只在 `checkPermissionSheets()`（L1083）中被调用，而 `checkPermissionSheets()` **从未被任何地方调用**。用户实际的入口是 `onFindNearbyStore()`（L1153）→ 直接 `wx.authorize` 系统弹窗 → **完全跳过 `showLocationSheet`**。
+- **C. `wx.authorize` 二次调用不弹窗**：用户拒绝过 `scope.userFuzzyLocation` 后，再次调用 `wx.authorize` 不会弹系统弹窗，会直接 fail，且没有任何自定义 sheet 兜底。
+- **D. `_devTestAfterPrivacy` fail 分支文案误导**：提示用户"先点查找附近门店同意 sheet"，与调试条应直接测试原生隐私弹窗的预期不符。
+
+#### 修改范围（两个文件）
+
+##### 1. `digital-recycling-miniprogram/app.js` — `resolvePrivacyAuthorization`
+
+- 检测 `getPrivacySetting.needAuthorization` 后**按当前页面分支处理**：
+  - **首页（`route === 'pages/index/index'`）**：首页 `showLocationSheet` 接管隐私同意 → 登记 `privacy_agreed` 并 `resolve({ button: 'disagree' })`，让后续 `wx.requirePrivacyAuthorize` 自然进入 fail 分支，由 `onLocationAllow` 接管
+  - **非首页**：弹 `wx.showModal` 让用户明确选择（同意 / 查看详情）：
+    - 同意 → 登记隐私并 `resolve agree`
+    - 查看详情 → 调 `wx.openPrivacyContract`，详情页关闭后 `resolve agree`
+    - 弹窗失败 / 拒绝 → `resolve disagree`
+  - **`needAuthorization === false`**：直接 `resolve agree`，已同意过无需再问
+- `_isOnIndexPage` 用 `getCurrentPages()` 安全获取当前页路由，含 `try/catch` 防御栈为空的情况
+- 仍保留 `wx.getPrivacySetting` `fail` 兜底为 `resolve agree`（避免异常阻塞）
+
+##### 2. `digital-recycling-miniprogram/pages/index/index.js` — 三处改动
+
+**改动 ①（隐私预检入口）`onFindNearbyStore` 重写**：
+- 入口先调 `wx.getPrivacySetting`：
+  - `needAuthorization === true` → 设置 `showLocationSheet: true, locationPrompted: true`，**让首页自定义 sheet 真正弹出来**
+  - `needAuthorization === false` → 直接调 `_doFindNearbyStore`
+  - `getPrivacySetting` 不存在（旧版基础库）/ fail → 走 `_doFindNearbyStore`
+
+**改动 ②（抽出复用方法）新增 `_doFindNearbyStore`**：
+- 把原 `onFindNearbyStore` 主体逻辑整体抽出（保留 10s 超时兜底、onSuccess/onFail、doGetLocation、wx.getSetting + wx.authorize 链路）
+- 由 `onFindNearbyStore`（隐私已同意）和 `onLocationAllow`（sheet 同意后）共用，避免逻辑分裂
+
+**改动 ③（sheet「允许」按钮）`onLocationAllow` 简化**：
+- 删除 `wx.requirePrivacyAuthorize` 链式调用（避免与 `app.js` 的 `wx.onNeedPrivacyAuthorization` 叠加成双弹窗）
+- 勾选同意后直接调 `_doFindNearbyStore`，由其内部 `wx.getSetting` 判断是否需要二次授权
+
+**改动 ④（调试条失败提示）`_devTestAfterPrivacy.fail` 分支文案更新**：
+- `devTestResult` 改为：`失败: 隐私协议尚未通过业务入口同意（请先点「查找附近门店」同意隐私 sheet）`
+- Modal 引导文案更新：「调试场景下请先点击首页「查找附近门店」按钮，在弹出的隐私 sheet 中勾选并同意《隐私协议》，再回来点击调试按钮即可测试定位」
+
+#### 行为
+
+- **用户首次点「查找附近门店」（未同意过隐私）**：
+  - 触发隐私预检 → `needAuthorization=true` → 首页 sheet 弹出（含「开启位置服务」标题、隐私协议勾选、取消/允许按钮）✅
+  - 勾选「已阅读并同意《隐私协议》」+ 点「允许」→ 直接进入 `_doFindNearbyStore` → `wx.getSetting` 检测 scope → 系统弹窗或直接定位
+  - 点「取消」→ sheet 关闭，storeInfo 不变
+- **用户曾拒绝过 scope**：
+  - 点「查找附近门店」→ 隐私 sheet 再次弹出（兜底）
+  - 同意 → `_doFindNearbyStore` 内部 `wx.authorize` fail → 弹 `wx.openSetting` 让用户去开启
+- **用户已同意过隐私**：
+  - 点「查找附近门店」→ 隐私预检直接通过 → `_doFindNearbyStore` 立即跑，sheet 不弹
+- **调试场景**：用户先点「查找附近门店」同意 sheet，再点调试条 → `app.js` `resolvePrivacyAuthorization` resolve disagree，`requirePrivacyAuthorize` fail → 弹引导 modal 提示「调试场景下请先通过业务入口同意隐私」
+
+#### 兼容性 / 限制
+
+- **未修改** wxml / wxss / app.json（`__usePrivacyCheck__` + `requiredPrivateInfos` 配置正确）
+- **未修改** `checkPermissionSheets` / `requestLocationPermission` 死代码（保守起见保留作为 sheet 触发模板参考）
+- **未修改** 后端 server / admin / app / 数据库 schema（纯前端 bug）
+- 其他 TabBar 页面（shopping / profile / brand-list 等）的隐私相关逻辑**未触碰**
+
+#### 验证
+
+- `node --check pages/index/index.js` exit 0 ✅
+- `node --check app.js` exit 0 ✅
+- 调用链：
+  - 按钮入口：`onFindNearbyStore` → `_doFindNearbyStore` ✅
+  - sheet 入口：`onLocationAllow` → `_doFindNearbyStore` ✅
+  - 调试入口：`onDevTestGetLocation` → `_devTestAfterPrivacy`（fail 提示文案已更新） ✅
+  - 全局回调：`app.js` 的 `wx.onNeedPrivacyAuthorization` → `resolvePrivacyAuthorization`（按页面分支） ✅
+- 待真机/开发工具实测：
+  - [ ] 首次点「查找附近门店」→ 自定义 sheet 弹出
+  - [ ] sheet 勾选 + 允许 → 进入系统授权弹窗
+  - [ ] 系统授权同意 → 成功获取定位 + 门店距离
+  - [ ] 调试条点击 → 失败后引导 modal 显示正确文案
+
+#### 影响面
+
+- 仅前端小程序 `app.js` + `pages/index/index.js` 两个文件
+- 数据库模型/迁移：**未修改**（不涉及 schema 变更，不生成迁移文件）
+- 后端 server / admin / app：**未触碰**
+- 依赖：**未新增**
+
+### fix-store-geocode-api — 门店管理"自动获取坐标"接口 404 修复
+
+#### 关键问题
+
+管理后台「内容管理 → 门店管理 → 新增/编辑门店」时，填写门店地址失焦或点击「📍 自动获取坐标」按钮，前端调用 `GET /api/admin/stores/geocode` 无任何返回，页面提示「地址解析失败：网络错误」。
+
+#### 根因（两层）
+
+**根因 A**：后端 `digital-recycling-server/src/routes/admin/store-manage.js` 当前只通过 `crud-factory` 暴露 4 个 CRUD 路由，**根本没有 `/geocode` 子路由**，导致请求 404。Express 默认未匹配路由返回 `Cannot GET ...`（HTML），前端 axios 拦截器判断 `res.code === undefined` 直接放行，后续 `payload.lat` 访问失败 → 最终走 catch 报"解析错误"。
+
+**根因 B（首次修复遗漏，2026-06-19 二次定位）**：项目使用 **Express 5.2.1**（[package.json](file:///c:/Users/17798/Desktop/陈峰/数码回收/digital-recycling-server/package.json)），Express 5 默认 `query parser: 'simple'`（原生 `querystring`），**不支持 `a[b]=c` 嵌套语法**。首次修复时直接 `req.query.address` 拿到 `undefined`，被错误地视为"地址为空"，返回 422 "请提供门店地址"。
+
+实测对比（mini Express 5 app 真实 HTTP 请求）：
+```
+GET /test?address[address]=深圳市华强北&address[province]=&_t=1781845959287
+- Express 4 默认 extended parser：
+    req.query = { address: { address: "...", province: "", city: "", district: "" }, _t: "..." }
+- Express 5 默认 simple parser（本项目实际行为）：
+    req.query = { "address[address]": "...", "address[province]": "", "address[city]": "", "address[district]": "", "_t": "..." }
+    req.query.address === undefined  ← 关键！
+```
+
+#### 修改范围（仅一个文件）
+
+- **`digital-recycling-server/src/routes/admin/store-manage.js`**
+  - 引入 `adminAuth`、`success/validateError`、`geocodeStore`、`logger`、`qs`（项目间接依赖 v6.15.2，未新增 npm 包）
+  - 新增 `parseQuery(req)` 工具函数：提取 `req.originalUrl` 的 query 段，用 `qs.parse` 解析后合并 `req.query`，**仅限本路由内部使用，不改全局 `app.set('query parser', ...)`** 以避免影响其它 admin 路由
+  - 新增 `normalizeAddressParam(raw)` 归一化函数，兼容两种入参形态：
+    - 嵌套对象：`?address[address]=...&address[province]=...&address[city]=...&address[district]=...`（前端 axios 默认序列化）
+    - 扁平对象：`?address=...&province=...&city=...&district=...`（向后兼容）
+  - 链式追加 `storeManage.get('/geocode', adminAuth, handler)`：
+    - 空地址 → HTTP 422 + `请提供门店地址`
+    - 解析成功 → HTTP 200 + `{ code: 0, data: { lat, lng, address, formatted } }`
+    - 解析失败（腾讯地图 status !== 0）→ HTTP 422 + `地址解析失败，请检查地址是否准确` + warn 日志
+    - 异常 → `next(err)` 让全局 `errorHandler` 兜底
+
+#### 行为
+
+- 前端"新增/编辑门店"对话框填写地址失焦后，自动调用 `/geocode` 并填充 latitude/longitude，不再报"解析错误"或"请提供门店地址"
+- 现有 CRUD（列表/新增/更新/删除门店）行为不变
+- 嵌套与扁平两种参数都支持
+
+#### 兼容性
+
+- 不修改前端 `digital-recycling-admin` 任何文件（保持现有 axios 调用方式，零回归）
+- 不修改 `utils/qqmap.js`（复用现有 `geocodeStore`，签名和返回结构已满足）
+- 不修改全局 `app.set('query parser', ...)` 配置（`app.js` 未触碰，避免影响其它 admin 路由对 query 的解析语义）
+- 不修改数据库 schema / models → **不生成迁移文件**
+- 不修改小程序 / app / 其他 admin 页面
+
+#### 验证
+
+- `node --check src/routes/admin/store-manage.js` exit 0 ✅
+- `node --check src/routes/admin/index.js` exit 0 ✅
+- 路由表枚举：`GET /geocode` 已注册，连同原有 4 个 CRUD 共 5 个路由 ✅
+- `normalizeAddressParam` 8 个单元测试全过：null / undefined / 空串 / flat 字符串 / 嵌套对象 / 完整嵌套 / whitespace trim / number ✅
+- **mini Express 5 app 端到端测试 4 场景全过**（mock adminAuth + 真实 HTTP 客户端）：
+  - 真实用户 URL（嵌套 + 空省市区）→ 200 + `{ code: 0, data: { lat: 22.547, lng: 114.085, address: "深圳市华强北", formatted: "..." } }` ✅
+  - 嵌套完整（有 province/city/district）→ 200 + 正常 data ✅
+  - 扁平参数 → 200 + 正常 data（向后兼容）✅
+  - 嵌套但 `address.address` 为空 → 422 + `请提供门店地址` ✅
+- Handler 链长度 = 2（`adminAuth` + 业务 handler）✅
+- `qs` 库已为项目间接依赖（v6.15.2），未新增任何 npm 依赖 ✅
+
+#### 影响面
+
+- 仅后端 `digital-recycling-server/src/routes/admin/store-manage.js` 单一文件
+- 数据库模型/迁移：**未修改**（不涉及 schema 变更，**不生成迁移文件**）
+- 前端 admin / app / 小程序：**未触碰**
+- 全局 `app.js` query parser 配置：**未触碰**
+- 依赖：**未新增**（复用 `qs` v6.15.2 作为间接依赖）
+- utils/qqmap.js：**未修改**
+
+### fix-store-distance-display — 首页门店距离显示"距离暂不可用"修复
+
+#### 关键问题
+
+用户反馈：尽管微信公众平台后台已开通 `wx.getLocation` 和 `wx.getFuzzyLocation` 接口权限，首页「附近门店」卡片仍始终显示「距离暂不可用」，实际未展示用户与最近门店的距离。
+
+#### 根因
+
+`pages/index/index.js` 的 `_fallbackStoreToLocal()` 兜底逻辑存在缺陷。当后端 `/places/nearest-store` 接口满足以下条件时：
+1. `payload.list` 非空
+2. `list[i].distance` 全部为 `null`（腾讯地图驾车距离矩阵失败/未配置）
+3. `list[i].latitude` / `list[i].longitude` 字段缺失或命名不一致
+
+前端 `haversineFallback()` 走兜底 → `withCoords.length === 0` → 调用 `_fallbackStoreToLocal()`，但该方法直接用 `{ ...storesData[0] }` 覆盖了 `storeInfo`，**没有用缓存的用户 lat/lng 配合 storesData 的坐标计算 haversine 距离**，导致 `storeInfo.distance` 一直为空，wxml 第 85 行 `{{storeInfo.distance ? '距离 ' + storeInfo.distance + ' km' : '距离暂不可用'}}` 命中 else 分支。
+
+#### 修改范围（仅一个文件）
+
+- **`digital-recycling-miniprogram/pages/index/index.js`**
+  - `onLoad`（line 179-185）：新增 `this._lastUserLat = null; this._lastUserLng = null` 初始化（非 data 字段）
+  - `fetchLocationAndStores` 入口（line 1169-1178）：新增 `[home] globalLocation ->` 诊断日志（vConsole 排查用）
+  - `fetchLocationAndStores.onLocationSuccess`（line 1181-1190）：在 `app.globalData.latitude/longitude` 赋值后，同步缓存到 `this._lastUserLat/_lastUserLng`（供 `_fallbackStoreToLocal` 兜底使用）
+  - `_fetchNearbyStores` 入口（line 428-432）：新增 `[home] fetchNearby ->` 诊断日志
+  - `processStore` 兜底分支（line 408-420）：当 `nearest === null` 时，尝试用 `stores[0].latitude/longitude` 配合 lat/lng 算 haversine 距离并赋给 `fallback.distance`；若 `stores[0]` 无坐标，保持现有 `delete fallback.distance` 行为
+  - `_fallbackStoreToLocal`（line 546-589）：重写兜底逻辑，当 storesData 非空 + 用户位置缓存有效时，用 `haversineDistance` 遍历 storesData 找最近门店，赋 `distance` 字段（保留 2 位小数，km 单位，字符串），标记 `source = 'haversine:fallback-local'`；算不出有效距离时保持现有降级行为。新增 `[home] fallback-distance ->` 诊断日志。
+
+#### 行为
+
+- **正常情况**（用户授权 + 后端 distance 正常）：storeInfo.distance 有值 → 显示「距离 X.XX km」
+- **后端 distance 全为 null + item 有坐标**：现有 `haversineFallback` 算出距离，行为不变
+- **后端 distance 全为 null + item 无坐标**（核心修复）：新增的 `_fallbackStoreToLocal` 兜底逻辑生效，用 storesData + 缓存用户位置算 haversine 距离 → 显示「距离 X.XX km」✅
+- **用户拒绝授权 + storesData 无坐标**：保持现有降级（distance 为 null，显示「距离暂不可用」+ 弹 modal）
+- **诊断日志**：vConsole 可见 5 类日志（globalLocation / getFuzzyLocation / fetchNearby / nearest-store / fallback-distance），便于用户自助排查
+
+#### 兼容性
+
+- 不修改 `app.json`（`requiredPrivateInfos: ["getFuzzyLocation"]` 配置正确，不与 getLocation 互斥冲突）
+- 不修改 `utils/distance.js`（复用现有 `haversineDistance`）
+- 不修改 wxml / wxss / json
+- 不修改后端 / admin / app / 数据库 schema
+
+#### 验证
+
+- `node --check pages/index/index.js` exit 0 ✅
+- GetDiagnostics 零错误 ✅
+- 真机验证 4 个场景：[ ] 正常 / [ ] 后端 distance 为 null + item 有坐标 / [ ] 后端 distance 为 null + item 无坐标（核心修复）/ [ ] 用户拒绝授权
+
+#### 影响面
+
+- 仅前端小程序 `pages/index/index.js` 单一文件
+- 数据库模型/迁移：**未修改**（不涉及后端与 schema）
+- 后端 server/admin/app：**未触碰**
+- 依赖：**未新增**
+- wxml / wxss / json：**未触碰**（wxml 第 85 行的 distance 三元判断逻辑保持不变）
+
 ## 2026-06-13
 
 ### fix-test-button-stuck-loading — 测试按钮"一直 loading"修复
@@ -448,5 +832,62 @@
 
 #### 兼容性
 
-- `pages/price-quote/price-quote.js` 中 `statusCode === 10007` 的弹窗逻辑保留，作为其他入口（如分享、扫码直达）绕过首页预检时的兜底。
+- `pages/price-quote/price-quote.js` 中 `statusCode === 10007` 的弹窗逻辑保留， 作为其他入口（如分享、扫码直达）绕过首页预检时的兜底。
 - 其他首页入口（`onBrandTap`、`goToBrandList`）不强制要求配额预检，保持现状。
+
+### fix-dev-test-privacy-flow — 开发者调试条点击跳到「隐私声明详情页」修复
+
+#### 关键问题
+
+`pages/index/index.wxml` 新增的开发者调试条（仅开发版可见，envVersion === 'develop'）点击「调用 wx.getFuzzyLocation」按钮时，若用户在微信公众平台后台尚未登记同意《用户隐私保护指引》，当前代码会调用 `wx.openPrivacyContract`，该 API 只能打开**只读**的隐私协议详情页，页面里只有「我已知晓」关闭按钮，**没有「同意」按钮**——用户找不到同意入口，体验断裂，无法完成调试定位。
+
+#### 根因
+
+微信小程序隐私相关 API 共三个，职责不同：
+
+| API | 用途 | 是否有「同意」按钮 |
+|---|---|---|
+| `wx.getPrivacySetting` | 查询当前是否需要用户授权 | 无（只查询） |
+| `wx.requirePrivacyAuthorize` | **弹原生授权弹窗**（带同意/拒绝） | ✅ 有 |
+| `wx.openPrivacyContract` | 打开隐私协议详情页（只读） | ❌ 无 |
+
+原 `onDevTestGetLocation` 在 `getPrivacySetting.needAuthorization === true` 时调用了 `wx.openPrivacyContract`，导致用户进入只读详情页找不到同意按钮。而紧随其后的 `_devTestAfterPrivacy` 已经正确处理了 `wx.requirePrivacyAuthorize`（带同意按钮），但被前置的 `openPrivacyContract` 拦截，永远走不到。
+
+#### 修改范围（仅一个文件）
+
+- **`digital-recycling-miniprogram/pages/index/index.js`**
+  - `onDevTestGetLocation` 隐私预检分支（约 565–586 行）：删除 `wx.openPrivacyContract` 调用，让 `needAuthorization === true` 与 `false` 两条路径都直接走 `_devTestAfterPrivacy`（其内部已正确处理 `wx.requirePrivacyAuthorize`）
+  - `devTestResult` 文案改为 `需先同意隐私声明（正在弹出授权框）`，让用户清楚看到当前阶段
+  - `_devTestAfterPrivacy` 顶部（约 594–649 行）：新增旧版基础库 fallback 分支——若既无 `requirePrivacyAuthorize` 也无 `openPrivacyContract`，仍按原行为直接定位；若仅有 `openPrivacyContract`，弹出只读详情页并提示「旧版基础库，请在详情页确认后点击「我已知晓」」
+
+#### 行为
+
+- 首次点击调试按钮（未授权过隐私）→ `getPrivacySetting` 返回 `needAuthorization: true` → 走 `_devTestAfterPrivacy` → 调 `wx.requirePrivacyAuthorize` → 微信弹原生授权弹窗（含「同意 / 拒绝」按钮）
+- 用户点「同意」→ 清掉 10 秒兜底 timer → 调 `wx.getFuzzyLocation` → 弹位置信息 Modal（lat/lng/accuracy/errMsg）
+- 用户点「拒绝」→ 弹 Modal「请先同意《小程序用户隐私保护指引》后再测试位置」+ `devTestResult: 失败: 用户拒绝隐私协议`
+- 旧版基础库（< 2.32.3 无 `requirePrivacyAuthorize`）→ fallback 到 `wx.openPrivacyContract` 详情页，提示用户在详情页底部点击「我已知晓」
+- 极旧基础库（既无 `requirePrivacyAuthorize` 也无 `openPrivacyContract`）→ 直接调 `wx.getFuzzyLocation`，行为与原代码一致
+
+#### 兼容性
+
+- 业务入口 `onFindNearbyStore`（生产链路）行为不变（走 `wx.authorize` 系统授权弹窗，不受此 bug 影响）
+- 调试条 UI / 样式 / 数据字段（`showDevTestBar`、`devTestResult`）未变更
+- 已有 `_devTestAfterPrivacy` 内 `requirePrivacyAuthorize` 失败分支（用户拒绝 → Modal 提示）保留
+- 已有 10 秒兜底超时 timer 清理逻辑保留
+- wxml / wxss / app.json / 后端 server / admin / app：**未触碰**
+- 数据库 schema / 迁移：**未修改**（不涉及 schema 变更，不生成迁移文件）
+
+#### 验证
+
+- `node --check pages/index/index.js` 语法检查 exit 0 ✅
+- 代码审查：`onDevTestGetLocation` 已无 `wx.openPrivacyContract` 直接调用 ✅
+- 代码审查：`_devTestAfterPrivacy` 三个分支齐全（requirePrivacyAuthorize → openPrivacyContract fallback → 直接定位 fallback）✅
+- 待真机/开发工具实测：首次点击 → 看到带同意按钮的弹窗 → 点同意 → 弹出位置 Modal
+- 待真机/开发工具实测：首次点击 → 看到带同意按钮的弹窗 → 点拒绝 → 弹出「请先同意隐私协议」Modal
+
+#### 影响面
+
+- 仅 `pages/index/index.js` 单文件
+- 数据库模型/迁移：**未修改**（不涉及 schema 变更，不生成迁移文件）
+- 后端 server / admin / app：**未触碰**
+- 依赖：**未新增**（仅使用既有 `wx.requirePrivacyAuthorize` / `wx.openPrivacyContract` / `wx.getFuzzyLocation`）

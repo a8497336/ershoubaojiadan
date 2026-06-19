@@ -74,6 +74,15 @@ Page({
     })
   },
 
+  handleCancel() {
+    wx.navigateBack({
+      delta: 1,
+      fail: () => {
+        wx.switchTab({ url: '/pages/index/index' })
+      }
+    })
+  },
+
   navigateToHome() {
     const redirectUrl = this.data.redirectUrl
     if (redirectUrl) {

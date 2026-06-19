@@ -1,10 +1,10 @@
 {
   "libVersion": "3.10.3",
-  "projectname": "digital-recycling-miniprogram",
+  "projectname": "dom",
   "condition": {},
   "setting": {
     "urlCheck": false,
-    "coverView": true,
+    "coverView": false,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,
     "preloadBackgroundData": false,
@@ -17,7 +17,6 @@
     "compileHotReLoad": true,
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
-    "bigPackageSizeSupport": false,
-    "useIsolateContext": true
+    "bigPackageSizeSupport": false
   }
 }

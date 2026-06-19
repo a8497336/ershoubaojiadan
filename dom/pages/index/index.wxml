@@ -1,0 +1,80 @@
+<!--pages/index/index.wxml - 定位测试 Demo 主页-->
+<view class="page">
+  <!-- 系统信息卡片 -->
+  <view class="card">
+    <view class="card-title">系统信息</view>
+    <view class="card-content mono">{{systemInfo || '加载中...'}}</view>
+  </view>
+
+  <!-- 5 个调试按钮 -->
+  <view class="card">
+    <view class="card-title">调试按钮</view>
+
+    <button class="btn btn-primary" bindtap="onCheckPrivacySetting" hover-class="btn-hover">
+      [1] 检测隐私设置 wx.getPrivacySetting
+    </button>
+
+    <button class="btn btn-primary" bindtap="onRequirePrivacyAuthorize" hover-class="btn-hover">
+      [2] 申请隐私授权 wx.requirePrivacyAuthorize
+    </button>
+
+    <button class="btn btn-primary" bindtap="onGetFuzzyLocation" bindlongtap="onCopyLocation" hover-class="btn-hover" loading="{{loading}}">
+      [3] 获取模糊位置 wx.getFuzzyLocation
+    </button>
+    <view class="hint">长按按钮可复制最近定位 lat,lng 到剪贴板</view>
+
+    <button class="btn btn-secondary" bindtap="onFullFlow" hover-class="btn-hover">
+      [4] 一键完整流程（隐私预检 → 申请 → 定位）
+    </button>
+
+    <button class="btn btn-ghost" bindtap="onClearCache" hover-class="btn-hover">
+      [5] 清除定位缓存
+    </button>
+  </view>
+
+  <!-- 隐私状态 -->
+  <view class="card">
+    <view class="card-title">隐私状态</view>
+    <view class="card-content mono {{privacyStatus.indexOf('✗') !== -1 ? 'status-error' : (privacyStatus.indexOf('✓') !== -1 ? 'status-success' : '')}}">
+      {{privacyStatus || '（尚未查询，点击 [1] 或 [2] 后查看）'}}
+    </view>
+  </view>
+
+  <!-- 定位结果 -->
+  <view class="card">
+    <view class="card-title">最近定位结果</view>
+    <view class="card-content mono {{locationResult.indexOf('✗') !== -1 ? 'status-error' : ''}}">
+      {{locationResult || '（尚未定位，点击 [3] 或 [4] 后查看）'}}
+    </view>
+  </view>
+
+  <!-- console 日志（最近 10 条） -->
+  <view class="card">
+    <view class="card-title">Console 日志（最近 10 条）</view>
+    <view class="log-list">
+      <view wx:if="{{consoleLogs.length === 0}}" class="log-empty">暂无日志</view>
+      <view wx:for="{{consoleLogs}}" wx:key="index" class="log-item log-{{item.indexOf('ERROR') !== -1 ? 'error' : (item.indexOf('WARN') !== -1 ? 'warn' : 'info')}}">
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- API 兼容性提示 -->
+  <view class="card footer-card" wx:if="{{sdkVersion}}">
+    <view class="card-title">API 兼容性</view>
+    <view class="api-check">
+      <view class="api-row">
+        <text class="api-name">wx.getPrivacySetting</text>
+        <text class="api-status">要求 SDKVersion ≥ 2.32.3</text>
+      </view>
+      <view class="api-row">
+        <text class="api-name">wx.requirePrivacyAuthorize</text>
+        <text class="api-status">要求 SDKVersion ≥ 3.0.0</text>
+      </view>
+      <view class="api-row">
+        <text class="api-name">wx.getFuzzyLocation</text>
+        <text class="api-status">要求 SDKVersion ≥ 2.25.0</text>
+      </view>
+    </view>
+  </view>
+</view>

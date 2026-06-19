@@ -24,6 +24,8 @@ Page({
     },
     canvasWidth: 300,
     canvasHeight: 200,
+    canvasDpr: 1,
+    canvasReady: false,
     allPoints: []
   },
 
@@ -36,28 +38,31 @@ Page({
     wx.setNavigationBarTitle({
       title: model ? `${model} - 价格趋势` : '价格趋势'
     })
-    
-    this.loadPriceTrend()
+    // 等待 canvas 就绪后再加载数据，避免重复请求
   },
 
   onReady() {
-    setTimeout(() => this.initCanvas(), 200)
+    this.initCanvas()
   },
 
   initCanvas() {
     const query = wx.createSelectorQuery()
     query.select('.trend-canvas').boundingClientRect(rect => {
       if (rect) {
-        const dpr = wx.getSystemInfoSync().pixelRatio
+        const dpr = wx.getSystemInfoSync().pixelRatio || 1
         this.setData({
           canvasWidth: rect.width,
           canvasHeight: rect.height,
-          canvasDpr: dpr
+          canvasDpr: dpr,
+          canvasReady: true
         }, () => {
           this.loadPriceTrend()
         })
       } else {
-        this.loadPriceTrend()
+        // 降级：canvas 节点未找到，仍尝试加载数据
+        this.setData({ canvasReady: true }, () => {
+          this.loadPriceTrend()
+        })
       }
     }).exec()
   },
@@ -78,7 +83,9 @@ Page({
           filteredPrices: trendData.currentPrices || [],
           isLoading: false
         }, () => {
-          setTimeout(() => this.drawChart(), 100)
+          if (this.data.canvasReady) {
+            setTimeout(() => this.drawChart(), 100)
+          }
         })
       })
       .catch(err => {
@@ -182,7 +189,7 @@ Page({
   },
 
   drawChart() {
-    const { canvasWidth, canvasHeight, trendData, lineColors } = this.data
+    const { canvasWidth, canvasHeight, canvasDpr, trendData, lineColors } = this.data
     if (!canvasWidth || !canvasHeight || !trendData || !trendData.trendData) return
     
     const padding = { top: 20, right: 20, bottom: 40, left: 50 }
@@ -190,6 +197,10 @@ Page({
     const chartHeight = canvasHeight - padding.top - padding.bottom
     
     const ctx = wx.createCanvasContext('trendChart')
+    
+    // 高 DPR 屏幕缩放，确保 Retina 屏渲染清晰
+    const dpr = canvasDpr || 1
+    ctx.scale(dpr, dpr)
     
     ctx.setFillStyle('#ffffff')
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
@@ -299,13 +310,14 @@ Page({
   },
 
   onChartTap(e) {
-    const { canvasWidth, canvasHeight, allPoints } = this.data
+    const { allPoints } = this.data
     const touch = e.touches[0]
     
     const query = wx.createSelectorQuery()
     query.select('.trend-canvas').boundingClientRect(rect => {
       if (!rect) return
       
+      // 使用 canvas 相对于视口的实际位置计算触摸坐标
       const x = touch.clientX - rect.left
       const y = touch.clientY - rect.top
       const padding = { top: 20, right: 20, bottom: 40, left: 50 }
@@ -327,7 +339,7 @@ Page({
       })
       
       if (nearestPoint) {
-        this.showPointDetail(nearestPoint, rect.left)
+        this.showPointDetail(nearestPoint, rect)
       }
     }).exec()
   },
@@ -338,14 +350,14 @@ Page({
     }, 2000)
   },
 
-  showPointDetail(point, canvasLeft) {
-    const { canvasWidth, canvasHeight } = this.data
+  showPointDetail(point, rect) {
     const padding = { top: 20, right: 20, bottom: 40, left: 50 }
-    const chartWidth = canvasWidth - padding.left - padding.right
-    const chartHeight = canvasHeight - padding.top - padding.bottom
+    const chartWidth = rect.width - padding.left - padding.right
+    const chartHeight = rect.height - padding.top - padding.bottom
     
-    const x = canvasLeft + padding.left + point.x * chartWidth / 100
-    const y = padding.top + point.y * chartHeight / 100
+    // 使用 rect 的实际视口位置计算弹窗坐标（position: fixed 需要视口坐标）
+    const x = rect.left + padding.left + point.x * chartWidth / 100
+    const y = rect.top + padding.top + point.y * chartHeight / 100
     
     this.setData({
       showDetail: true,

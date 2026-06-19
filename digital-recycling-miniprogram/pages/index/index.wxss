@@ -218,6 +218,28 @@
   padding: 24rpx;
   box-shadow: var(--shadow-sm);
 }
+.store-card-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 24rpx;
+  min-height: 200rpx;
+}
+.store-loading-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+  animation: storeLoadingSpin 1.5s linear infinite;
+}
+@keyframes storeLoadingSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.store-loading-text {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
 .store-header {
   display: flex;
   align-items: center;
@@ -241,6 +263,12 @@
 .store-distance {
   font-size: 26rpx;
   color: var(--color-text-tertiary);
+}
+.store-distance-warn {
+  color: var(--color-primary);
+}
+.store-distance-warn:active {
+  opacity: 0.6;
 }
 
 .store-info-row {
@@ -282,6 +310,189 @@
 .store-address .store-action {
   margin-left: 16rpx;
   white-space: nowrap;
+}
+
+/* ===== 开发者定位调试条（仅开发版可见） ===== */
+.dev-test-bar {
+  background: #FFF7E6;
+  border: 2rpx dashed #FFAA00;
+  border-radius: var(--radius-lg);
+  margin: 16rpx 24rpx;
+  padding: 20rpx 24rpx;
+}
+.dev-test-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: #B45A00;
+  margin-bottom: 16rpx;
+}
+.dev-test-row {
+  display: flex;
+  gap: 16rpx;
+}
+.dev-test-btn {
+  flex: 1;
+  background: #FFFFFF;
+  border: 2rpx solid #FFAA00;
+  border-radius: var(--radius-md);
+  padding: 16rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: #B45A00;
+}
+.dev-test-btn:active {
+  background: #FFE9C2;
+}
+.dev-test-btn-primary {
+  background: #FFAA00;
+  color: #FFFFFF;
+}
+.dev-test-btn-primary:active {
+  background: #E69900;
+}
+.dev-test-result {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: #FFFFFF;
+  border-radius: var(--radius-sm);
+  font-size: 24rpx;
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+.dev-test-hint {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+
+/* ===== dev-test-bar 卡片化（参考 dom）===== */
+.dev-test-card {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
+}
+.dev-test-card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+  padding-left: 12rpx;
+  border-left: 4rpx solid #ff2d4a;
+  line-height: 1.4;
+}
+.dev-test-card-content {
+  font-size: 24rpx;
+  color: #555;
+  word-break: break-all;
+  line-height: 1.6;
+  margin-bottom: 8rpx;
+}
+.dev-test-card-content.mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: #f8f8f8;
+  padding: 12rpx 16rpx;
+  border-radius: 6rpx;
+  border: 1rpx solid #eee;
+  font-size: 22rpx;
+}
+.dev-test-card-content:last-child {
+  margin-bottom: 0;
+}
+
+/* 成功/失败状态着色 */
+.status-success {
+  color: #28b940 !important;
+  font-weight: 600;
+}
+.status-error {
+  color: #ff2d4a !important;
+  font-weight: 600;
+}
+
+/* Console 日志区 */
+.dev-test-log-list {
+  background-color: #1e1e1e;
+  border-radius: 6rpx;
+  padding: 12rpx 16rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+.dev-test-log-empty {
+  color: #888;
+  font-size: 22rpx;
+  text-align: center;
+  padding: 12rpx 0;
+}
+.dev-test-log-item {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 20rpx;
+  line-height: 1.6;
+  word-break: break-all;
+  padding: 2rpx 0;
+  white-space: pre-wrap;
+}
+.log-info { color: #d4d4d4; }
+.log-warn { color: #dcdcaa; }
+.log-error { color: #f48771; font-weight: 500; }
+
+/* API 兼容性行 */
+.dev-test-api-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6rpx 0;
+  border-bottom: 1rpx dashed #eee;
+  font-size: 22rpx;
+}
+.dev-test-api-row:last-child {
+  border-bottom: none;
+}
+.dev-test-api-row text:first-child {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  color: #333;
+  font-weight: 500;
+}
+.dev-test-api-row text:last-child {
+  color: #999;
+  font-size: 20rpx;
+}
+
+/* 错误码速查表 */
+.dev-test-err-table {
+  background-color: #f8f8f8;
+  border-radius: 6rpx;
+  padding: 12rpx 16rpx;
+  border: 1rpx solid #eee;
+  font-size: 22rpx;
+  color: #555;
+  line-height: 1.8;
+}
+.dev-test-err-table view {
+  word-break: break-all;
+}
+
+/* 调试按钮变体（[4] 一键流程 / [5] 清除缓存） */
+.dev-test-btn-secondary {
+  background-color: #fff0f0;
+  color: #ff2d4a;
+  border: 2rpx solid #ff2d4a;
+}
+.dev-test-btn-ghost {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* 门店调试提示（仅 dev-test-bar 可见时） */
+.store-debug-hint {
+  font-size: 20rpx;
+  color: #999;
+  text-align: right;
+  margin-top: 12rpx;
+  padding: 0 8rpx;
+  font-style: italic;
 }
 
 /* ===== 搜索栏 ===== */
@@ -928,113 +1139,8 @@
   transform: rotate(45deg);
 }
 
-/* ��λ��˽��Ȩ���� */
-.location-sheet {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-.sheet-mask {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-}
-.sheet-content {
-  position: relative;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
-  padding: 48rpx 40rpx 64rpx;
-  box-sizing: border-box;
-  width: 100%;
-  animation: sheetSlideUp 0.25s ease-out;
-  bottom: 200rpx;
-}
-@keyframes sheetSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-.sheet-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  text-align: center;
-  color: #1a1a1a;
-  margin-bottom: 20rpx;
-}
-.sheet-desc {
-  font-size: 28rpx;
-  line-height: 1.7;
-  color: #666;
-  text-align: center;
-  margin-bottom: 40rpx;
-  padding: 0 12rpx;
-}
-.sheet-checkbox-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20rpx 0 40rpx;
-}
-.checkbox {
-  width: 36rpx;
-  height: 36rpx;
-  border: 2rpx solid #ccc;
-  border-radius: 8rpx;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26rpx;
-  color: #fff;
-  margin-right: 16rpx;
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-.checkbox.checked {
-  background: #07c160;
-  border-color: #07c160;
-  color: #fff;
-}
-.sheet-checkbox-label {
-  font-size: 26rpx;
-  color: #666;
-}
-.sheet-buttons {
-  display: flex;
-  gap: 24rpx;
-}
-.sheet-btn {
-  flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
-  text-align: center;
-  font-size: 30rpx;
-  border-radius: 44rpx;
-  font-weight: 600;
-}
-.sheet-btn-cancel {
-  background: #f5f5f5;
-  color: #666;
-}
-.sheet-btn-allow.disabled {
-  background: #e0e0e0;
-  color: #aaa;
-  pointer-events: none;
-}
-.sheet-btn-allow.enabled {
-  background: #07c160;
-  color: #fff;
-}
-
-/* 开发测试按钮（首页调试用） */
+/* 开发测试按钮（首页调试用）- 旧样式（已迁移到 dev-test-bar 卡片化结构，保留作为参考，可安全删除） */
+/* 旧样式已被 L386-518 的新卡片化样式取代，删除以下块避免冲突
 .dev-test-bar {
   margin: 16rpx 24rpx;
   padding: 16rpx;
@@ -1063,3 +1169,4 @@
   text-align: center;
   width: 100%;
 }
+*/

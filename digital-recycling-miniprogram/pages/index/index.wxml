@@ -76,13 +76,20 @@
         </view>
       </view>
     </view>
+  
+    <!-- 加载中骨架(onLoad 自动调 _autoLoadNearbyStore 期间显示) -->
+    <view class="store-card store-card-loading" wx:if="{{storeLoading && !storeInfo}}">
+      <view class="store-loading-icon">📍</view>
+      <view class="store-loading-text">正在定位查找最近门店...</view>
+    </view>
 
-    <!-- 附近门店 -->
-    <view class="store-card" wx:if="{{storeInfo}}">
+    <!-- 已有门店信息时显示门店卡片 -->
+    <view class="store-card" wx:elif="{{storeInfo}}">
       <view class="store-header">
         <text class="store-tag">附近门店</text>
         <text class="store-name">{{storeInfo.name || '联赢门店'}}</text>
-        <text class="store-distance">{{storeInfo.distance ? '距离 ' + storeInfo.distance + ' km' : '距离 获取中…'}}</text>
+        <text wx:if="{{storeInfo.distance}}" class="store-distance">距离 {{storeInfo.distance}} km</text>
+        <text wx:else class="store-distance store-distance-warn">距离暂不可用</text>
       </view>
       <view class="store-info-row" bindtap="makePhoneCall" data-phone="{{storeInfo.phone || '18755875222'}}">
         <view class="store-label">
@@ -102,12 +109,90 @@
         </view>
         <text class="store-action">导航 ></text>
       </view>
+      <!-- <view class="store-debug-hint" wx:if="{{showDevTestBar}}">调试场景：可在下方 dev-test-bar 单独测试定位</view> -->
     </view>
-    <!-- 开发测试：手动触发获取位置（不依赖自动流程） -->
-    <!-- <view class="dev-test-bar" wx:if="{{showDevTestBar}}">
-      <button class="dev-test-btn" bindtap="onDevTestGetLocation" type="default" size="mini">🧪 测试获取位置</button>
-      <text class="dev-test-hint" wx:if="{{devTestResult}}">{{devTestResult}}</text>
-    </view> -->
+
+    <!-- 开发者调试条（仅开发版可见）：参考 dom 的 5 按钮调试面板 + 系统信息 + 隐私/结果 + 日志 + 兼容性 + 错误码表 -->
+    <view class="dev-test-bar" wx:if="{{showDevTestBar}}">
+      <view class="dev-test-title">🔧 开发者定位调试（参考 dom）</view>
+
+      <!-- 系统信息卡片 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">系统信息</view>
+        <view class="dev-test-card-content mono">{{systemInfo || '加载中...'}}</view>
+        <view class="dev-test-card-content mono">API 可用性: {{apiCheckText}}</view>
+      </view>
+
+      <!-- 5 按钮 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">调试按钮</view>
+        <view class="dev-test-row">
+          <view class="dev-test-btn dev-test-btn-primary" bindtap="onDevTestCheckPrivacy">[1] 检测隐私设置</view>
+        </view>
+        <view class="dev-test-row">
+          <view class="dev-test-btn dev-test-btn-primary" bindtap="onDevTestRequirePrivacy">[2] 申请隐私授权</view>
+        </view>
+        <view class="dev-test-row">
+          <view class="dev-test-btn dev-test-btn-primary"
+                bindtap="onDevTestGetLocation"
+                bindlongtap="onDevTestCopyLocation">[3] 获取模糊位置</view>
+        </view>
+        <view class="dev-test-hint">长按 [3] 复制 lat,lng 到剪贴板</view>
+        <view class="dev-test-row">
+          <view class="dev-test-btn dev-test-btn-secondary" bindtap="onDevTestFullFlow">[4] 一键完整流程</view>
+        </view>
+        <view class="dev-test-row">
+          <view class="dev-test-btn dev-test-btn-ghost" bindtap="onDevTestClearCache">[5] 清除定位缓存</view>
+        </view>
+      </view>
+
+      <!-- 隐私状态 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">隐私状态</view>
+        <view class="dev-test-card-content mono {{privacyStatusClass}}">{{privacyStatus || '（尚未查询，点击 [1] 或 [2] 后查看）'}}</view>
+      </view>
+
+      <!-- 定位结果 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">最近定位结果</view>
+        <view class="dev-test-card-content mono {{locationResultClass}}">{{locationResult || '（尚未定位，点击 [3] 或 [5] 后查看）'}}</view>
+      </view>
+
+      <!-- Console 日志 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">Console 日志（最近 10 条）</view>
+        <view class="dev-test-log-list">
+          <view wx:if="{{consoleLogs.length === 0}}" class="dev-test-log-empty">暂无日志</view>
+          <view wx:for="{{consoleLogs}}" wx:key="index" class="dev-test-log-item log-{{item.level}}">
+            {{item.text}}
+          </view>
+        </view>
+      </view>
+
+      <!-- API 兼容性 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">API 兼容性</view>
+        <view class="dev-test-api-row"><text>wx.getPrivacySetting</text><text>要求 SDKVersion ≥ 2.32.3</text></view>
+        <view class="dev-test-api-row"><text>wx.requirePrivacyAuthorize</text><text>要求 SDKVersion ≥ 3.0.0</text></view>
+        <view class="dev-test-api-row"><text>wx.getFuzzyLocation</text><text>要求 SDKVersion ≥ 2.25.0</text></view>
+        <view class="dev-test-api-row"><text>wx.onNeedPrivacyAuthorization</text><text>要求 SDKVersion ≥ 2.32.3</text></view>
+      </view>
+
+      <!-- 错误码速查表 -->
+      <view class="dev-test-card">
+        <view class="dev-test-card-title">错误码速查表</view>
+        <view class="dev-test-err-table">
+          <view>• system permission denied → 系统未授权微信位置权限（iOS）</view>
+          <view>• ERROR_NOCELL&amp;WIFI_LOCATIONSWITCHOFF → 系统定位服务关闭</view>
+          <view>• fail authorize / auth deny → 用户拒绝授权</view>
+          <view>• fuzzyLocation:fail → 模糊位置接口调用失败（隐私协议未声明）</view>
+          <view>• getPrivacySetting:fail → 隐私查询失败（基础库过旧）</view>
+        </view>
+      </view>
+
+      <view class="dev-test-hint">提示：仅定位调试，不会写入 app.globalData / storeInfo / processStore</view>
+    </view>
+
     <!-- 常用报价 -->
     <view class="common-quote-header">
       <text class="active">常用报价</text>
@@ -235,7 +320,7 @@
       <view class="flow-title">发货下单 → 到货验机 → 确认报价 → 完成收款</view>
       <view class="flow-steps">
         <view class="flow-step">
-          <text class="flow-icon-em">🪝🌳</text>
+          <text class="flow-icon-em">🌳</text>
           <text class="flow-step-text">报价精准</text>
         </view>
         <view class="flow-step">
@@ -281,22 +366,7 @@
     <!-- 返回顶部 -->
     <view wx:if="{{showBackTop}}" class="back-top" bindtap="scrollToTop">🚀</view>
 
-    <!-- 定位隐私授权弹窗 -->
-    <view class="location-sheet" wx:if="{{showLocationSheet}}">
-      <view class="sheet-mask" bindtap="onLocationDeny"></view>
-      <view class="sheet-content">
-        <view class="sheet-title">开启位置服务</view>
-        <view class="sheet-desc">为了展示离您最近的门店，需要获取您的位置信息。请在下方勾选并点击「允许」</view>
-        <view class="sheet-checkbox-row" bindtap="toggleLocationCheck">
-          <view class="checkbox {{locationSheetChecked ? 'checked' : ''}}">{{locationSheetChecked ? '✓' : ''}}</view>
-          <text class="sheet-checkbox-label">已阅读并同意《隐私协议》</text>
-        </view>
-        <view class="sheet-buttons">
-          <view class="sheet-btn sheet-btn-cancel" bindtap="onLocationDeny">取消</view>
-          <view class="sheet-btn sheet-btn-allow {{locationSheetChecked ? 'enabled' : 'disabled'}}" bindtap="onLocationAllow">允许</view>
-        </view>
-      </view>
-    </view>
+    <!-- 定位隐私授权弹窗已移除(onLoad 自动调 _autoLoadNearbyStore,首次进入走 wx.requirePrivacyAuthorize 弹原生授权弹窗) -->
 
     <!-- 悬浮三按钮：电话 / 客服 / 问题 -->
     <view class="fab-stack">

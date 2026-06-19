@@ -13,6 +13,9 @@
       <button class="login-btn" bindtap="handleLogin">
         微信一键登录
       </button>
+      <view class="cancel-btn" bindtap="handleCancel">
+        暂不登录
+      </view>
     </view>
   </view>
 

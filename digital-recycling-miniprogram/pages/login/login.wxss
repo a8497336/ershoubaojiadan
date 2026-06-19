@@ -107,6 +107,14 @@
   background: #e62640;
 }
 
+.cancel-btn {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #999;
+  padding: 16rpx 0;
+}
+
 .agreement-footer {
   position: fixed;
   bottom: 0;

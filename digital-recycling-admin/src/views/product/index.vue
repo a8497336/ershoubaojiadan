@@ -378,8 +378,8 @@ const loadCategories = async () => {
 
 const loadBrands = async () => {
   try {
-    const res = await getBrands({ pageSize: 200 })
-    allBrands.value = res.data.list
+    const res = await getBrands({ pageSize: 500 })
+    allBrands.value = Array.isArray(res.data) ? res.data : (res.data.list || [])
   } catch (error) {
     console.error('加载品牌失败:', error)
     ElMessage.error('加载品牌列表失败')

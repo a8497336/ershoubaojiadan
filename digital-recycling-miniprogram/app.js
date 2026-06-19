@@ -20,66 +20,9 @@ App({
     this.initNetworkListener()
     this.checkApiStatus()
     this.checkLoginStatus()
-    this.initPrivacyAuthorization()
-  },
-
-  requestPrivacyAuthorization() {
-    if (typeof wx.requirePrivacyAuthorize === 'function') {
-      wx.requirePrivacyAuthorize({
-        success: () => {},
-        fail: () => {}
-      })
-    }
-  },
-
-  initPrivacyAuthorization() {
-    if (typeof wx.onNeedPrivacyAuthorization === 'function') {
-      wx.onNeedPrivacyAuthorization((resolve, eventInfo) => {
-        this.resolvePrivacyAuthorization(resolve, eventInfo)
-      })
-    }
-  },
-
-  resolvePrivacyAuthorization(resolve, eventInfo) {
-    wx.getPrivacySetting({
-      success: (res) => {
-        if (!res.needAuthorization) {
-          resolve({ button: 'agree', event: eventInfo.event })
-          return
-        }
-        wx.showModal({
-          title: '隐私授权',
-          content: res.privacyContractName
-            ? `在使用服务前，请你仔细阅读并同意《${res.privacyContractName}》，以便我们为你提供相关服务。`
-            : '在使用服务前，请你仔细阅读并同意《用户服务协议》和《隐私政策》，以便我们为你提供相关服务。',
-          showCancel: true,
-          cancelText: '拒绝',
-          confirmText: '同意',
-          success: (modalRes) => {
-            if (modalRes.confirm) {
-              wx.setStorageSync('privacy_agreed', true)
-              resolve({ button: 'agree', event: eventInfo.event })
-              if (this.globalData.pendingLocationRequest) {
-                this.globalData.pendingLocationRequest = false
-                const app = this
-                const page = getCurrentPages().slice(-1)[0]
-                if (page && page.requestStoreLocation) {
-                  setTimeout(() => page.requestStoreLocation(), 50)
-                }
-              }
-            } else {
-              resolve({ button: 'disagree', event: eventInfo.event })
-            }
-          },
-          fail: () => {
-            resolve({ button: 'disagree', event: eventInfo.event })
-          }
-        })
-      },
-      fail: () => {
-        resolve({ button: 'agree', event: eventInfo.event })
-      }
-    })
+    // 注意：故意不在此处监听 wx.onNeedPrivacyAuthorization
+    // 原因：注册后 wx.requirePrivacyAuthorize 不再弹原生弹窗
+    //      保留原生行为，让 requirePrivacyAuthorize 自然弹出原生弹窗（与 dom 一致）
   },
 
   initNetworkListener() {
@@ -215,7 +158,6 @@ App({
     networkType: 'wifi',
     apiStatus: 'unknown',
     statusBarHeight: 0,
-    pendingLocationRequest: false,
     latitude: null,
     longitude: null
   }

@@ -108,4 +108,20 @@ router.get('/trend', adminAuth, async (req, res, next) => {
   }
 })
 
+router.get('/category-distribution', adminAuth, async (req, res, next) => {
+  try {
+    const [results] = await db.sequelize.query(`
+      SELECT c.name, COUNT(oi.id) AS value
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      JOIN categories c ON p.category_id = c.id
+      GROUP BY c.id, c.name
+      ORDER BY value DESC
+    `)
+    return success(res, results)
+  } catch (err) {
+    next(err)
+  }
+})
+
 module.exports = router

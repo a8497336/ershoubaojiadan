@@ -7,18 +7,18 @@
     </nav>
 
     <div class="page-content" v-if="!loading">
-      <div class="product-header" v-if="trendData">
+      <div class="product-header" v-if="trendData && trendData.trendData && trendData.trendData.length > 0">
         <div class="product-brand">{{ trendData.product?.Brand?.name || '' }}</div>
         <div class="product-model">{{ modelName }}</div>
         <div class="price-summary">
           <div class="price-range">
             <span class="price-label">最高价</span>
-            <span class="price-value high">¥{{ trendData.summary?.maxPrice || '--' }}</span>
+            <span class="price-value high">¥{{ trendData.summary?.maxPrice != null ? trendData.summary.maxPrice : '--' }}</span>
           </div>
           <div class="price-divider"></div>
           <div class="price-range">
             <span class="price-label">最低价</span>
-            <span class="price-value low">¥{{ trendData.summary?.minPrice || '--' }}</span>
+            <span class="price-value low">¥{{ trendData.summary?.minPrice != null ? trendData.summary.minPrice : '--' }}</span>
           </div>
         </div>
         <div class="price-change" v-if="trendData.summary">
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="time-selector">
+      <div class="time-selector" v-if="trendData && trendData.trendData && trendData.trendData.length > 0">
         <div
           v-for="opt in timeOptions"
           :key="opt.value"
@@ -120,7 +120,7 @@
         </div>
       </div>
 
-      <div class="bottom-actions">
+      <div class="bottom-actions" v-if="trendData && trendData.trendData && trendData.trendData.length > 0">
         <button class="btn btn-outline" @click="addToStock">加入压货</button>
         <button class="btn btn-primary" @click="goRecycle">立即回收</button>
       </div>

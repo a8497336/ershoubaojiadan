@@ -43,11 +43,6 @@ Page({
     announcementTimer: null,
     bannerTimer: null,
 
-    showLocationSheet: false,
-    locationAgreed: false,
-    locationSheetChecked: false,
-    locationPrompted: false,
-
     phoneBrands: [
       { bg: 'bg-xiaomi', icon: '📱', iconStyle: 'font-size:20rpx;', name: '热门老年机' },
       { bg: 'bg-apple', icon: '', iconStyle: 'font-size:20rpx;', name: '智能机/电容屏' },
@@ -173,12 +168,93 @@ Page({
       { bg: 'bg-sugar', icon: '威士忌', iconStyle: 'font-size:16rpx;', name: '洋酒威士忌' }
     ],
 
-    searchTimer: null
+    searchTimer: null,
+    storeLoading: false,
+
+    // ===== dev-test-bar 调试面板字段（参考 dom）=====
+    systemInfo: '',
+    sdkVersion: '',
+    apiCheckText: '',
+    privacyStatus: '',
+    privacyStatusClass: '',
+    locationResult: '',
+    locationResultClass: '',
+    consoleLogs: []
   },
 
   onLoad() {
+    // 缓存最近一次成功获取到的用户位置（_fallbackStoreToLocal 兜底用，非 data 字段）
+    this._lastUserLat = null
+    this._lastUserLng = null
     this.setData({ statusBarHeight: app.globalData.statusBarHeight, online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this._loadSystemInfoDevTest()
     this.init()
+    this._autoLoadNearbyStore()
+  },
+
+  /**
+   * 进入页面(onLoad)即自动加载最近门店
+   * 与原 onFindNearbyStore 核心逻辑一致,适配自动场景
+   * - 隐私预检:wx.getPrivacySetting → 命中则调 wx.requirePrivacyAuthorize(弹原生弹窗)
+   * - 定位:wx.getFuzzyLocation → processStore
+   * - 失败兜底:STORE.DEFAULT_STORE
+   * - 系统定位服务关闭:_showLocationServiceModal
+   */
+  _autoLoadNearbyStore() {
+    if (this.data.storeLoading) return  // 防重入
+    if (typeof wx.getPrivacySetting === 'function') {
+      wx.getPrivacySetting({
+        success: (privRes) => {
+          if (privRes.needAuthorization) {
+            // 隐私未同意:弹原生授权弹窗
+            wx.requirePrivacyAuthorize({
+              success: () => this._doFindNearbyStore(),
+              fail: () => {
+                // 用户拒绝隐私 → 兜底默认门店
+                this.setData({ storeInfo: STORE.DEFAULT_STORE })
+              }
+            })
+            return
+          }
+          this._doFindNearbyStore()
+        },
+        fail: () => this._doFindNearbyStore()
+      })
+    } else {
+      // 旧版基础库:无 getPrivacySetting → 直接定位
+      this._doFindNearbyStore()
+    }
+  },
+
+  // ===== dev-test-bar: 加载系统信息（参考 dom _loadSystemInfo）=====
+  _loadSystemInfoDevTest() {
+    try {
+      const sys = wx.getSystemInfoSync()
+      const summary = `libVersion=${sys.SDKVersion || '-'} | model=${sys.model || '-'} | system=${sys.system || '-'} | platform=${sys.platform || '-'}`
+      const apis = []
+      apis.push(typeof wx.getPrivacySetting === 'function' ? 'getPrivacySetting✓' : 'getPrivacySetting✗')
+      apis.push(typeof wx.requirePrivacyAuthorize === 'function' ? 'requirePrivacyAuthorize✓' : 'requirePrivacyAuthorize✗')
+      apis.push(typeof wx.getFuzzyLocation === 'function' ? 'getFuzzyLocation✓' : 'getFuzzyLocation✗')
+      this.setData({
+        systemInfo: summary,
+        sdkVersion: sys.SDKVersion || '',
+        apiCheckText: apis.join(' | ')
+      })
+      this._logDevTest('系统信息: ' + summary, 'info')
+      this._logDevTest('API 可用性: ' + apis.join(' | '), 'info')
+    } catch (e) {
+      this._logDevTest('getSystemInfoSync fail: ' + (e && e.message || JSON.stringify(e)), 'error')
+    }
+  },
+
+  // ===== dev-test-bar: 调试日志工具（参考 dom log）=====
+  // 同时输出到 console.log（vConsole 可见）+ 写入 data.consoleLogs（页面内可见）
+  _logDevTest(msg, level = 'info') {
+    const time = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+    const text = `[${time}] [${level.toUpperCase()}] ${msg}`
+    console.log(text)
+    const logs = [{ text, level }, ...this.data.consoleLogs].slice(0, 10)
+    this.setData({ consoleLogs: logs })
   },
 
   onShow() {
@@ -186,42 +262,8 @@ Page({
     if (tabBar) {
       tabBar.setData({ activeTab: 'home' })
     }
-    // 合規整改：無論是否登入，都先加載首屏內容；定位授權失敗時也直接展示首頁
+    // 自动加载最近门店（由 onLoad 触发,onShow 保持轻量,只刷新首屏数据）
     this.loadHomeData()
-    // 處理定位（不影響首屏渲染）
-    const prompted = wx.getStorageSync('location_prompt_done')
-    if (!prompted) {
-      this.requestLocationPermission()
-    } else if (app.globalData.latitude == null || app.globalData.longitude == null) {
-      // 老用户但 app 冷启动后 globalData 位置丢失，重新获取位置
-      // 先检查隐私授权状态，避免 wx.getLocation 静默失败
-      if (typeof wx.getPrivacySetting === 'function') {
-        wx.getPrivacySetting({
-          success: (res) => {
-            if (res.needAuthorization) {
-              // 需要隐私授权，先触发授权流程
-              wx.requirePrivacyAuthorize({
-                success: () => {
-                  this.fetchLocationAndStores()
-                },
-                fail: () => {
-                  // 隐私授权被拒绝，不强制跳转登录（合规）
-                }
-              })
-            } else {
-              // 已授权，直接获取位置
-              this.fetchLocationAndStores()
-            }
-          },
-          fail: () => {
-            // getPrivacySetting 失败，尝试直接获取位置
-            this.fetchLocationAndStores()
-          }
-        })
-      } else {
-        this.fetchLocationAndStores()
-      }
-    }
   },
 
   onHide() {
@@ -293,19 +335,11 @@ Page({
 
       if (storeRes.length > 0) {
         this.setData({ storesData: storeRes })
-        // 关键：先读 lat/lng 缓存，再传给 processStore（同步算距离）
-        const cachedLat = app.globalData.latitude
-        const cachedLng = app.globalData.longitude
-        this.processStore(storeRes, cachedLat, cachedLng)
-        // 异步增强：腾讯地图驾车矩阵（失败也无害）
-        if (typeof cachedLat === 'number' && typeof cachedLng === 'number') {
-          this._fetchNearbyStores(cachedLat, cachedLng)
-        }
-      } else {
-        this.setData({ storeInfo: STORE.DEFAULT_STORE })
+        // 仅当已有缓存用户位置时才计算距离并展示门店；否则保持 storeInfo=null 展示「查找附近门店」按钮
         const cachedLat = app.globalData.latitude
         const cachedLng = app.globalData.longitude
         if (typeof cachedLat === 'number' && typeof cachedLng === 'number') {
+          this.processStore(storeRes, cachedLat, cachedLng)
           this._fetchNearbyStores(cachedLat, cachedLng)
         }
       }
@@ -386,6 +420,17 @@ Page({
 
     if (nearest) {
       this.setData({ storeInfo: nearest })
+      return
+    }
+
+    // 兜底：所有 store 都没 latitude/longitude 字段，尝试用 stores[0] 配合 lat/lng 算 haversine 距离
+    const s0 = stores[0]
+    const s0Lat = typeof s0.latitude === 'number' ? s0.latitude : parseFloat(s0.latitude)
+    const s0Lng = typeof s0.longitude === 'number' ? s0.longitude : parseFloat(s0.longitude)
+    if (Number.isFinite(s0Lat) && Number.isFinite(s0Lng)) {
+      const dist = haversineDistance(lat, lng, s0Lat, s0Lng)
+      const fallback = { ...s0, distance: dist.toFixed(2) }
+      this.setData({ storeInfo: fallback })
     } else {
       const fallback = { ...stores[0] }
       delete fallback.distance
@@ -400,6 +445,9 @@ Page({
 
   _fetchNearbyStores(lat, lng) {
     if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return
+
+    // 诊断日志：用户位置缓存状态（vConsole 排查用）
+    console.log('[home] fetchNearby ->', { lat, lng, hasUserLocation: this._lastUserLat != null && this._lastUserLng != null })
 
     const apply = (item, source) => {
       if (!item) return false
@@ -515,9 +563,37 @@ Page({
 
   _fallbackStoreToLocal() {
     const stores = this.data.storesData
+    const userLat = this._lastUserLat
+    const userLng = this._lastUserLng
+    const hasUserLoc = typeof userLat === 'number' && typeof userLng === 'number' && !isNaN(userLat) && !isNaN(userLng)
+
     if (stores && stores.length > 0) {
-      // 保留 stores[0].distance（如果之前 processStore 已用 haversine 写入）
-      // 不再 delete fallback.distance，避免误伤
+      // 兜底：用 storesData + 缓存用户位置 算 haversine 距离
+      // 覆盖场景：后端 /places/nearest-store 返回的 list 全部 distance 为 null 且 item 缺 latitude/longitude
+      let nearest = null
+      let minDist = Infinity
+      let candidateCount = 0
+      if (hasUserLoc) {
+        stores.forEach(s => {
+          const sLat = typeof s.latitude === 'number' ? s.latitude : parseFloat(s.latitude)
+          const sLng = typeof s.longitude === 'number' ? s.longitude : parseFloat(s.longitude)
+          if (Number.isFinite(sLat) && Number.isFinite(sLng)) {
+            candidateCount++
+            const dist = haversineDistance(userLat, userLng, sLat, sLng)
+            if (dist < minDist) {
+              minDist = dist
+              nearest = { ...s, distance: dist.toFixed(2), source: 'haversine:fallback-local' }
+            }
+          }
+        })
+      }
+      if (nearest) {
+        console.log('[home] fallback-distance ->', { reason: 'stores_with_coords', candidateCount, nearestDistance: nearest.distance })
+        this.setData({ storeInfo: nearest })
+        return
+      }
+      // 算不出距离（无用户位置 / storesData 无坐标）：保持现有降级
+      console.log('[home] fallback-distance ->', { reason: 'no_coords_or_no_user_loc', candidateCount: 0, nearestDistance: null })
       this.setData({ storeInfo: { ...stores[0] } })
     } else if (STORE.DEFAULT_STORE) {
       this.setData({ storeInfo: { ...STORE.DEFAULT_STORE } })
@@ -525,11 +601,147 @@ Page({
   },
 
   /**
-   * 开发测试：手动触发 wx.getLocation
+   * dev-test-bar: [1] 检测隐私设置（参考 dom onCheckPrivacySetting）
+   */
+  onDevTestCheckPrivacy() {
+    this._logDevTest('--- 开始: [1] 检测隐私设置 ---', 'info')
+    if (typeof wx.getPrivacySetting !== 'function') {
+      this._logDevTest('当前基础库不支持 wx.getPrivacySetting', 'error')
+      this.setData({
+        privacyStatus: '基础库不支持（SDKVersion < 2.32.3）',
+        privacyStatusClass: 'status-error'
+      })
+      return
+    }
+    wx.getPrivacySetting({
+      success: (res) => {
+        const text = `needAuthorization=${res.needAuthorization} | privacyContractName=${res.privacyContractName || '-'}`
+        this._logDevTest('[1] getPrivacySetting success: ' + text, 'info')
+        this.setData({
+          privacyStatus: text,
+          privacyStatusClass: 'status-success'
+        })
+        app.globalData.privacySetting = res
+      },
+      fail: (err) => {
+        const errMsg = (err.errMsg || JSON.stringify(err))
+        this._logDevTest('[1] getPrivacySetting fail: ' + errMsg, 'error')
+        this.setData({
+          privacyStatus: '查询失败: ' + errMsg,
+          privacyStatusClass: 'status-error'
+        })
+      }
+    })
+  },
+
+  /**
+   * dev-test-bar: [2] 申请隐私授权（参考 dom onRequirePrivacyAuthorize）
+   */
+  onDevTestRequirePrivacy() {
+    this._logDevTest('--- 开始: [2] 申请隐私授权 ---', 'info')
+    if (typeof wx.requirePrivacyAuthorize !== 'function') {
+      this._logDevTest('当前基础库不支持 wx.requirePrivacyAuthorize', 'error')
+      this.setData({
+        privacyStatus: '基础库不支持（SDKVersion < 3.0.0）',
+        privacyStatusClass: 'status-error'
+      })
+      return
+    }
+    this._logDevTest('正在弹出原生隐私授权弹窗（请在弹窗中选择「同意」或「拒绝」）', 'info')
+    wx.requirePrivacyAuthorize({
+      success: () => {
+        this._logDevTest('[2] requirePrivacyAuthorize SUCCESS - 用户同意隐私协议', 'info')
+        this.setData({
+          privacyStatus: '✓ 已同意隐私协议',
+          privacyStatusClass: 'status-success'
+        })
+      },
+      fail: (err) => {
+        const errMsg = (err && err.errMsg) || JSON.stringify(err)
+        this._logDevTest('[2] requirePrivacyAuthorize FAIL: ' + errMsg, 'error')
+        this.setData({
+          privacyStatus: '✗ 拒绝: ' + errMsg,
+          privacyStatusClass: 'status-error'
+        })
+      }
+    })
+  },
+
+  /**
+   * dev-test-bar: [4] 一键完整流程（参考 dom onFullFlow，参考 [dom/pages/index/index.js#L131-L173]）
+   */
+  onDevTestFullFlow() {
+    this._logDevTest('=== 开始: [4] 一键完整流程（隐私预检 → 申请 → 定位）===', 'info')
+    if (typeof wx.getPrivacySetting === 'function') {
+      wx.getPrivacySetting({
+        success: (res) => {
+          this._logDevTest('[4] 步骤1/3: 隐私预检 needAuthorization=' + res.needAuthorization, 'info')
+          if (res.needAuthorization) {
+            this._logDevTest('[4] 步骤2/3: 弹出隐私授权', 'info')
+            if (typeof wx.requirePrivacyAuthorize === 'function') {
+              wx.requirePrivacyAuthorize({
+                success: () => {
+                  this._logDevTest('[4] 步骤2/3: ✓ 用户同意隐私', 'info')
+                  this._logDevTest('[4] 步骤3/3: 调用 getFuzzyLocation', 'info')
+                  this.onDevTestGetLocation()
+                },
+                fail: (err) => {
+                  const errMsg = (err && err.errMsg) || ''
+                  this._logDevTest('[4] 步骤2/3: ✗ 用户拒绝隐私 ' + errMsg, 'error')
+                  this.setData({ devTestResult: '失败: 用户拒绝隐私授权' })
+                }
+              })
+            } else {
+              this._logDevTest('基础库不支持 requirePrivacyAuthorize，跳过', 'warn')
+              this._logDevTest('[4] 步骤3/3: 调用 getFuzzyLocation', 'info')
+              this.onDevTestGetLocation()
+            }
+          } else {
+            this._logDevTest('[4] 步骤2/3: 隐私已同意，跳过', 'info')
+            this._logDevTest('[4] 步骤3/3: 调用 getFuzzyLocation', 'info')
+            this.onDevTestGetLocation()
+          }
+        },
+        fail: (err) => {
+          this._logDevTest('[4] 隐私预检失败，直接定位: ' + (err.errMsg || ''), 'warn')
+          this.onDevTestGetLocation()
+        }
+      })
+    } else {
+      this._logDevTest('基础库不支持 getPrivacySetting，直接定位', 'warn')
+      this.onDevTestGetLocation()
+    }
+  },
+
+  /**
+   * dev-test-bar: 长按 [3] 复制 lat,lng 到剪贴板（参考 dom onCopyLocation）
+   */
+  onDevTestCopyLocation() {
+    const loc = app.globalData.lastLocation
+    if (!loc) {
+      this._logDevTest('尚无定位结果可复制', 'warn')
+      wx.showToast({ title: '暂无定位结果', icon: 'none' })
+      return
+    }
+    wx.setClipboardData({
+      data: `${loc.latitude},${loc.longitude}`,
+      success: () => {
+        this._logDevTest('已复制 lat,lng 到剪贴板', 'info')
+        wx.showToast({ title: '已复制', icon: 'success' })
+      },
+      fail: (err) => {
+        this._logDevTest('复制失败: ' + (err.errMsg || ''), 'error')
+      }
+    })
+  },
+
+  /**
+   * 开发测试：手动触发定位接口
    * 只读探针：不写 app.globalData、不触发 _fetchNearbyStores / requestStoreLocation、不污染 storeInfo
-   * 修复点：complete 回调 + 10秒安全超时 + 隐私协议先检查（覆盖 wx.getLocation 不会触发 success/fail 的场景）
+   * 修复点：complete 回调 + 10秒安全超时 + 隐私协议先检查（覆盖定位接口不会触发 success/fail 的场景）
    */
   onDevTestGetLocation() {
+    this._logDevTest('--- 开始: [3] 获取模糊位置 ---', 'info')
     // 1) 取消旧 timer，避免多次点击多个 timer 打架
     if (this._devTestTimeout) {
       clearTimeout(this._devTestTimeout)
@@ -542,47 +754,35 @@ Page({
     // 4) 显示新的 loading
     wx.showLoading({ title: '定位中...', mask: true })
 
-    // 启动 10 秒兜底 timer，防止 getFuzzyLocation / getLocation 永不回调的场景
+    // 启动 10 秒兜底 timer，防止定位接口永不回调的场景
     this._devTestTimeout = setTimeout(() => {
       this._devTestTimeout = null
       wx.hideLoading()
       // 仅当 success/fail 都没触发（devTestResult 仍空）时弹超时
       if (!this.data.devTestResult) {
         this.setData({ devTestResult: '超时: 定位 10秒未响应' })
-        console.warn('[dev-test] getLocation timeout ->', { reason: 'no callback in 10s' })
+        this._logDevTest('超时: 定位 10秒未响应', 'error')
+        console.warn('[dev-test] location timeout ->', { reason: 'no callback in 10s' })
         wx.showModal({
           title: '位置超时',
-          content: 'wx.getFuzzyLocation / wx.getLocation 10秒未返回任何回调。\n可能原因：\n1. 隐私协议未接受\n2. 系统位置授权未开启\n3. 微信位置服务被禁用\n4. 开发工具模拟器无 GPS 信号',
+          content: '定位接口 10秒未返回任何回调。\n可能原因：\n1. 隐私协议未接受\n2. 系统位置授权未开启\n3. 微信位置服务被禁用\n4. 开发工具模拟器无 GPS 信号',
           confirmText: '我知道了',
           showCancel: false
         })
       }
     }, 10000)
-
     // 5) 隐私设置预检（基础库 2.32.3+）：用 wx.getPrivacySetting 明确判断是否需要重新授权
     if (typeof wx.getPrivacySetting === 'function') {
       wx.getPrivacySetting({
         success: (privRes) => {
           console.log('[dev-test] getPrivacySetting ->', privRes)
           if (privRes.needAuthorization) {
-            // 隐私声明尚未同意 → 强制弹隐私协议
-            this.setData({ devTestResult: '需先同意隐私声明' })
-            if (typeof wx.openPrivacyContract === 'function') {
-              wx.openPrivacyContract({
-                success: () => {
-                  console.log('[dev-test] openPrivacyContract 关闭')
-                  this._devTestAfterPrivacy()
-                },
-                fail: () => {
-                  console.warn('[dev-test] openPrivacyContract fail')
-                  this._devTestAfterPrivacy()
-                }
-              })
-            } else {
-              this._devTestAfterPrivacy()
-            }
-            return
+            // 隐私声明尚未同意：改用 wx.requirePrivacyAuthorize（带「同意 / 拒绝」按钮的原生授权弹窗）。
+            // 不再调 wx.openPrivacyContract（只读详情页，无同意按钮）。
+            this.setData({ devTestResult: '需先同意隐私声明（正在弹出授权框）' })
+            this._logDevTest('需先同意隐私声明（正在弹出授权框）', 'warn')
           }
+          // 无论是否需要授权，统一走 _devTestAfterPrivacy（其内部会处理 requirePrivacyAuthorize）
           this._devTestAfterPrivacy()
         },
         fail: (err) => {
@@ -599,7 +799,7 @@ Page({
   /**
    * 隐私检查通过后的定位逻辑
    * 优先 wx.requirePrivacyAuthorize（向后兼容旧版基础库），
-   * 再调 wx.getFuzzyLocation / wx.getLocation
+   * 再调 wx.getFuzzyLocation
    */
   _devTestAfterPrivacy() {
     if (typeof wx.requirePrivacyAuthorize === 'function') {
@@ -617,17 +817,42 @@ Page({
             this._devTestTimeout = null
           }
           wx.hideLoading()
+          // 用户拒绝了 wx.requirePrivacyAuthorize 弹出的原生隐私声明弹窗
           this.setData({ devTestResult: '失败: 用户拒绝隐私协议' })
+          this._logDevTest('失败: 用户拒绝隐私协议', 'error')
           console.warn('[dev-test] requirePrivacyAuthorize fail')
           wx.showModal({
             title: '需要隐私协议',
-            content: '请先同意《小程序用户隐私保护指引》后再测试位置。',
+            content: '请点击「调用 wx.getFuzzyLocation」按钮后，在弹出的原生隐私声明弹窗中选择「同意」。若未弹出，请检查 app.json 是否配置了 __usePrivacyCheck__: true。',
             confirmText: '我知道了',
             showCancel: false
           })
         }
       })
+    } else if (typeof wx.openPrivacyContract === 'function') {
+      // 旧版基础库：无 requirePrivacyAuthorize，但有 openPrivacyContract（旧式只读详情页）。
+      // 仅作为 fallback：基础库 < 2.32.3 时使用，提示用户在详情页底部点击「我已知晓」后再继续。
+      this.setData({ devTestResult: '需先同意隐私声明（旧版基础库，请在详情页确认后点击「我已知晓」）' })
+      wx.openPrivacyContract({
+        success: () => {
+          console.log('[dev-test] openPrivacyContract 关闭')
+          if (this._devTestTimeout) {
+            clearTimeout(this._devTestTimeout)
+            this._devTestTimeout = null
+          }
+          this._devTestDoGetLocation()
+        },
+        fail: () => {
+          console.warn('[dev-test] openPrivacyContract fail')
+          if (this._devTestTimeout) {
+            clearTimeout(this._devTestTimeout)
+            this._devTestTimeout = null
+          }
+          this._devTestDoGetLocation()
+        }
+      })
     } else {
+      // 极旧基础库：既无 requirePrivacyAuthorize 也无 openPrivacyContract，直接定位
       if (this._devTestTimeout) {
         clearTimeout(this._devTestTimeout)
         this._devTestTimeout = null
@@ -637,14 +862,48 @@ Page({
   },
 
   /**
+   * 开发者调试：清除定位相关的全部 storage + globalData 缓存，
+   * 便于反复测试「未授权 / 已授权 / 已拒绝」等不同分支。
+   */
+  onDevTestClearCache() {
+    this._logDevTest('--- 开始: [5] 清除定位缓存 ---', 'info')
+    try {
+      wx.removeStorageSync('location_prompt_done')
+      wx.removeStorageSync('location_permission_done')
+      wx.removeStorageSync('privacy_agreed')
+    } catch (e) {
+      console.warn('[dev-test] clear cache fail', e)
+    }
+    try {
+      app.globalData.latitude = undefined
+      app.globalData.longitude = undefined
+    } catch (e) {}
+    this._lastUserLat = null
+    this._lastUserLng = null
+    this.setData({
+      storeInfo: null,
+      devTestResult: '已清除定位缓存（localStorage + globalData）',
+      privacyStatus: '',
+      privacyStatusClass: '',
+      locationResult: '',
+      locationResultClass: ''
+    })
+    this._logDevTest('已清除定位缓存（localStorage + globalData）', 'info')
+    console.log('[dev-test] cache cleared')
+    wx.showToast({ title: '已清除定位缓存', icon: 'success' })
+  },
+
+  /**
    * 实际调用定位
-   * 优先 wx.getFuzzyLocation（基础库 2.25.0+，申请门槛低），兜底 wx.getLocation
+   * 优先 wx.getFuzzyLocation（基础库 2.25.0+，申请门槛低）
    * 10 秒安全超时已在 onDevTestGetLocation 中统一管理
    */
   _devTestDoGetLocation() {
     const showSuccessModal = (res, source) => {
       const summary = `lat=${(res.latitude || 0).toFixed(6)}, lng=${(res.longitude || 0).toFixed(6)}, acc=${res.accuracy || 0}m`
-      this.setData({ devTestResult: summary })
+      const full = `lat=${(res.latitude || 0).toFixed(6)} | lng=${(res.longitude || 0).toFixed(6)} | acc=${res.accuracy || 0}m | speed=${res.speed || '-'} | altitude=${res.altitude || '-'}`
+      this.setData({ devTestResult: summary, locationResult: full, locationResultClass: '' })
+      this._logDevTest('getFuzzyLocation SUCCESS: ' + full, 'info')
       console.log('[dev-test] ' + source + ' success ->', res)
       wx.showModal({
         title: '位置成功',
@@ -666,7 +925,8 @@ Page({
 
     const showFailModal = (err, source) => {
       const errMsg = (err && err.errMsg) || '未知错误'
-      this.setData({ devTestResult: `失败: ${errMsg}` })
+      this.setData({ devTestResult: `失败: ${errMsg}`, locationResult: `✗ 失败: ${errMsg}`, locationResultClass: 'status-error' })
+      this._logDevTest('getFuzzyLocation FAIL: ' + errMsg, 'error')
       console.warn('[dev-test] ' + source + ' fail ->', err)
       // 针对常见系统级错误给出针对性提示
       let content = `source: ${source}\nerrMsg: ${errMsg}\n\n（测试按钮不会写入 app.globalData，也不会触发 _fetchNearbyStores）`
@@ -680,7 +940,7 @@ Page({
             wx.openAppAuthorizeSetting()
           }
         }
-      } else if (errMsg.includes('getLocation:fail system permission denied')) {
+      } else if (errMsg.includes('fuzzyLocation:fail system permission denied') || errMsg.includes('system permission denied')) {
         content = 'iOS 系统未开启微信的位置权限。\n\n请前往：\n【设置】→【微信】→【位置】→ 改为【使用 App 期间】或【始终】\n\n开启后重新点击测试按钮。'
         confirmText = '去开启'
         onConfirm = () => {
@@ -710,22 +970,24 @@ Page({
       })
     }
 
-    const fallbackGetLocation = (onSuccess, onFail, source) => {
+    // 仅测试 wx.getFuzzyLocation（与 app.json requiredPrivateInfos 一致，
+    // 模糊定位与精确位置互斥不能共存）
+    if (typeof wx.getFuzzyLocation === 'function') {
       let handled = false
-      wx.getLocation({
+      wx.getFuzzyLocation({
         type: 'gcj02',
         success: (res) => {
           handled = true
-          onSuccess(res, source)
+          showSuccessModal(res, 'getFuzzyLocation')
         },
         fail: (err) => {
           handled = true
-          onFail(err, source)
+          showFailModal(err, 'getFuzzyLocation')
         },
         complete: () => {
           if (!handled) {
-            console.warn('[dev-test] getLocation complete without callback')
-            onFail({ errMsg: 'getLocation complete without success/fail' }, source)
+            console.warn('[dev-test] getFuzzyLocation complete without callback')
+            showFailModal({ errMsg: 'getFuzzyLocation complete without success/fail' }, 'getFuzzyLocation')
           }
           // 清理父级超时
           if (this._devTestTimeout) {
@@ -735,32 +997,14 @@ Page({
           wx.hideLoading()
         }
       })
-    }
-
-    // 优先 wx.getFuzzyLocation
-    if (typeof wx.getFuzzyLocation === 'function') {
-      let fuzzyHandled = false
-      wx.getFuzzyLocation({
-        type: 'gcj02',
-        success: (res) => {
-          fuzzyHandled = true
-          showSuccessModal(res, 'getFuzzyLocation')
-        },
-        fail: (err) => {
-          fuzzyHandled = true
-          console.warn('[dev-test] getFuzzyLocation fail, fallback to getLocation ->', err)
-          fallbackGetLocation(showSuccessModal, showFailModal, 'getLocation')
-        },
-        complete: () => {
-          if (!fuzzyHandled) {
-            console.warn('[dev-test] getFuzzyLocation complete without callback, fallback to getLocation')
-            fallbackGetLocation(showSuccessModal, showFailModal, 'getLocation')
-          }
-        }
-      })
     } else {
-      // 旧版基础库：直接 wx.getLocation
-      fallbackGetLocation(showSuccessModal, showFailModal, 'getLocation')
+      // 旧版基础库无 getFuzzyLocation
+      showFailModal({ errMsg: '基础库不支持 wx.getFuzzyLocation' }, 'getFuzzyLocation')
+      if (this._devTestTimeout) {
+        clearTimeout(this._devTestTimeout)
+        this._devTestTimeout = null
+      }
+      wx.hideLoading()
     }
   },
 
@@ -1057,54 +1301,6 @@ Page({
     if (this.data.announcementTimer) { clearInterval(this.data.announcementTimer); this.data.announcementTimer = null }
   },
 
-  checkPermissionSheets() {
-    const token = wx.getStorageSync('token')
-    if (!token) {
-      setTimeout(() => this.requestLocationPermission(), 1000)
-    }
-  },
-
-  requestLocationPermission() {
-    const token = wx.getStorageSync('token')
-    wx.getSetting({
-      success: (res) => {
-        if (res.authSetting['scope.userFuzzyLocation'] || res.authSetting['scope.userLocation']) {
-          // 已授权（兼容新旧两种 scope，避免老用户重新授权）
-          this.fetchLocationAndStores()
-          if (!token) this.loadHomeData()
-          else this.loadHomeData()
-        } else {
-          // 未授权 / 曾经拒绝 → 显示自定义隐私授权弹窗
-          this.setData({ showLocationSheet: true, locationPrompted: true })
-        }
-      },
-      fail: () => {
-        if (!token) this.loadHomeData()
-        else this.loadHomeData()
-      }
-    })
-  },
-
-  askForLocationPermission() {
-    wx.authorize({
-      scope: 'scope.userFuzzyLocation',
-      success: () => {
-        this.fetchLocationAndStores()
-        wx.setStorageSync('location_prompt_done', true)
-      },
-      fail: (err) => {
-        const errMsg = err.errMsg || ''
-        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
-          this._showLocationServiceModal()
-        }
-        wx.setStorageSync('location_prompt_done', true)
-        const token = wx.getStorageSync('token')
-        if (!token) this.loadHomeData()
-        else this.loadHomeData()
-      }
-    })
-  },
-
   _showLocationServiceModal() {
     wx.showModal({
       title: '定位服务未开启',
@@ -1124,8 +1320,133 @@ Page({
     })
   },
 
+  /**
+   * 实际执行定位与最近门店计算（隐私预检已通过）
+   * 由 _autoLoadNearbyStore 调用
+   */
+  _doFindNearbyStore() {
+    if (this.data.storeLoading) return
+    this.setData({ storeLoading: true })
+
+    // 10 秒超时兜底：防止定位接口永不回调
+    const timeoutId = setTimeout(() => {
+      this.setData({ storeLoading: false })
+      this.showToast('定位超时，请重试')
+    }, 10000)
+
+    const clearTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+
+    const onSuccess = (res) => {
+      clearTimer()
+      const latitude = res.latitude
+      const longitude = res.longitude
+      app.globalData.latitude = latitude
+      app.globalData.longitude = longitude
+      this._lastUserLat = latitude
+      this._lastUserLng = longitude
+      wx.setStorageSync('location_prompt_done', true)
+      wx.setStorageSync('location_permission_done', true)
+
+      if (this.data.storesData && this.data.storesData.length > 0) {
+        this.processStore(this.data.storesData, latitude, longitude)
+      } else {
+        this.setData({ storeInfo: STORE.DEFAULT_STORE })
+      }
+      this.requestStoreLocation(latitude, longitude)
+      this.setData({ storeLoading: false })
+    }
+
+    const onFail = (err) => {
+      clearTimer()
+      this.setData({ storeLoading: false })
+      const errMsg = (err && err.errMsg) || ''
+      if (errMsg.includes('system permission denied') || errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('location unavailable')) {
+        this._showLocationServiceModal()
+      } else {
+        this.showToast('定位失败，请检查位置权限')
+      }
+    }
+
+    // 先检查授权状态，未授权则引导用户开启
+    const doGetLocation = () => {
+      if (typeof wx.getFuzzyLocation === 'function') {
+        let handled = false
+        wx.getFuzzyLocation({
+          type: 'gcj02',
+          success: (res) => {
+            handled = true
+            onSuccess(res)
+          },
+          fail: (err) => {
+            handled = true
+            onFail(err)
+          },
+          complete: () => {
+            if (!handled) {
+              onFail({ errMsg: '定位接口未响应' })
+            }
+          }
+        })
+      } else {
+        onFail({ errMsg: '基础库不支持 wx.getFuzzyLocation' })
+      }
+    }
+
+    wx.getSetting({
+      success: (res) => {
+        if (res.authSetting['scope.userFuzzyLocation'] || res.authSetting['scope.userLocation']) {
+          // 已授权，直接定位
+          doGetLocation()
+        } else {
+          // 未授权：用 wx.authorize 直接触发系统授权弹窗
+          wx.authorize({
+            scope: 'scope.userFuzzyLocation',
+            success: () => {
+              doGetLocation()
+            },
+            fail: (err) => {
+              clearTimer()
+              this.setData({ storeLoading: false })
+              const errMsg = (err && err.errMsg) || ''
+              if (errMsg.includes('system permission denied') || errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('location unavailable')) {
+                this._showLocationServiceModal()
+              } else {
+                // 用户拒绝授权：提示后可打开设置页
+                wx.showModal({
+                  title: '需要位置权限',
+                  content: '需要获取您的位置才能查找附近门店，是否前往设置开启？',
+                  confirmText: '去设置',
+                  cancelText: '取消',
+                  success: (modalRes) => {
+                    if (modalRes.confirm && typeof wx.openSetting === 'function') {
+                      wx.openSetting()
+                    }
+                  }
+                })
+              }
+            }
+          })
+        }
+      },
+      fail: () => {
+        // getSetting 失败，尝试直接定位
+        doGetLocation()
+      }
+    })
+  },
+
   fetchLocationAndStores() {
     const app = getApp()
+
+    // 诊断日志：用户位置/门店数据状态摘要（vConsole 排查用）
+    const storesData = this.data.storesData
+    console.log('[home] globalLocation ->', {
+      hasUserLocation: typeof app.globalData.latitude === 'number' && typeof app.globalData.longitude === 'number',
+      hasStores: Array.isArray(storesData) && storesData.length > 0,
+      storesWithCoords: Array.isArray(storesData) ? storesData.filter(s => s && s.latitude && s.longitude).length : 0
+    })
 
     // 处理 success 后的业务逻辑（共用）
     const onLocationSuccess = (locationRes) => {
@@ -1133,6 +1454,9 @@ Page({
       const longitude = locationRes.longitude
       app.globalData.latitude = latitude
       app.globalData.longitude = longitude
+      // 缓存到 page 实例（供 _fallbackStoreToLocal 兜底使用，不走 setData）
+      this._lastUserLat = latitude
+      this._lastUserLng = longitude
       wx.setStorageSync('location_permission_done', true)
       this.requestStoreLocation(latitude, longitude)
       // 同步重算 processStore：保证 storeInfo 立即有距离（不依赖异步后端）
@@ -1153,32 +1477,33 @@ Page({
       this.loadHomeData()
     }
 
-    // 优先使用 wx.getFuzzyLocation（基础库 2.25.0+，申请门槛低）
+    // 仅使用 wx.getFuzzyLocation（app.json 的 requiredPrivateInfos 只声明了它，
+    // 模糊定位与精确位置互斥不能共存，因此不再 fallback 精确位置接口）。
+    // 模糊定位精度约 1km，用于「最近门店距离展示」足够。
     if (typeof wx.getFuzzyLocation === 'function') {
-      let fuzzyHandled = false
+      let handled = false
       wx.getFuzzyLocation({
         type: 'gcj02',
         success: (res) => {
-          fuzzyHandled = true
+          handled = true
           console.log('[home] getFuzzyLocation success ->', res)
           onLocationSuccess(res)
         },
         fail: (err) => {
-          fuzzyHandled = true
-          console.warn('[home] getFuzzyLocation fail, fallback to getLocation ->', err)
-          // 兜底调 wx.getLocation
-          this._fallbackGetLocation(onLocationSuccess, onLocationFail)
+          handled = true
+          console.warn('[home] getFuzzyLocation fail ->', err)
+          onLocationFail()
         },
         complete: () => {
-          if (!fuzzyHandled) {
-            console.warn('[home] getFuzzyLocation complete without success/fail, fallback to getLocation')
-            this._fallbackGetLocation(onLocationSuccess, onLocationFail)
+          if (!handled) {
+            console.warn('[home] getFuzzyLocation complete without success/fail')
+            onLocationFail()
           }
         }
       })
     } else {
-      // 旧版基础库：直接走 wx.getLocation
-      this._fallbackGetLocation(onLocationSuccess, onLocationFail)
+      // 旧版基础库无 getFuzzyLocation：提示失败（不再用未声明的精确位置接口）
+      onLocationFail()
     }
   },
 
@@ -1224,30 +1549,6 @@ Page({
   },
 
   /**
-   * 兜底调用 wx.getLocation（带 handled 标志位 + complete 回调）
-   */
-  _fallbackGetLocation(onSuccess, onFail) {
-    let handled = false
-    wx.getLocation({
-      type: 'gcj02',
-      success: (locationRes) => {
-        handled = true
-        onSuccess(locationRes)
-      },
-      fail: () => {
-        handled = true
-        onFail()
-      },
-      complete: () => {
-        if (!handled) {
-          console.warn('[home] wx.getLocation complete without success/fail')
-          onFail()
-        }
-      }
-    })
-  },
-
-  /**
    * 悬浮客服按钮点击事件（open-type="contact" 会自动跳转到微信原生客服，
    * bindcontact 用于接收用户发送消息的回調，仅用于日誌記錄）
    */
@@ -1274,61 +1575,6 @@ Page({
 
   navigateToLogin() {
     wx.navigateTo({ url: '/pages/login/login?redirect=' + encodeURIComponent('/pages/index/index') })
-  },
-
-  toggleLocationCheck() {
-    this.setData({ locationSheetChecked: !this.data.locationSheetChecked })
-  },
-
-  onLocationDeny() {
-    this.setData({ showLocationSheet: false, locationAgreed: false, locationSheetChecked: false })
-    wx.setStorageSync('location_prompt_done', true)
-    wx.setStorageSync('location_permission_done', true)
-    const token = wx.getStorageSync('token')
-    this.loadHomeData()
-  },
-
-  onLocationAllow() { 
-    if (!this.data.locationSheetChecked) {
-      this.showToast('请先勾选并阅读隐私协议')
-      return
-    }
-    this.setData({ showLocationSheet: false, locationAgreed: true })
-    wx.setStorageSync('location_prompt_done', true)
-    wx.authorize({
-      scope: 'scope.userFuzzyLocation',
-      success: () => {
-        this.fetchLocationAndStores()
-        const token = wx.getStorageSync('token')
-        if (!token) this.loadHomeData()
-        else this.loadHomeData()
-      },
-      fail: (err) => {
-        const errMsg = err.errMsg || ''
-        if (errMsg.includes('ERROR_NOCELL&WIFI_LOCATIONSWITCHOFF') || errMsg.includes('system permission denied') || errMsg.includes('location unavailable')) {
-          this._showLocationServiceModal()
-        }
-        wx.setStorageSync('location_permission_done', true)
-        const token = wx.getStorageSync('token')
-        if (!token) this.loadHomeData()
-        else this.loadHomeData()
-      }
-    })
-  },
-
-  onPrivacyDeny() {
-    this.setData({ showPrivacySheet: false })
-    wx.setStorageSync('privacy_permission_done', true)
-    wx.showToast({ title: '部分功能可能无法使用', icon: 'none' })
-    const token = wx.getStorageSync('token')
-    this.loadHomeData()
-  },
-
-  onPrivacyAgree() {
-    wx.setStorageSync('privacy_permission_done', true)
-    this.setData({ showPrivacySheet: false, privacyAgreed: true })
-    const token = wx.getStorageSync('token')
-    this.loadHomeData()
   },
 
   requireLogin(targetUrl) {

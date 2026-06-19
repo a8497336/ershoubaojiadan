@@ -95,6 +95,26 @@
     </el-dialog>
 
     <el-dialog v-model="trendVisible" :title="trendProduct.name + ' - 价格趋势'" width="700px" destroy-on-close>
+      <!-- Product summary -->
+      <div class="trend-summary" v-if="trendSummary">
+        <div class="trend-summary-row">
+          <span class="trend-label">品牌：</span>
+          <span>{{ trendProduct.Brand?.name || '--' }}</span>
+          <span class="trend-label" style="margin-left: 16px;">型号：</span>
+          <span>{{ trendProduct.model || trendProduct.name || '--' }}</span>
+        </div>
+        <div class="trend-summary-row">
+          <span class="trend-label">当前最高价：</span>
+          <span class="trend-price-up">¥{{ trendSummary.maxPrice }}</span>
+          <span class="trend-label" style="margin-left: 16px;">当前最低价：</span>
+          <span class="trend-price-down">¥{{ trendSummary.minPrice }}</span>
+          <span class="trend-label" style="margin-left: 16px;">较昨日：</span>
+          <span :class="trendSummary.priceChange >= 0 ? 'trend-price-up' : 'trend-price-down'">
+            {{ trendSummary.priceChange >= 0 ? '+' : '' }}{{ trendSummary.priceChange }}
+            ({{ trendSummary.priceChangePercent }}%)
+          </span>
+        </div>
+      </div>
       <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
         <span style="font-size: 14px; color: #666;">时间范围：</span>
         <el-radio-group v-model="trendDays" @change="loadTrendData">
@@ -103,7 +123,10 @@
           <el-radio-button :value="30">30天</el-radio-button>
         </el-radio-group>
       </div>
-      <div ref="trendChartRef" style="width: 100%; height: 400px;"></div>
+      <div ref="trendChartRef" style="width: 100%; height: 400px;" v-show="trendHasData"></div>
+      <div v-if="!trendHasData && !trendLoading" style="width: 100%; height: 400px; display: flex; align-items: center; justify-content: center; color: #909399; font-size: 14px;">
+        暂无价格趋势数据
+      </div>
       <div v-if="trendLoading" v-loading="true" style="height: 400px;"></div>
     </el-dialog>
   </div>
@@ -193,12 +216,12 @@ const loadData = async () => {
 const loadBaseData = async () => {
   const [condRes, brandRes, productRes] = await Promise.all([
     getConditions(),
-    getBrands({ pageSize: 200 }),
-    getProducts({ pageSize: 500 })
+    getBrands({ pageSize: 500 }),
+    getProducts()
   ])
   conditions.value = condRes.data
-  brands.value = brandRes.data.list
-  allProducts.value = productRes.data.list
+  brands.value = Array.isArray(brandRes.data) ? brandRes.data : (brandRes.data.list || [])
+  allProducts.value = Array.isArray(productRes.data) ? productRes.data : (productRes.data.list || [])
 }
 
 const handleFilterChange = () => {
@@ -372,6 +395,8 @@ const trendVisible = ref(false)
 const trendProduct = ref({ name: '' })
 const trendDays = ref(15)
 const trendLoading = ref(false)
+const trendSummary = ref(null)
+const trendHasData = ref(false)
 const trendChartRef = ref(null)
 let trendChartInstance = null
 
@@ -390,9 +415,14 @@ const loadTrendData = async () => {
   try {
     const res = await getPriceTrend(trendProduct.value.id, { days: trendDays.value })
     const data = res.data
-    renderTrendChart(data)
+    trendSummary.value = data.summary || null
+    trendHasData.value = data.trendData && data.trendData.length > 0
+    if (trendHasData.value) {
+      renderTrendChart(data)
+    }
   } catch (error) {
     ElMessage.error('加载趋势数据失败')
+    trendHasData.value = false
   } finally {
     trendLoading.value = false
   }
@@ -438,5 +468,29 @@ onMounted(async () => {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+.trend-summary {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.trend-summary-row {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #333;
+  line-height: 2;
+}
+.trend-label {
+  color: #909399;
+}
+.trend-price-up {
+  color: #f56c6c;
+  font-weight: 600;
+}
+.trend-price-down {
+  color: #67c23a;
+  font-weight: 600;
 }
 </style>

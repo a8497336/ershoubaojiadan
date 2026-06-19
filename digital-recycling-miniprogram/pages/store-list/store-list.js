@@ -33,21 +33,38 @@ Page({
   },
 
   fetchLocation() {
-    wx.getLocation({
-      type: 'gcj02',
-      success: (res) => {
-        const lat = Number(res.latitude)
-        const lng = Number(res.longitude)
-        if (!isNaN(lat) && !isNaN(lng)) {
-          this._userLat = lat
-          this._userLng = lng
-          this._applyDistancesAndSort()
-        }
-      },
-      fail: () => {
-        // 定位失败不阻塞，列表保持原序
+    // 仅使用 wx.getFuzzyLocation（app.json 的 requiredPrivateInfos 只声明了它，
+    // 模糊定位与精确位置互斥不能共存）
+    const onSuccess = (res) => {
+      const lat = Number(res.latitude)
+      const lng = Number(res.longitude)
+      if (!isNaN(lat) && !isNaN(lng)) {
+        this._userLat = lat
+        this._userLng = lng
+        this._applyDistancesAndSort()
       }
-    })
+    }
+    const onFail = (err) => {
+      // 定位失败不阻塞，列表保持原序
+      console.warn('[store-list] 定位失败，列表按原序展示 ->', err && err.errMsg)
+    }
+
+    if (typeof wx.getFuzzyLocation === 'function') {
+      let handled = false
+      wx.getFuzzyLocation({
+        type: 'gcj02',
+        success: (res) => { handled = true; onSuccess(res) },
+        fail: (err) => { handled = true; onFail(err) },
+        complete: () => {
+          if (!handled) {
+            console.warn('[store-list] getFuzzyLocation complete without success/fail')
+            onFail({ errMsg: 'getFuzzyLocation complete without success/fail' })
+          }
+        }
+      })
+    } else {
+      onFail({ errMsg: '基础库不支持 wx.getFuzzyLocation' })
+    }
   },
 
   _applyDistancesAndSort() {

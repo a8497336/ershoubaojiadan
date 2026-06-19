@@ -84,8 +84,6 @@ const db = require('../../models')
 const { Op } = require('sequelize')
 const iconv = require('iconv-lite')
 
-const MAX_SKIPPED_NAMES = 50
-
 const BRAND_STYLE_MAP = {
   '热门老年机': { icon_text: '老年', bg_color: 'bg-xiaomi' },
   '智能机/电容屏': { icon_text: '智能', bg_color: 'bg-apple' },
@@ -135,7 +133,6 @@ const BRAND_STYLE_MAP = {
 const HEADER_KEYWORDS = ['开机屏好', '开机屏坏', '不开机', '废板']
 const SKIP_COLUMNS = ['网络型号', '序号', '备注']
 const NO_SERIES_MARKERS = ['型号', '序号']
-const SERIES_COLUMN_PATTERN = /^[A-Za-z][\u4e00-\u9fa5]+列$/
 
 const SERIES_INFER_MAP = {
   'One': 'One系列',
@@ -306,35 +303,32 @@ function parseHeaderRow(row) {
   const conditions = []
   let hasModelCode = false
   let modelCodeColIndex = -1
-  let productNameColIndex = 0
+  let productNameColOffset = 0
 
   for (let i = 0; i < row.length; i++) {
     const val = cleanStr(row[i])
     if (!val) continue
     if (SKIP_COLUMNS.includes(val)) {
       if (val === '网络型号') { hasModelCode = true; modelCodeColIndex = i }
+      if (val === '序号' && i === 0) { productNameColOffset = 1 }
       continue
     }
     if (i === 0) {
-      if (NO_SERIES_MARKERS.includes(val)) {
-        seriesName = null
-      } else if (SERIES_COLUMN_PATTERN.test(val)) {
-        seriesName = val
-        productNameColIndex = i
-      } else {
-        seriesName = val
-        productNameColIndex = i
-      }
+      seriesName = NO_SERIES_MARKERS.includes(val) ? null : val
       continue
     }
-    if (SERIES_COLUMN_PATTERN.test(val) && !seriesName) {
+    if (productNameColOffset === 1 && i === 1) {
+      if (val === '型号' || val === '系列') continue
+      if (HEADER_KEYWORDS.some(kw => val.includes(kw))) {
+        conditions.push({ name: val, colIndex: i })
+        continue
+      }
       seriesName = val
-      productNameColIndex = i
       continue
     }
     conditions.push({ name: val, colIndex: i })
   }
-  return { seriesName, conditions, hasModelCode, modelCodeColIndex, productNameColIndex }
+  return { seriesName, conditions, hasModelCode, modelCodeColIndex, productNameColOffset }
 }
 
 function parsePrice(val) {
@@ -456,93 +450,6 @@ router.delete('/:id', adminAuth, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-router.post('/preview', adminAuth, importUpload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return error(res, '请选择文件', 422, 422)
-    }
-    const originalBuffer = req.file.buffer
-    let wb
-    try {
-      wb = XLSX.read(originalBuffer, { type: 'buffer' })
-    } catch (xlsxErr) {
-      const converted = await convertToStandardXLSX(originalBuffer)
-      if (converted) {
-        wb = XLSX.read(converted, { type: 'buffer' })
-      } else {
-        return error(res, '文件格式无效或已损坏，请重新保存为标准Excel文件后重试', 422, 422)
-      }
-    }
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
-    if (data.length < 8) {
-      return error(res, '文件中未找到有效数据（数据行不足）', 422, 422)
-    }
-    let brandName = extractBrandName(req.file.originalname)
-    if (!brandName) {
-      brandName = extractBrandFromExcelContent(data)
-    }
-    if (brandName && !BRAND_STYLE_MAP[brandName]) {
-      const corrected = extractBrandFromExcelContent(data)
-      if (corrected && BRAND_STYLE_MAP[corrected]) brandName = corrected
-    }
-    let currentSeries = null
-    let hasModelCode = false
-    let modelCodeColIndex = -1
-    let productNameColIndex = 0
-    const willSkip = []
-    for (let i = 7; i < data.length; i++) {
-      const row = data[i]
-      if (!row || row.length === 0) continue
-      if (isHeaderRow(row)) {
-        const parsed = parseHeaderRow(row)
-        currentSeries = parsed.seriesName
-        hasModelCode = parsed.hasModelCode
-        modelCodeColIndex = parsed.modelCodeColIndex
-        productNameColIndex = parsed.productNameColIndex
-        continue
-      }
-      let productName = ''
-      if (hasModelCode) {
-        productName = cleanStr(row[productNameColIndex] != null ? row[productNameColIndex] : row[0])
-      } else {
-        const sourceVal = productNameColIndex > 0 && row[productNameColIndex] != null
-          ? row[productNameColIndex]
-          : row[0]
-        productName = cleanStr(sourceVal)
-      }
-      if (!productName) continue
-      if (!isValidProductName(productName)) {
-        willSkip.push({ rowIndex: i, name: productName, reason: 'invalid_name' })
-        continue
-      }
-      const descriptionKeywords = [
-        '所有', '备注', '提示', '须知', '注意', '说明', '声明', '联系', '免责',
-        '欢迎', '免责声明', '温馨提示', '特别提示', '平台', '公司', '倡议', '坚持', '统一',
-        '愿各位', '早日突围', '突围', '打造', '共同', '回收', '兄弟们', '一起', '套路', '公平', '公正', '公开',
-        '炸弹机', '芯片', '缺失', '更换', '外观', '正常', '价格', '不满意', '货物', '交易',
-        '远离', '核算', '深圳', '行情', '一机一价', '参考', '让我们', '回收价格', '报价参考',
-        '诚信', '经营', '合作', '共赢'
-      ]
-      const hasKeyword = descriptionKeywords.some(kw => productName.includes(kw))
-      const pureChineseOnly = /^[\u4e00-\u9fa5]+$/.test(productName)
-      const isTooLongPureChinese = pureChineseOnly && productName.length > 4
-      if (hasKeyword || isTooLongPureChinese) {
-        willSkip.push({ rowIndex: i, name: productName.substring(0, 50), reason: 'description_text' })
-      }
-    }
-    return success(res, {
-      brandName: brandName,
-      willSkip: willSkip.slice(0, 50)
-    }, '预览成功')
-  } catch (err) {
-    if (err.message && err.message.includes('仅支持')) {
-      return error(res, err.message, 422, 422)
-    }
-    next(err)
-  }
-})
-
 router.post('/import', adminAuth, importUpload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -607,7 +514,7 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       return error(res, `品牌名 "${brandName}" 为乱码或无效，已跳过导入`, 400, 400)
     }
 
-    const stats = { brands: 1, products: 0, productsUpdated: 0, conditions: 0, prices: 0, skippedRows: 0, skippedNames: [] }
+    const stats = { brands: 1, products: 0, productsUpdated: 0, conditions: 0, prices: 0, skippedRows: 0 }
 
     // ===== Phase 1: 批量预加载现有产品和价格 =====
     const existingProducts = await db.Product.findAll({ where: { brand_id: brand.id } })
@@ -634,7 +541,7 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     let currentConditions = []
     let hasModelCode = false
     let modelCodeColIndex = -1
-    let productNameColIndex = 0
+    let productNameColOffset = 0
     let productSortOrder = 0
     let conditionSortOrder = 0
     const conditionCache = {}
@@ -649,7 +556,7 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
         currentConditions = parsed.conditions
         hasModelCode = parsed.hasModelCode
         modelCodeColIndex = parsed.modelCodeColIndex
-        productNameColIndex = parsed.productNameColIndex
+        productNameColOffset = parsed.productNameColOffset || 0
         continue
       }
 
@@ -657,22 +564,20 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
 
       let productName = ''
       let modelCode = ''
-      let nameColIndex = productNameColIndex
+      let nameColIndex = 0
 
       if (hasModelCode) {
-        productName = cleanStr(row[productNameColIndex] != null ? row[productNameColIndex] : row[0])
+        productName = cleanStr(row[productNameColOffset])
         modelCode = cleanStr(row[modelCodeColIndex])
       } else {
-        const sourceVal = productNameColIndex > 0 && row[productNameColIndex] != null
-          ? row[productNameColIndex]
-          : row[0]
-        const firstVal = cleanStr(sourceVal)
-        if (/^\d+$/.test(firstVal) && productNameColIndex === 0) {
+        const firstVal = cleanStr(row[productNameColOffset])
+        // 纯数字就是产品名（如1107、1105、1100），直接作为产品名
+        if (/^\d+$/.test(firstVal)) {
           productName = firstVal
           nameColIndex = 0
         } else {
           productName = firstVal
-          nameColIndex = productNameColIndex
+          nameColIndex = 0
         }
       }
 
@@ -681,9 +586,6 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       if (!isValidProductName(productName)) {
         console.log(`  跳过无效的产品名: ${productName}`)
         stats.skippedRows++
-        if (stats.skippedNames.length < MAX_SKIPPED_NAMES) {
-          stats.skippedNames.push({ rowIndex: i, name: productName, reason: 'invalid_name' })
-        }
         continue
       }
 
@@ -697,13 +599,10 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       ]
       const hasKeyword = descriptionKeywords.some(kw => productName.includes(kw))
       const pureChineseOnly = /^[\u4e00-\u9fa5]+$/.test(productName)
-      const isTooLongPureChinese = pureChineseOnly && productName.length > 4
+      const isTooLongPureChinese = pureChineseOnly && productName.length > 6
 
       if (hasKeyword || isTooLongPureChinese) {
         console.log(`  Skipping description text: ${productName.substring(0, 40)}`)
-        if (stats.skippedNames.length < MAX_SKIPPED_NAMES) {
-          stats.skippedNames.push({ rowIndex: i, name: productName.substring(0, 50), reason: 'description_text' })
-        }
         continue
       }
 
@@ -825,9 +724,163 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
       productsUpdated: stats.productsUpdated,
       conditions: stats.conditions,
       prices: stats.prices,
-      skippedRows: stats.skippedRows,
-      skippedNames: stats.skippedNames
+      skippedRows: stats.skippedRows
     }, '导入成功')
+  } catch (err) {
+    if (err.message && err.message.includes('仅支持')) {
+      return error(res, err.message, 422, 422)
+    }
+    next(err)
+  }
+})
+
+router.post('/preview', adminAuth, importUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return error(res, '请选择文件', 422, 422)
+    }
+
+    let wb
+    try {
+      wb = XLSX.read(req.file.buffer, { type: 'buffer' })
+    } catch (xlsxErr) {
+      console.log(`  ⚠️ XLSX标准解析失败: ${xlsxErr.message}`)
+      console.log('  ⚠️ 文件非标准XLSX，尝试转换格式...')
+      const converted = await convertToStandardXLSX(req.file.buffer)
+      if (converted) {
+        try {
+          wb = XLSX.read(converted, { type: 'buffer' })
+          console.log('  ✓ 转换后解析成功')
+        } catch (e2) {
+          return error(res, '文件格式无效或已损坏', 422, 422)
+        }
+      } else {
+        return error(res, '文件格式无效或已损坏', 422, 422)
+      }
+    }
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1 })
+
+    if (data.length < 8) {
+      return error(res, '文件中未找到有效数据（数据行不足）', 422, 422)
+    }
+
+    let brandName = extractBrandName(req.file.originalname)
+
+    if (!brandName) {
+      console.log('  ⚠️ 从文件名无法提取品牌名，尝试从Excel内容匹配...')
+      brandName = extractBrandFromExcelContent(data)
+      if (brandName) {
+        console.log(`  ✓ 从Excel内容匹配到品牌: "${brandName}"`)
+      }
+    }
+
+    if (brandName && !BRAND_STYLE_MAP[brandName]) {
+      console.log(`  ⚠️ 品牌名 "${brandName}" 不在预定义列表中，尝试从Excel内容校正...`)
+      const correctedName = extractBrandFromExcelContent(data)
+      if (correctedName && BRAND_STYLE_MAP[correctedName]) {
+        console.log(`  ✓ 从Excel内容校正品牌: "${brandName}" → "${correctedName}"`)
+        brandName = correctedName
+      }
+    }
+
+    if (!brandName) {
+      return error(res, '无法从文件名或Excel内容中识别品牌，请检查文件格式', 400, 400)
+    }
+
+    // 查找品牌（不创建，仅查询）
+    const brand = await db.Brand.findOne({ where: { name: brandName } })
+
+    // 查询已有产品，构建产品名集合
+    let productNameSet = new Set()
+    if (brand) {
+      const existingProducts = await db.Product.findAll({ where: { brand_id: brand.id } })
+      productNameSet = new Set(existingProducts.map(p => p.name))
+    }
+
+    const willSkip = []
+    let productsCount = 0
+    let productsUpdatedCount = 0
+    let pricesCount = 0
+    const seenNewNames = new Set()
+
+    let currentSeries = null
+    let currentConditions = []
+    let hasModelCode = false
+    let modelCodeColIndex = -1
+    let productNameColOffset = 0
+
+    const descriptionKeywords = [
+      '所有', '备注', '提示', '须知', '注意', '说明', '声明', '联系', '免责',
+      '欢迎', '免责声明', '温馨提示', '特别提示', '平台', '公司', '倡议', '坚持', '统一',
+      '愿各位', '早日突围', '突围', '打造', '共同', '回收', '兄弟们', '一起', '套路', '公平', '公正', '公开',
+      '炸弹机', '芯片', '缺失', '更换', '外观', '正常', '价格', '不满意', '货物', '交易',
+      '远离', '核算', '深圳', '行情', '一机一价', '参考', '让我们', '回收价格', '报价参考',
+      '诚信', '经营', '合作', '共赢'
+    ]
+
+    for (let i = 7; i < data.length; i++) {
+      const row = data[i]
+      if (!row || row.length === 0) continue
+
+      if (isHeaderRow(row)) {
+        const parsed = parseHeaderRow(row)
+        currentSeries = parsed.seriesName
+        currentConditions = parsed.conditions
+        hasModelCode = parsed.hasModelCode
+        modelCodeColIndex = parsed.modelCodeColIndex
+        productNameColOffset = parsed.productNameColOffset || 0
+        continue
+      }
+
+      if (currentConditions.length === 0) continue
+
+      const productName = cleanStr(row[productNameColOffset])
+
+      if (!productName) {
+        willSkip.push({ rowIndex: i + 1, name: '', reason: '空产品名' })
+        continue
+      }
+
+      if (!isValidProductName(productName)) {
+        willSkip.push({ rowIndex: i + 1, name: productName, reason: '乱码或无效' })
+        continue
+      }
+
+      const hasKeyword = descriptionKeywords.some(kw => productName.includes(kw))
+      const pureChineseOnly = /^[\u4e00-\u9fa5]+$/.test(productName)
+      const isTooLongPureChinese = pureChineseOnly && productName.length > 6
+
+      if (hasKeyword || isTooLongPureChinese) {
+        willSkip.push({ rowIndex: i + 1, name: productName, reason: '描述文本' })
+        continue
+      }
+
+      // 统计价格条数
+      for (const cond of currentConditions) {
+        const rawVal = row[cond.colIndex]
+        const priceVal = parsePrice(rawVal)
+        if (priceVal !== null) {
+          pricesCount++
+        }
+      }
+
+      // 统计产品：已存在 vs 新名称
+      if (productNameSet.has(productName)) {
+        productsUpdatedCount++
+      } else if (!seenNewNames.has(productName)) {
+        seenNewNames.add(productName)
+        productsCount++
+      }
+    }
+
+    return success(res, {
+      brandName,
+      willSkip,
+      products: productsCount,
+      productsUpdated: productsUpdatedCount,
+      prices: pricesCount
+    }, '预览成功')
   } catch (err) {
     if (err.message && err.message.includes('仅支持')) {
       return error(res, err.message, 422, 422)
@@ -844,18 +897,29 @@ function isGarbledText(text) {
 
 function hasValidChinese(text) {
   if (!text) return false
-  return /[a-zA-Z0-9\u4e00-\u9fa5]/.test(text)
+  
+  // 如果只包含数字和字母（如"360"、"TCL"），认为是有效的
+  if (/^[a-zA-Z0-9]+$/.test(text)) {
+    return true
+  }
+  
+  // 检查是否包含有效中文
+  const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
+  const totalChars = text.replace(/[\x00-\u1F]/g, '').length
+  return totalChars > 0 && chineseChars / totalChars > 0.1
 }
 
 function isValidProductName(productName) {
   if (!productName) return false
-  // 长度上限：防止描述性长文本混入
-  if (productName.length > 50) return false
-  // 必须包含至少一个字母 / 数字 / 中文
-  if (!/[a-zA-Z0-9\u4e00-\u9fa5]/.test(productName)) return false
-  // 排除明显乱码（连续高字节无意义字符）
-  if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(productName)) return false
-  return true
+  
+  // 如果只包含字母、数字、空格、括号、连字符（如"N6 Pro"、"N7 Lite"、"Q30"），认为是有效的
+  if (/^[a-zA-Z0-9\s\(\)\-\/\.\+]+$/.test(productName)) {
+    return true
+  }
+  
+  const chineseChars = (productName.match(/[\u4e00-\u9fa5]/g) || []).length
+  const totalChars = productName.replace(/[\x00-\u1F]/g, '').length
+  return totalChars > 0 && chineseChars / totalChars > 0.1
 }
 
 function cleanGarbledData(data) {
