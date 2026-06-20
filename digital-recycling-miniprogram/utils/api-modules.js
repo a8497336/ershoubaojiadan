@@ -80,8 +80,9 @@ const orderApi = {
 const membershipApi = {
   getPlans: () => request({ url: '/membership/plans' }),
   getStatus: () => request({ url: '/membership/status' }),
-  purchase: (planId) => request({ url: '/membership/purchase', method: 'POST', data: { plan_id: planId } }),
-  payCallback: (orderNo) => request({ url: '/membership/pay-callback', method: 'POST', data: { order_no: orderNo } })
+  purchase: (planId) => request({ url: '/membership/purchase', method: 'POST', data: { plan_id: planId } })
+  // payCallback 已移除 — 改用微信小程序虚拟支付 wx.requestVirtualPayment
+  // 真实支付回调由后端 /api/membership/virtual-pay-notify 接收
 }
 
 const walletApi = {

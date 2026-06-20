@@ -36,6 +36,11 @@ module.exports = (sequelize, DataTypes) => {
     status: {
       type: DataTypes.TINYINT,
       defaultValue: 1
+    },
+    product_id: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      comment: '微信小程序虚拟支付商品 ID(从 MP 后台虚拟支付 → 商品管理获取)'
     }
   }, {
     tableName: 'membership_plans',

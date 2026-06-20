@@ -1223,6 +1223,7 @@ Page({
 
   copyWechat(e) {
     const wxid = e ? (e.currentTarget.dataset.wxid || '') : (this.data.storeInfo ? (this.data.storeInfo.wechat || CONTACT.WECHAT_ID) : CONTACT.WECHAT_ID)
+    debugger
     if (!wxid) { this.showToast('暂无内容'); return }
     wx.setClipboardData({ data: wxid, success: () => this.showToast('微信号已复制') })
   },

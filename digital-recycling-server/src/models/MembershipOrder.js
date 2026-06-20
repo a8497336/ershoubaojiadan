@@ -36,6 +36,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     end_date: {
       type: DataTypes.DATEONLY
+    },
+    transaction_id: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      comment: '微信支付订单号(由微信虚拟支付回调写入,用于对账)'
     }
   }, {
     tableName: 'membership_orders',

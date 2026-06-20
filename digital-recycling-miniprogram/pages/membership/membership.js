@@ -55,25 +55,44 @@ Page({
   },
 
   doPurchase(planId) {
+    if (typeof wx.requestVirtualPayment !== 'function') {
+      wx.showModal({
+        title: '请升级微信',
+        content: '当前微信版本不支持虚拟支付,请升级到最新版本后再试',
+        showCancel: false
+      })
+      return
+    }
+
     wx.showLoading({ title: '创建订单...' })
     membershipApi.purchase(planId).then((res) => {
       wx.hideLoading()
       const data = res.data || res
-      const orderNo = data.orderNo
-      wx.showModal({
-        title: '订单已创建',
-        content: '订单号：' + orderNo + '\n金额：¥' + data.amount,
-        confirmText: '模拟支付',
-        cancelText: '稍后支付',
-        success: (modalRes) => {
-          if (modalRes.confirm) {
-            membershipApi.payCallback(orderNo).then(() => {
-              wx.showToast({ title: '支付成功', icon: 'success' })
-              this.loadUserInfo()
-            }).catch(() => {
-              wx.showToast({ title: '支付失败', icon: 'none' })
-            })
+      if (!data.signData) {
+        wx.showToast({ title: '订单数据异常,稍后重试', icon: 'none' })
+        return
+      }
+      // 后端返回 { mode, signData, orderNo, amount, planName, productId }
+      wx.requestVirtualPayment({
+        signData: data.signData,
+        mode: data.mode || 'long_series_goods',
+        success: (payRes) => {
+          // payRes.errMsg === 'requestVirtualPayment:ok'
+          wx.showToast({ title: '支付成功', icon: 'success' })
+          this.loadUserInfo()
+        },
+        fail: (payErr) => {
+          // payErr.errMsg: 'requestVirtualPayment:fail cancel' / 'fail ...'
+          const errMsg = (payErr && payErr.errMsg) || '未知错误'
+          if (errMsg.includes('cancel')) {
+            // 用户主动取消,不弹错误
+            return
           }
+          wx.showToast({ title: '支付失败：' + errMsg, icon: 'none' })
+        },
+        complete: () => {
+          // 无论成功失败都重新加载用户信息(后端回调可能延迟到达)
+          this.loadUserInfo()
         }
       })
     }).catch((err) => {

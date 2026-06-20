@@ -4,6 +4,129 @@
 
 ## 2026-06-19
 
+### hotfix-add-membership-virtual-pay-columns — 修复生产环境 `Unknown column 'product_id' in 'field list'` 错误
+
+#### 问题
+
+生产环境访问 `https://wx.lydzhsw.com/api/membership/plans` 报错:
+```json
+{"code":500,"message":"Unknown column 'product_id' in 'field list'","data":null,"timestamp":1781944340578}
+```
+
+#### 根因
+
+`membership-virtual-payment-integration` 改动中,在 Sequelize 模型 [MembershipPlan.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/models/MembershipPlan.js) / [MembershipOrder.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-server/src/models/MembershipOrder.js) 加了 `product_id` / `transaction_id` 字段,并配套写了迁移文件 [20260619-add-membership-virtual-pay-fields.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-server/migrations/20260619-add-membership-virtual-pay-fields.js),**但迁移未在生产数据库执行**,导致 Sequelize 在 `findAll/findByPk` 时找不到列。
+
+#### 修复
+
+通过 MySQL MCP 在生产环境直接执行 ALTER TABLE:
+
+```sql
+ALTER TABLE `membership_plans` 
+  ADD COLUMN `product_id` VARCHAR(64) NULL 
+  COMMENT '微信小程序虚拟支付商品 ID(从 MP 后台虚拟支付 → 商品管理获取)';
+
+ALTER TABLE `membership_orders` 
+  ADD COLUMN `transaction_id` VARCHAR(64) NULL 
+  COMMENT '微信支付订单号(由微信虚拟支付回调写入,用于对账)';
+```
+
+#### 验证
+
+执行后查 schema:
+- `membership_plans` 表末尾新增 `product_id` varchar(64) NULL ✅
+- `membership_orders` 表末尾新增 `transaction_id` varchar(64) NULL ✅
+- 访问 `https://wx.lydzhsw.com/api/membership/plans` 应恢复 200 正常返回套餐列表
+
+#### 经验教训
+
+- **Schema 变更前必跑迁移**:每次改 Sequelize 模型,务必同步执行 `npx sequelize-cli db:migrate`,并写入 CI/CD 部署流水线
+- **回退方案**:本次通过 MCP 直接 ALTER 是应急手段,正确流程应是部署流水线自动执行迁移
+- **回填数据**:本次新增字段均为 NULL,无需回填历史数据;后续在 MP 后台配好 `product_id` 后,需手动 UPDATE `membership_plans` 3 条记录
+
+#### 影响面
+
+- 仅生产数据库 schema 变更,无代码改动
+- `membership_plans` / `membership_orders` 表各加 1 个可空列
+- 不影响现有数据(无默认值约束)
+
+
+
+### membership-virtual-payment-integration — 接入微信小程序虚拟支付(会员中心)
+
+#### 关键问题
+
+[digital-recycling-miniprogram/pages/membership/membership.js#L57-L83](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/membership/membership.js#L57-L83) 原 `doPurchase` 用 `membershipApi.payCallback` 模拟支付成功,无法在生产环境使用,且不符合微信小程序发布对虚拟商品支付的合规要求。
+
+[digital-recycling-miniprogram/pages/membership/membership.wxml](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/membership/membership.wxml) 提供 3 个虚拟会员套餐(月度 ¥19.90 / 季度 ¥79.00 / 半年 ¥110.00),属于虚拟商品/服务,**必须接入官方「小程序虚拟支付」能力**(否则审核不通过)。
+
+官方文档:
+- 接用指引:[https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment.html](https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment.html)
+- 详情指引:[https://developers.weixin.qq.com/community/minihome/doc/00002cf077cd4810fee42f4b865c01](https://developers.weixin.qq.com/community/minihome/doc/00002cf077cd4810fee42f4b865c01)
+
+#### 修改范围
+
+**新增文件(4 个)**:
+- [digital-recycling-server/src/services/virtualPay.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/services/virtualPay.js) — 签名/验签工具(`signVirtualPayParams` / `verifyNotifySignature`,MD5 加密,字段按字母升序,末尾追加 `&key=<支付密钥>`)
+- [digital-recycling-server/src/config/virtualPay.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/config/virtualPay.js) — 加载 `WX_VIRTUAL_PAY_KEY` / `WX_VIRTUAL_PAY_NOTIFY_URL` / `WX_VIRTUAL_PAY_OFFER_ID`
+- [digital-recycling-server/migrations/20260619-add-membership-virtual-pay-fields.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/migrations/20260619-add-membership-virtual-pay-fields.js) — Sequelize CLI 数据库迁移,`membership_plans.product_id` + `membership_orders.transaction_id`
+- `.env.example` 追加 3 个配置项
+
+**修改文件(5 个)**:
+- [digital-recycling-miniprogram/pages/membership/membership.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/membership/membership.js) — `doPurchase` 改用 `wx.requestVirtualPayment({ signData, mode, success, fail, complete })`,增加基础库版本检查
+- [digital-recycling-miniprogram/utils/api-modules.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/utils/api-modules.js) — 删除 `membershipApi.payCallback`
+- [digital-recycling-server/src/routes/api/membership.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/routes/api/membership.js) — `/purchase` 改造(返回 signData) + 新增 `/virtual-pay-notify` + 删除 `/pay-callback`
+- [digital-recycling-server/src/models/MembershipPlan.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/models/MembershipPlan.js) — 新增 `product_id` 字段
+- [digital-recycling-server/src/models/MembershipOrder.js](file:///c:/Users%17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-server/src/models/MembershipOrder.js) — 新增 `transaction_id` 字段
+
+#### 行为变化
+
+| 场景 | 修复前 | 修复后 |
+|---|---|---|
+| 用户点「立即开通」 | 弹 modal "确认购买" + 创建订单 + 弹 "模拟支付" 二次确认 + 调 payCallback 模拟成功 | 弹 modal "确认购买" + 创建订单 + 调 `wx.requestVirtualPayment` 弹起微信原生支付面板 |
+| 支付成功 | 后端 `payCallback` 接收后开通会员 | 微信 → `/api/membership/virtual-pay-notify` → 后端验签 → 开通会员 + 写入 `transaction_id` |
+| 支付失败/取消 | 弹 toast "支付失败" | errMsg 含 "cancel" 时静默;其他失败弹 toast |
+| 重复购买 | 已有会员的按钮显示「已开通」disabled | 不变 |
+
+#### 兼容性
+
+- 基础库 < 2.19.0 时 `wx.requestVirtualPayment` 不存在,前端会弹「请升级微信」modal
+- 数据库迁移由 Sequelize CLI 执行,可回滚(`down` 方法)
+- 会员中心 UI (`membership.wxml` / `membership.wxss`) 完全不变
+
+#### 验证
+
+- `node --check digital-recycling-miniprogram/pages/membership/membership.js` exit 0 ✅
+- `node --check digital-recycling-miniprogram/utils/api-modules.js` exit 0 ✅
+- `grep -r 'payCallback' digital-recycling-miniprogram/` 仅匹配注释 ✅
+- `grep -r 'signVirtualPayParams|verifyNotifySignature' digital-recycling-server/src/` 正确引用 ✅
+- `grep -r 'product_id|transaction_id' digital-recycling-server/src/models/` 模型字段已添加 ✅
+- GetDiagnostics 零错误 ✅
+- 待 MP 后台联调(由用户/运营完成):
+  - [ ] 后端单测:`signVirtualPayParams` 生成签名与微信沙盒对比
+  - [ ] API 联调:`POST /api/membership/purchase` 返回 signData
+  - [ ] 数据库迁移执行:`membership_plans.product_id` + `membership_orders.transaction_id` 已添加
+  - [ ] 小程序联调:点「立即开通」→ `wx.requestVirtualPayment` 弹起支付面板
+  - [ ] 小程序联调:支付成功 → 微信回调后端 → 会员开通
+  - [ ] 小程序联调:支付取消 → 静默,无会员开通
+  - [ ] 重复购买:已开通会员的套餐按钮显示「已开通」且不可点击
+
+#### 前置条件(用户/运营)
+
+1. 在 [mp.weixin.qq.com](https://mp.weixin.qq.com) 申请开通虚拟支付能力
+2. 在 MP 后台 → 虚拟支付 → 商品管理 → 添加 3 个商品(月度/季度/半年),记录 `product_id`
+3. 在 MP 后台 → 虚拟支付 → 沙盒管理 → 申请沙盒密钥(开发联调用)
+4. 在生产数据库中给 `membership_plans` 表的 3 行记录填上 `product_id`
+5. 在 `.env` 中填入 `WX_VIRTUAL_PAY_KEY` / `WX_VIRTUAL_PAY_OFFER_ID` / `WX_VIRTUAL_PAY_NOTIFY_URL`
+
+#### 影响面
+
+- 修改 5 个文件 + 新增 4 个文件 + 数据库迁移
+- 后端 server:5 文件改动
+- 小程序:2 文件改动
+- 数据库:2 字段新增(由迁移文件管理)
+- dom / admin / app 等其他子项目:未触碰
+
 ### fix-dev-test-privacy-popup — 修复开发者调试场景下原生隐私声明弹窗不弹
 
 #### 关键问题
