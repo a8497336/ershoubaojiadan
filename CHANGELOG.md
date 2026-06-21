@@ -2,6 +2,416 @@
 
 > 项目根目录下的汇总变更日志。所有需求变更完成后第一时间更新本文档。
 
+## 2026-06-21
+
+### 修复 `wx.setClipboardData` errno 112（剪贴板权限未声明）
+
+#### 问题
+
+首页点击「复制微信号」报错：`setClipboardData:fail api scope is not declared in the privacy agreement, errno: 112`。全项目 11 处 `wx.setClipboardData` 调用均受影响（首页复制微信号、dev-test 复制 lat,lng、个人中心复制微信号、订单详情复制订单号/运单号、邀请好友复制邀请码、邮寄地址复制地址/微信号、商务合作复制微信号等）。
+
+#### 根因
+
+`wx.setClipboardData` 自微信基础库 3.0.0 起属于「用户隐私保护指引」管控的隐私 API,需在**小程序后台侧**(微信公众平台 → 设置 → 用户隐私保护指引)勾选「**剪贴板**」权限并提交审核后才能正常调用。
+
+#### 修复记录(两次迭代)
+
+**第一次(错误,已回退)**：
+
+- 误以为 `setClipboardData` 需要在 `app.json` 的 `requiredPrivateInfos` 数组中声明
+- 在 [app.json](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.json) `requiredPrivateInfos` 追加 `"setClipboardData"`(L63-L65)
+- 微信开发者工具**拒绝**: `requiredPrivateInfos[1] 字段需为 chooseAddress,chooseLocation,choosePoi,getFuzzyLocation,getLocation,onLocationChange,startLocationUpdate,startLocationUpdateBackground`
+- 真相: **`requiredPrivateInfos` 是微信给位置类 API 专用的白名单(仅 8 个值)**,`setClipboardData` 不在白名单中 → 不能通过此字段修复 errno 112
+
+**第二次(当前,正确)**:
+
+- **回退** app.json 错误修改,恢复为仅 `"getFuzzyLocation"`(L63-L65)
+- **不修改**任何代码文件(包括 app.json、app.js、任何 .js)
+- **唯一修复点:后台侧(人工操作,待办)**
+
+#### 后台侧修复(本次唯一有效修复点)
+
+微信公众平台 → 设置 → 用户隐私保护指引 → 找到「**剪贴板**」权限(截图红圈位置)→ 勾选并填写处理目的(例如「用于用户主动复制门店微信号 / 订单号 / 运单号 / 邀请码 / 收货地址等信息」)→ 保存 → 提交审核
+
+#### 影响面
+
+- **零代码文件被修改**(v2 修正后)
+- [digital-recycling-miniprogram/app.json](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.json) 已恢复原始状态(仅 `getFuzzyLocation`)
+- [digital-recycling-miniprogram/app.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.js) 未修改(保持 `fix-dev-test-privacy-popup` 修复后的状态,故意不监听 `onNeedPrivacyAuthorization`)
+- 全部 11 处 `wx.setClipboardData` 调用点所属文件均未修改(fail 兜底已存在)
+- [digital-recycling-miniprogram/utils/common.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/utils/common.js) 未修改(`copyToClipboard` 已含 fail modal 兜底)
+- 后端 server / admin / app / 数据库 schema / 迁移文件 / `dom` 项目 / 依赖 均未触碰
+
+#### 兼容性
+
+- 后台审核通过后,正式版小程序的全部 11 处复制场景均能从 errno 112 → success
+- 后台未审核通过时,errno 112 失败 → 走 fail 兜底(首页弹 modal 显示原始内容 / dev-test Toast「复制失败」/ 其他 silent)
+- 开发工具中可临时勾选「不校验合法域名、web-view、TLS 版本、HTTPS 证书」跳过隐私指引审核状态检查,但 `app.json` 的 `requiredPrivateInfos` 白名单限制无法跳过
+
+#### 待真机验证(后台审核通过后)
+
+- 首页点击「复制微信号」→ Toast「微信号已复制」→ 微信剪贴板内含完整微信号 → Console 无 errno 112
+- 其余 10 处复制场景类似
+
+#### 相关 spec
+
+- `.trae/specs/declare-clipboard-privacy-scope/`(本次,含 v1 错误 + v2 修正完整记录)
+- `.trae/specs/fix-dev-test-privacy-popup/`(已完成,管「弹窗不弹」,与本次独立)
+
+### 首页顶部导航栏固定
+
+#### 需求
+
+`.nav-bar` 原为 `position: sticky`，但因 iOS/部分安卓对 sticky 支持不一致，导航栏只在顶部生效，向上滚动时会跟随滚走。
+
+#### 修复
+
+**1. WXSS** ([index.wxss#L8-L24](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.wxss#L8-L24)):
+- `.nav-bar` 改为 `position: fixed; top: 0; left: 0; right: 0; z-index: 1000`
+- `.page-container` 新增 `padding-top: var(--nav-h, 188rpx)` 补偿固定后的占位
+
+**2. JS** ([index.js#L191-L195](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.js#L191-L195) + [index.js#L201-L218](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.js#L201-L218)):
+- `onLoad` setData 注入 `pageStyle: --status-bar-h: ${statusBarHeight}px`
+- 新增 `onReady`：用 `wx.createSelectorQuery` 测量 `.nav-bar` 实际高度（含 statusBar），转成 rpx 后注入 CSS 变量 `--nav-h`，**避免硬编码 176rpx 算错**
+
+**3. WXML** ([index.wxml#L1](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/index/index.wxml#L1)):
+- `<view class="page-container">` 改为 `<view class="page-container" style="{{pageStyle}}">`，将 CSS 变量注入根容器
+
+#### 影响面
+
+- 仅 `pages/index/index` 页面
+
+---
+
+### 修复 tooltip 被 canvas 遮挡（终极方案：canvas 上绘制 tooltip）
+
+#### 问题
+
+经过多次尝试（`cover-view` → `view` → `position: absolute` 放 chart-section 内部），tooltip 始终被 canvas 遮挡。**微信小程序中，canvas 元素（包括 Canvas 2D）始终渲染在普通 view 之上**，`position` / `z-index` 对其无效。
+
+#### 修复
+
+**改为直接在 canvas 上绘制 tooltip**，彻底消除层级问题。
+
+**1. WXML** ([price-trend.wxml#L39-L41](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L39-L41)):
+- 移除 `.point-detail` view 元素，不再尝试 DOM 叠加
+
+**2. JS — canvas 绘制 tooltip** ([price-trend.js#L357-L426](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L357-L426)):
+- 新增 `_drawTooltip(ctx, padding, chartWidth, chartHeight)`：在数据点上方绘制圆角矩形 tooltip + 箭头
+- 新增 `_roundRect(ctx, x, y, w, h, r)`：Canvas 2D 绘制圆角矩形
+- `drawChart` 末尾检查 `showDetail`，若为 true 则调用 `_drawTooltip`
+
+**3. JS — 显示/隐藏逻辑** ([price-trend.js#L443-L465](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L443-L465)):
+- `_showPointDetail`：存储 `px`/`py` 到 `detailData`，`setData` 回调中 `drawChart()` 重绘
+- 关闭 tooltip：`setData({ showDetail: false })` 回调中 `drawChart()` 重绘
+- 清理 `_chartSectionRect`、`detailX`、`detailY` 等不再需要的字段
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+### 修复 canvas tooltip 超出画布被裁剪
+
+#### 问题
+
+数据点靠近画布顶部时，tooltip 默认画在数据点上方 → `boxY` 为负值 → tooltip 顶部被画布边界裁掉，只能看到下半部分。
+
+#### 修复
+
+[price-trend.js#L379-L409](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L379-L409) — `_drawTooltip` 增加自适应定位：
+- 默认画在数据点**下方**（箭头朝上指数据点）
+- 下方放不下时画在**上方**（箭头朝下指数据点），`boxY` 夹紧到 `>= 2`
+- 同时 clamp `boxX` 防止水平溢出
+
+#### 影响面
+
+- 仅 `price-trend` 页面
+
+---
+
+### 修复 tooltip 被 chart-section 遮挡
+
+#### 问题
+
+`cover-view` 改 `view` 后 tooltip 仍被 `.chart-section` 遮挡，`position: fixed` + `z-index` 在微信小程序的同层渲染中层级不可靠。
+
+#### 修复
+
+**1. tooltip 移入 chart-section 内部** ([price-trend.wxml#L35-L60](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L35-L60)):
+- `.point-detail` 从页面根层级移入 `.chart-section` 内部，放在 canvas 之后、图例之前
+- 按 DOM 顺序，tooltip 一定在 canvas 上方
+
+**2. CSS 定位从 fixed 改为 absolute** ([price-trend.wxss#L97-L103](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxss#L97-L103) / [price-trend.wxss#L144-L154](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxss#L144-L154)):
+- `.chart-section` 新增 `position: relative`
+- `.point-detail` 从 `position: fixed` 改为 `position: absolute`，`z-index` 从 1000 降为 10
+
+**3. 弹窗坐标计算改为相对 chart-section** ([price-trend.js#L107-L118](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L107-L118) / [price-trend.js#L447-L460](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L447-L460)):
+- 新增缓存 `_chartSectionRect`
+- `_showPointDetail` 坐标从 `rect.left + padding...` 改为 `canvasRect.left - sectionRect.left + padding...`
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 修复点击图表节点不弹出 tooltip（getBoundingClientRect 不可用）
+
+#### 问题
+
+点击图表数据点后无任何反应，弹窗不显示。
+
+#### 根因
+
+`_handleChartTouch` 中调用了 `this._canvas.getBoundingClientRect()`，但 Canvas 2D 节点（`res[0].node`）是微信内部对象，没有 `getBoundingClientRect` 方法，返回 `undefined` → `if (!rect) return` 直接退出，后续命中检测和弹窗逻辑全部跳过。
+
+#### 修复
+
+**1. 初始化时缓存 canvas 页面位置** ([price-trend.js#L106-L113](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L106-L113)):
+- `_initCanvasIfNeeded` 中新增 `wx.createSelectorQuery().select('#trendChart').boundingClientRect()` 缓存到 `this._canvasRect`
+
+**2. 触摸坐标改用相对 canvas 坐标** ([price-trend.js#L398-L412](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L398-L412)):
+- 不再用 `e.touches[0].clientX/Y` + `getBoundingClientRect` 转换
+- 直接用 `e.touches[0].x/y`（touchstart）和 `e.detail.x/y`（tap），两者都是相对 canvas 元素的坐标
+- 弹窗位置用缓存的 `_canvasRect.left/top` + 图表坐标计算
+
+**3. 弹窗定位** ([price-trend.js#L442-L470](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L442-L470)):
+- `_showPointDetail(point)` 不再接收 `rect` 参数，改为读取 `this._canvasRect`
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 修复 price-trend 页面审查发现的关键问题
+
+#### 问题
+
+1. **页面无数据加载（阻断）**: `onReady` 改为只调 `_initCanvasIfNeeded` 后，`loadPriceTrend` 调用链路断裂，页面永远不请求数据
+2. **touchstart + tap 双重触发**: 每次触摸先触发 `touchstart` 显示弹窗，紧接着 `tap` 事件检测到 `showDetail=true` 又把弹窗关掉，导致"时有时无"
+3. **tap 事件无 `e.touches`**: `bindtap` 事件没有 `e.touches` 属性，走 `_handleChartTouch` 第一行 `if (!e.touches) return` 直接退出，降级方案失效
+
+#### 修复
+
+**1. 恢复数据加载** ([price-trend.js#L56-L60](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L56-L60)):
+- `onReady` 中恢复调用 `this.loadPriceTrend()`
+
+**2. 修复双重触发** ([price-trend.js#L365-L437](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L365-L437)):
+- 新增 `_detailJustShown` 标志位
+- `onChartTouchStart` → 重置标志 → 处理触摸
+- `onChartTap` → 检查标志，若本次 touchstart 已显示弹窗则忽略 tap
+- `_showPointDetail` → 设置标志为 true
+
+**3. 修复 tap 事件兼容** ([price-trend.js#L388-L437](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L388-L437)):
+- `_handleChartTouch` 同时兼容 `e.touches[0]`（touchstart）和 `e.detail.x/y`（tap）
+- tap 坐标是相对于 canvas 元素的，加上 `rect.left/top` 转成 client 坐标
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 声明剪贴板（setClipboardData）隐私权限
+
+#### 问题
+
+首页点击「复制微信号」报错：`setClipboardData:fail api scope is not declared in the privacy agreement, errno: 112`。全项目 11 处 `wx.setClipboardData` 调用均受影响（首页复制微信号、dev-test 复制 lat,lng、个人中心复制微信号、订单详情复制订单号/运单号、邀请好友复制邀请码、邮寄地址复制地址/微信号、商务合作复制微信号等）。
+
+#### 根因
+
+[app.json](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.json) 的 `requiredPrivateInfos` 数组仅声明 `getFuzzyLocation`,未声明 `setClipboardData`。微信小程序自基础库 3.0.0 起将 `wx.setClipboardData` 纳入「用户隐私保护指引」管控,必须显式声明才能调用。
+
+#### 修复
+
+- **代码侧**：[app.json](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/app.json) `requiredPrivateInfos` 数组新增 `"setClipboardData"`,保留 `getFuzzyLocation`(L63-L66 数组加 1 个字符串,共 1 行新增)
+- **后台侧(待办,人工操作)**：微信公众平台 → 设置 → 用户隐私保护指引 → 勾选「剪贴板」权限、处理目的填写「用于用户主动复制门店微信号 / 订单号 / 运单号 / 邀请码 / 收货地址等信息」→ 保存 → 提交审核
+
+#### 影响面
+
+- 仅修改 `app.json` 一个文件
+- 全项目 11 处 `wx.setClipboardData` 调用点 JS 代码不变(fail 兜底均已存在或为 silent,修根因后根本不会触发 fail)
+- `app.js`、`pages/index/index.js` 及其余 10 处调用点所属文件均未修改
+- 后端 server / admin / app / 数据库 schema / 迁移文件 / `dom` 项目 / 依赖 均未触碰
+
+#### 兼容性
+
+- 后台审核通过后,正式版小程序的全部 11 处复制场景均能 success
+- 开发工具中可临时勾选「不校验合法域名、web-view、TLS 版本、HTTPS 证书」跳过隐私指引审核状态检查,但 `app.json` 的 `requiredPrivateInfos` 声明是硬性要求,不能跳过
+
+#### 待真机验证
+
+- 首页点击「复制微信号」→ Toast「微信号已复制」→ 微信剪贴板内含完整微信号 → Console 无 errno 112
+- 其余 10 处复制场景类似
+
+#### 相关 spec
+
+- `.trae/specs/declare-clipboard-privacy-scope/`(本次)
+- `.trae/specs/fix-dev-test-privacy-popup/`(已完成,管「弹窗不弹」,与本次独立)
+
+### 修复价格趋势页成色选择器 tab 切换 & 弹窗遮挡
+
+#### 问题
+
+1. **成色选择器 tab 切换失效**: `data-condition="{{null}}"` 在 WXML 中传递 JS `null` 值，但 JS `selectCondition` 方法用字符串 `=== 'null'` 判断，导致 `parseInt(null)` → `NaN`，筛选结果为空
+2. **数据点弹窗被 canvas 遮挡**: canvas 是微信原生组件，渲染层级高于普通 `<view>`，弹窗在上方时被遮挡
+
+#### 修复
+
+**1. tab 切换** ([price-trend.wxml](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L66) / [price-trend.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L380-L382)):
+- WXML: `data-condition="{{null}}"` → `data-condition=""` (空字符串更可靠)
+- JS: 改用 `rawCondition === null || rawCondition === undefined || rawCondition === ''` 三重判断
+
+**2. 弹窗遮挡** ([price-trend.wxml](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L52-L60) / [price-trend.wxss](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxss#L143-L194)):
+- 弹窗从 `.chart-section` 内部移到页面根层级
+- `<view>` → `<cover-view>`（可覆盖 canvas 原生组件）
+- CSS 移除 `font-weight`、`margin: 0 auto`、`display: block`（cover-view 不支持），改用 flex 布局
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+### 修复 Canvas 2D 节点初始化时机错误导致趋势图未加载
+
+#### 问题
+
+控制台报 `Page.onReady took 68ms`，趋势图完全不显示。
+
+#### 根因
+
+`canvas` 在 WXML 中被 `wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}` 控制渲染。**初始 `trendData === null`，canvas 节点根本未渲染**。
+
+时序错误：
+1. `onReady` 触发 → `_initCanvasIfNeeded()` → `query.select('#trendChart')` 找不到节点 → 走降级逻辑 `setData({canvasReady: true})` → 触发 `loadPriceTrend`
+2. `loadPriceTrend` 拿到数据后 `setData` callback 检查 `canvasReady === true` → 直接 `drawChart`
+3. 但 `this._canvas` / `this._ctx` 都是 null（因为真正的 canvas 节点查询在 onReady 时失败了）
+4. `drawChart` 第一行 `if (!this._ctx) return` 直接退出 → 啥都没画
+
+#### 修复
+
+**重写 canvas 初始化流程** ([price-trend.js#L54-L107](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L54-L107)):
+
+- `initCanvas()` → `_initCanvasIfNeeded()`：不再触发数据加载，只做节点初始化
+- 初始化时如果数据已就绪（`this.data.trendData`）就立即 `drawChart`
+- 节点找不到时静默返回，由 `loadPriceTrend` 的 setData 回调在 canvas 真正渲染后再次触发
+- `onReady` 用 `wx.nextTick` 延迟一帧尝试首次初始化
+- `loadPriceTrend` 的 setData callback 改为调用 `_initCanvasIfNeeded()`（替代直接 drawChart），由它判断是否需要初始化
+
+**新的时序**：
+1. `onReady` → `_initCanvasIfNeeded`（nextTick 一帧后）→ canvas 未渲染，静默返回
+2. `loadPriceTrend` 拿到数据 → `setData` 更新 `trendData` → 视图更新，canvas 渲染
+3. setData callback → `_initCanvasIfNeeded` → 找到节点 → 初始化 → 立即 `drawChart` ✅
+
+#### 验证
+
+- 首次进入页面，趋势图正常显示
+- 切换 7天/15天/30天，图表重新绘制
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 优化价格趋势页点击弹窗稳定性（Canvas 2D 新接口）
+
+#### 问题
+
+点击数据点时弹窗"时有时无"：
+- 旧版 canvas 接口（`wx.createCanvasContext` + `bindtouchend`）是微信"不再维护"的接口，触摸事件不稳定
+- `bindtouchend` 在手指微移出 canvas、弹窗遮挡后松手等场景下会丢失
+- 弹窗关闭定时器在快速点击时与下次显示冲突，导致新弹窗刚显示就被旧的关闭定时器隐藏
+
+#### 修复
+
+**1. 升级到 Canvas 2D 新接口** ([price-trend.wxml#L40-L42](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L40-L42) / [price-trend.js#L62-L98](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L62-L98)):
+- `<canvas canvas-id="...">` → `<canvas type="2d" id="...">`（支持同层渲染，事件更稳定）
+- 改用 `wx.createSelectorQuery().select('#xxx').fields({ node: true, size: true })` 获取 canvas 节点
+- 用 `canvas.getContext('2d')` 替代 `wx.createCanvasContext('xxx')`
+- `drawChart` 用 `ctx.fillRect` / `ctx.arc` 等标准 Canvas 2D API
+
+**2. 触摸事件优化** ([price-trend.js#L354-L412](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L354-L412)):
+- `bindtouchstart` 立即响应（不等松手），`bindtap` 作为降级
+- 触摸容差半径从 25px 扩大到 30px
+- 通过 `canvas.getBoundingClientRect()` 实时获取 canvas 位置，兼容滚动/布局变化
+
+**3. 修复定时器冲突** ([price-trend.js#L414-L445](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%1B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L414-L445)):
+- 每次显示弹窗前 `_clearHideTimer()` 清除旧定时器
+- 关闭弹窗时支持再次点击同一位置关闭
+- `onUnload` 清理定时器，避免内存泄漏
+- 弹窗显示时长从 2s 延长到 3s
+
+**4. 文本绘制优化**:
+- 用 `setTextBaseline('middle' / 'top')` 精确对齐 Y/X 轴标签
+
+#### 参考文档
+
+- [微信小程序 canvas Canvas 2D 示例代码](https://developers.weixin.qq.com/miniprogram/dev/component/canvas.html#Canvas-2D-%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81)
+- 旧版画布迁移指南
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 修复价格趋势图数据坐标计算错误 & canvas 尺寸问题
+
+#### 问题
+
+1. **图表未完整展示 + 弹窗定位不准**: `calculateChartData` 中调用 `this.calculateX(point.date)` / `this.calculateY(point.price)` 时，`this.data.dateRange` 和 `this.data.priceRange` 尚未更新（仍为初始值 `{start:'', end:''}` / `{min:0, max:0}`），导致所有点位坐标全部算成 `x:50, y:50`，图表聚集在中心，弹窗位置也全错
+2. **canvas 尺寸偏小**: 初始内联样式 `width:{{canvasWidth}}px; height:{{canvasHeight}}px` 使用默认值 300x200，覆盖了 CSS 的 `height: 400rpx`，导致图表显示不全
+
+#### 修复
+
+**1. 坐标计算** ([price-trend.js](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.js#L121-L192)):
+- 先计算 `newPriceRange` / `newDateRange`，再内联计算点位坐标
+- 新增 `calcX(date, dateRange)` / `calcY(price, priceRange)` 方法，直接接收 range 参数，不再依赖 `this.data`
+- 保留原 `calculateX` / `calculateY` 供 `drawChart` 使用（drawChart 在 setData 回调后执行，data 已更新）
+
+**2. canvas 尺寸** ([price-trend.wxml](file:///c:/Users/17798/Desktop/%E9%99%88%E5%B3%B0/%E6%95%B0%E7%A0%81%E5%9B%9E%E6%94%B6/digital-recycling-miniprogram/pages/price-trend/price-trend.wxml#L40)):
+- 移除 canvas 内联 style，让 CSS `width: 100%; height: 400rpx` 控制尺寸
+- `initCanvas` 通过 `boundingClientRect` 测量实际像素尺寸用于绘图
+
+#### 影响面
+
+- 仅 `price-trend` 页面，无其他页面影响
+
+---
+
+### 清空 OPPO、VIVO、华为、三星品牌产品
+
+#### 操作
+
+通过 MySQL MCP 在生产环境执行删除操作:
+
+1. 删除关联价格数据: `DELETE FROM prices WHERE product_id IN (SELECT id FROM products WHERE brand_id IN (5, 6, 9, 10))` — 6793 条
+2. 删除产品数据: `DELETE FROM products WHERE brand_id IN (5, 6, 9, 10)` — 1133 条
+
+#### 影响品牌
+
+| 品牌 | 删除产品数 |
+|------|-----------|
+| OPPO | 280 |
+| VIVO | 345 |
+| 华为 | 508 |
+| 三星 | 0 |
+| **合计** | **1133** |
+
+#### 影响范围
+
+- `prices` 表: 删除 6793 条关联价格数据
+- `products` 表: 删除 1133 条产品记录
+- 品牌表 (`brands`) 未删除,仅清空产品
+
+#### 备注
+
+- 三星品牌下无产品,无需清理
+- 如需恢复数据,需从备份中还原
+
+---
+
 ## 2026-06-19
 
 ### hotfix-add-membership-virtual-pay-columns — 修复生产环境 `Unknown column 'product_id' in 'field list'` 错误
