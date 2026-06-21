@@ -166,6 +166,12 @@
   font-size: 24rpx;
   color: #ff2d4a;
 }
+.agreement-link:active {
+  opacity: 0.6;
+}
+.agreement-link-hover {
+  opacity: 0.6;
+}
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

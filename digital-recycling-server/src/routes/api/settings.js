@@ -24,9 +24,9 @@ const db = require('../../models')
 const QUOTE_SETTING_KEYS = [
   'quote_page_title',
   'quote_view_count',
-  'quote_receiver_name',
-  'quote_receiver_phone',
-  'quote_receiver_address',
+  'receiver_name',
+  'receiver_phone',
+  'receiver_address',
   'quote_rules',
   'quote_footer_notes'
 ]
@@ -40,7 +40,7 @@ router.get('/quote', async (req, res, next) => {
     const result = {
       page_title: '今日手机回收报价',
       view_count: '61954098',
-      receiver_name: '陈约',
+      receiver_name: '',
       receiver_phone: '15361862828',
       receiver_address: '广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B',
       rules: '开机进系统/屏好/屏坏/不开机/废板 等机况定义说明...\n具体以实际检测为准，价格仅供参考',
@@ -52,9 +52,8 @@ router.get('/quote', async (req, res, next) => {
         '价格随市场行情波动，请以实际交易为准'
       ]
     }
-
     settings.forEach(s => {
-      const key = s.key.replace('quote_', '')
+      const key = s.key
       if (key === 'rules' || key === 'footer_notes') {
         try {
           result[key] = JSON.parse(s.value)
@@ -64,6 +63,7 @@ router.get('/quote', async (req, res, next) => {
       } else {
         result[key] = s.value
       }
+      console.log(result[key], key)
     })
 
     return success(res, result)

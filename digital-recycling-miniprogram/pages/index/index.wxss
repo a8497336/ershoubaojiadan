@@ -2,11 +2,16 @@
 
 .page-container {
   background: var(--color-background);
+  padding-top: var(--nav-h, 160rpx);
   padding-bottom: 200rpx;
 }
 
 /* ===== 顶部导航栏 ===== */
 .nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   background: var(--color-primary);
   height: auto;
   min-height: 88rpx;
@@ -14,8 +19,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24rpx;
-  position: sticky;
-  z-index: 100;
+  z-index: 1000;
 }
 .nav-bar .more-btn {
   color: var(--color-text-inverse);

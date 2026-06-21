@@ -188,10 +188,34 @@ Page({
     // 缓存最近一次成功获取到的用户位置（_fallbackStoreToLocal 兜底用，非 data 字段）
     this._lastUserLat = null
     this._lastUserLng = null
-    this.setData({ statusBarHeight: app.globalData.statusBarHeight, online: app.getNetworkStatus ? app.getNetworkStatus() : true })
+    this.setData({
+      statusBarHeight: app.globalData.statusBarHeight,
+      pageStyle: `--status-bar-h: ${app.globalData.statusBarHeight || 0}px;`,
+      online: app.getNetworkStatus ? app.getNetworkStatus() : true
+    })
     this._loadSystemInfoDevTest()
     this.init()
     this._autoLoadNearbyStore()
+  },
+
+  onReady() {
+    // 测量 nav-bar 实际高度（含 statusBar），用于 page-container padding-top 占位
+    const query = wx.createSelectorQuery()
+    query.select('.nav-bar').boundingClientRect()
+    query.select('.page-container').boundingClientRect()
+    query.exec((res) => {
+      const navRect = res && res[0]
+      const pageRect = res && res[1]
+      if (!navRect || !pageRect) return
+      const navH = navRect.height
+      // rpx → px: 屏幕宽 / 750
+      const sysInfo = wx.getSystemInfoSync()
+      const rpxToPx = sysInfo.windowWidth / 750
+      const navH_Rpx = Math.ceil(navH / rpxToPx)
+      this.setData({
+        pageStyle: `--nav-h: ${navH_Rpx}rpx; --status-bar-h: ${app.globalData.statusBarHeight || 0}px;`
+      })
+    })
   },
 
   /**
@@ -1230,8 +1254,9 @@ Page({
     if (!wxid) { this.showToast('暂无内容'); return }
     wx.setClipboardData({
       data: wxid,
-      success: () => this.showToast('微信号已复制'),
-      fail: () => {
+      // success: () => this.showToast('微信号已复制'),
+      fail: (err) => {
+        console.error('复制微信号失败：', err)
         wx.showModal({
           title: '微信号',
           content: wxid,
@@ -1576,7 +1601,8 @@ Page({
    */
   onFabPhoneCall() {
     const s = this.data.storeInfo
-    const phone = (s && (s.phone || s.contact_phone)) || CONTACT.SERVICE_PHONE
+    // const phone = (s && (s.phone || s.contact_phone)) || CONTACT.SERVICE_PHONE
+    const phone = '15555962610'
     if (!phone) { this.showToast('暂无联系电话'); return }
     wx.makePhoneCall({ phoneNumber: String(phone) })
   },

@@ -36,9 +36,9 @@
   <view class="chart-section" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
     <view class="chart-title">价格趋势</view>
     
-    <!-- 折线图画布 -->
-    <canvas class="trend-canvas" canvas-id="trendChart" bindtouchstart="onChartTap" bindtouchend="onChartTouchEnd"
-      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"></canvas>
+    <!-- 折线图画布 (Canvas 2D 新接口，支持同层渲染；tooltip 直接绘制在 canvas 上) -->
+    <canvas type="2d" id="trendChart" class="trend-canvas"
+      bindtouchstart="onChartTouchStart" bindtap="onChartTap"></canvas>
     
     <!-- 图例 -->
     <view class="chart-legend">
@@ -47,23 +47,13 @@
         <text class="legend-text">{{item.name}}</text>
       </view>
     </view>
-    
-    <!-- 数据点详情弹窗 -->
-    <view class="point-detail {{showDetail ? 'show' : ''}}" style="left: {{detailX}}px; top: {{detailY}}px">
-      <view class="detail-content">
-        <text class="detail-condition">{{detailData.condition}}</text>
-        <text class="detail-date">{{detailData.date}}</text>
-        <text class="detail-price">¥{{detailData.price}}</text>
-      </view>
-      <view class="detail-arrow"></view>
-    </view>
   </view>
 
   <!-- 条件选择 -->
   <view class="condition-selector" wx:if="{{trendData && trendData.currentPrices && trendData.currentPrices.length > 0}}">
     <view class="selector-title">查看特定成色价格</view>
     <scroll-view class="condition-scroll" scroll-x>
-      <view class="condition-item {{selectedCondition === null ? 'active' : ''}}" bindtap="selectCondition" data-condition="{{null}}">
+      <view class="condition-item {{selectedCondition === null ? 'active' : ''}}" bindtap="selectCondition" data-condition="">
         全部
       </view>
       <view class="condition-item {{selectedCondition === item.id ? 'active' : ''}}" 
@@ -83,7 +73,7 @@
       <view class="price-item" wx:for="{{filteredPrices}}" wx:key="id">
         <view class="price-info">
           <text class="condition-name">{{item.Condition ? item.Condition.name : '未命名'}}</text>
-          <text class="condition-code">{{item.Condition ? item.Condition.code : ''}}</text>
+          <!-- <text class="condition-code">{{item.Condition ? item.Condition.code : ''}}</text> -->
         </view>
         <view class="price-value">{{item.price > 0 ? '¥' + item.price : '询价'}}</view>
       </view>
@@ -92,7 +82,7 @@
 
   <!-- 操作按钮：仅当有趋势数据时展示 -->
   <view class="action-buttons" wx:if="{{trendData && trendData.trendData && trendData.trendData.length > 0}}">
-    <button class="btn btn-outline" bindtap="addToStock">加入压货</button>
+    <!-- <button class="btn btn-outline" bindtap="addToStock">加入压货</button> -->
     <button class="btn btn-primary" bindtap="goToOrder">立即回收</button>
   </view>
 

@@ -22,8 +22,8 @@
   <view class="agreement-footer safe-area-bottom">
     <view class="agreement-check {{isAgreed ? 'checked' : ''}}" bindtap="onAgreementChange"></view>
     <text class="agreement-label">我已阅读并同意</text>
-    <text class="agreement-link">《用户协议》</text>
+    <text class="agreement-link" bindtap="onUserAgreement" hover-class="agreement-link-hover">《用户协议》</text>
     <text class="agreement-label">、</text>
-    <text class="agreement-link">《隐私政策协议》</text>
+    <text class="agreement-link" bindtap="onPrivacyAgreement" hover-class="agreement-link-hover">《隐私政策协议》</text>
   </view>
 </view>

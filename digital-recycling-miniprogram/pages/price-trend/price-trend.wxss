@@ -95,6 +95,7 @@
 }
 
 .chart-section {
+  position: relative;
   background: #fff;
   margin: 0 30rpx 20rpx;
   padding: 30rpx;
@@ -141,12 +142,15 @@
 }
 
 .point-detail {
-  position: fixed;
-  z-index: 1000;
+  position: absolute;
+  z-index: 10;
   transform: translate(-50%, -100%);
   transition: opacity 0.2s ease;
   opacity: 0;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .point-detail.show {
@@ -161,25 +165,25 @@
   border-radius: 12rpx;
   min-width: 140rpx;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .detail-condition {
   font-size: 22rpx;
   opacity: 0.8;
-  display: block;
   margin-bottom: 4rpx;
 }
 
 .detail-date {
   font-size: 20rpx;
   opacity: 0.7;
-  display: block;
   margin-bottom: 8rpx;
 }
 
 .detail-price {
   font-size: 28rpx;
-  font-weight: bold;
 }
 
 .detail-arrow {
@@ -188,7 +192,6 @@
   border-left: 12rpx solid transparent;
   border-right: 12rpx solid transparent;
   border-top: 14rpx solid rgba(0, 0, 0, 0.85);
-  margin: 0 auto;
 }
 
 .condition-selector {
