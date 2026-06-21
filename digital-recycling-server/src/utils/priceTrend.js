@@ -81,6 +81,18 @@ async function getPriceTrendData(productId, days = 15) {
     trendData[key].data.sort((a, b) => a.date.localeCompare(b.date))
   }
 
+  // 补齐当日缺失的数据点：若最新数据日期不是今天，复制最后一条数据到今天
+  const today = new Date().toISOString().split('T')[0]
+  for (const key of Object.keys(trendData)) {
+    const data = trendData[key].data
+    if (data.length > 0) {
+      const lastPoint = data[data.length - 1]
+      if (lastPoint.date !== today) {
+        data.push({ date: today, price: lastPoint.price })
+      }
+    }
+  }
+
   const currentPrices = allPrices.filter(p => !p.effective_date || p.effective_date >= startDateStr)
 
   let maxPrice = 0, minPrice = 0, latestPrice = 0

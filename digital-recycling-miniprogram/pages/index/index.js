@@ -1147,16 +1147,7 @@ Page({
     const keyword = (this.data.searchKeyword || '').trim()
     if (!keyword) return
     this.clearSearchTimer()
-    searchApi.search({ keyword }).then(res => {
-      const results = res.data || res || []
-      if (results.length > 0) {
-        wx.navigateTo({ url: '/pages/brand-list/brand-list?keyword=' + encodeURIComponent(keyword) })
-      } else {
-        this.showToast('未找到相关结果')
-      }
-    }).catch(() => {
-      wx.navigateTo({ url: '/pages/brand-list/brand-list?keyword=' + encodeURIComponent(keyword) })
-    })
+    wx.navigateTo({ url: '/pages/product-search/product-search?keyword=' + encodeURIComponent(keyword) })
   },
 
   clearSearchTimer() {

@@ -56,7 +56,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
       [Op.or]: [
         { name: { [Op.like]: `%${keyword}%` } },
         { model_code: { [Op.like]: `%${keyword}%` } },
-        { series_name: { [Op.like]: `%${keyword}%` } }
+        { series_name: { [Op.like]: `%${keyword}%` } },
+        { '$Brand.name$': { [Op.like]: `%${keyword}%` } }
       ]
     }
 

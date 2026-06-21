@@ -156,6 +156,38 @@ router.get('/today', auth, async (req, res, next) => {
       })
     }
 
+    // 自动同步：当日无价格时，从最近有效日期复制价格
+    const todayPriceCount = await db.Price.count({ where: { effective_date: today } })
+    if (todayPriceCount === 0) {
+      const latestDateResult = await db.Price.findOne({
+        attributes: [[fn('MAX', col('effective_date')), 'latest_date']],
+        raw: true
+      })
+      const latestDate = latestDateResult?.latest_date
+      if (latestDate) {
+        console.log(`[价格同步] 当日无价格，从 ${latestDate} 复制到 ${today}`)
+        const latestPrices = await db.Price.findAll({
+          where: { effective_date: latestDate },
+          raw: true
+        })
+        if (latestPrices.length > 0) {
+          const todayPrices = latestPrices.map(p => ({
+            product_id: p.product_id,
+            condition_id: p.condition_id,
+            price: p.price,
+            is_available: p.is_available,
+            effective_date: today
+          }))
+          try {
+            await db.Price.bulkCreate(todayPrices, { ignoreDuplicates: true })
+            console.log(`[价格同步] 成功复制 ${todayPrices.length} 条价格记录到 ${today}`)
+          } catch (syncErr) {
+            console.log(`[价格同步] 复制失败（可能已存在）: ${syncErr.message}`)
+          }
+        }
+      }
+    }
+
     const latestDates = await db.Price.findAll({
       where: { product_id: { [Op.in]: productIds } },
       attributes: ['product_id', [fn('MAX', col('effective_date')), 'latest_date']],

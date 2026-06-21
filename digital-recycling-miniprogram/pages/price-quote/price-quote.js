@@ -224,12 +224,13 @@ Page({
 
       this.setData({
         priceDate: data.effectiveDate || data.date || '',
-        updateTime: data.updateTime ?
-          new Date(data.updateTime).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          }) : '',
+        updateTime: data.updateTime ? (() => {
+          const d = new Date(data.updateTime)
+          const year = d.getFullYear()
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${year}/${month}/${day}`
+        })() : '',
         viewCount: data.viewCount || 0,
         priceList: processedList,
         categoryGroups: categoryGroups,
@@ -279,7 +280,7 @@ Page({
     if (price === null || price === undefined || price === '') return 'price-none'
     const num = parseFloat(price)
     if (isNaN(num) || num <= 0) return 'price-none'
-    if (conditionName === '开机屏好') return 'price-bootable'
+    if (conditionName === '开机屏好' || conditionName === '开机屏好(无id)') return 'price-bootable'
     if (conditionName === '不开机' || conditionName === '废板-整机') return 'price-dead'
     return 'price-other'
   },
