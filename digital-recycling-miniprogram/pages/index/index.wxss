@@ -947,6 +947,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fab-stack.fab-hidden {
+  opacity: 0;
+  transform: translateX(120rpx);
+  pointer-events: none;
 }
 .fab-item {
   width: 100%;

@@ -28,6 +28,8 @@ Page({
     loading: true,
     priceLoading: true,
     showBackTop: false,
+    showFab: true,
+    _fabTimer: null,
     toastVisible: false,
     toastMsg: '',
     networkError: false,
@@ -281,7 +283,18 @@ Page({
   },
 
   onPageScroll(e) {
-    this.setData({ showBackTop: e.scrollTop > 600 })
+    const scrollTop = e.scrollTop
+    this.setData({ showBackTop: scrollTop > 600 })
+    // 滚动时隐藏 FAB，停止 300ms 后再显示
+    if (scrollTop > 200) {
+      this.setData({ showFab: false })
+      if (this.data._fabTimer) clearTimeout(this.data._fabTimer)
+      this.data._fabTimer = setTimeout(() => {
+        this.setData({ showFab: true })
+      }, 300)
+    } else {
+      this.setData({ showFab: true })
+    }
   },
 
   init() {
@@ -1223,9 +1236,19 @@ Page({
 
   copyWechat(e) {
     const wxid = e ? (e.currentTarget.dataset.wxid || '') : (this.data.storeInfo ? (this.data.storeInfo.wechat || CONTACT.WECHAT_ID) : CONTACT.WECHAT_ID)
-    debugger
     if (!wxid) { this.showToast('暂无内容'); return }
-    wx.setClipboardData({ data: wxid, success: () => this.showToast('微信号已复制') })
+    wx.setClipboardData({
+      data: wxid,
+      success: () => this.showToast('微信号已复制'),
+      fail: () => {
+        wx.showModal({
+          title: '微信号',
+          content: wxid,
+          confirmText: '好的',
+          showCancel: false
+        })
+      }
+    })
   },
 
 

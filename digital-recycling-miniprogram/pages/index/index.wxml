@@ -369,7 +369,7 @@
     <!-- 定位隐私授权弹窗已移除(onLoad 自动调 _autoLoadNearbyStore,首次进入走 wx.requirePrivacyAuthorize 弹原生授权弹窗) -->
 
     <!-- 悬浮三按钮：电话 / 客服 / 问题 -->
-    <view class="fab-stack">
+    <view class="fab-stack {{showFab ? '' : 'fab-hidden'}}">
       <view class="fab-item" bindtap="onFabPhoneCall" hover-class="fab-item-hover">
         <text class="fab-item-icon">📞</text>
         <text class="fab-item-label">电话</text>
