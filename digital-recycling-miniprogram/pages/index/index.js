@@ -1148,7 +1148,7 @@ Page({
   },
 
   fetchHotPrices() {
-    priceApi.getTodayPrices({ page: 1, pageSize: 20 }).then(res => {
+    contentApi.getHotPrices().then(res => {
       const data = res.data || res || {}
       const rawList = data.list || []
       const list = rawList.slice(0, 20).map(item => {

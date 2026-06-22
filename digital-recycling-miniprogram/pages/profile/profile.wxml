@@ -46,7 +46,7 @@
       <view class="vip-left">
         <text class="vip-em">👑</text>
         <view>
-          <view class="vip-text">{{userInfo.member_level || userInfo.vip_level || '普通'}}会员</view>
+          <view class="vip-text">{{userInfo.planName || '普通'}}会员</view>
           <view class="vip-desc" wx:if="{{!userInfo.is_vip}}">开通会员享更多特权</view>
         </view>
       </view>

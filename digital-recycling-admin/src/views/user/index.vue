@@ -88,7 +88,7 @@
         <el-form-item label="昵称"><el-input v-model="editForm.nickname" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="editForm.phone" /></el-form-item>
         <el-form-item label="积分"><el-input-number v-model="editForm.points" :min="0" /></el-form-item>
-        <el-form-item label="查价次数"><el-input-number v-model="editForm.scan_remaining" :min="0" /></el-form-item>
+        <el-form-item label="查价次数"><el-input-number v-model="editForm.quote_remaining" :min="0" /></el-form-item>
         <el-form-item label="会员类型">
           <el-select v-model="editForm.membership_id" placeholder="选择会员类型" clearable style="width: 100%">
             <el-option v-for="p in membershipPlans" :key="p.id" :label="p.name" :value="p.id" />

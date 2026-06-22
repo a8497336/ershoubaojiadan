@@ -84,7 +84,7 @@ router.get('/today', auth, async (req, res, next) => {
   try {
     const { brand_id, category_id, product_id } = req.query
     const user = req.user
-    const isVip = user.membership_expire && new Date(user.membership_expire) > new Date()
+    const isVip = user.membership_id && user.membership_expire && new Date(user.membership_expire) > new Date()
     const today = new Date().toISOString().split('T')[0]
 
     let dailyMax = 10
@@ -137,8 +137,9 @@ router.get('/today', auth, async (req, res, next) => {
     const productIds = products.map(p => p.id)
     if (productIds.length === 0) {
       const quotaRes = isVip
-        ? { quoteRemaining: 9999, quoteDailyRemaining: 9999 }
+        ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
         : {
+            isVip: false,
             quoteRemaining: parseInt(user.quote_remaining) || 0,
             quoteDailyRemaining: (() => {
               const dailyDate = user.quote_daily_date
@@ -237,8 +238,9 @@ router.get('/today', auth, async (req, res, next) => {
     await user.reload()
 
     const quotaRes = isVip
-      ? { quoteRemaining: 9999, quoteDailyRemaining: 9999 }
+      ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
       : {
+          isVip: false,
           quoteRemaining: parseInt(user.quote_remaining) || 0,
           quoteDailyRemaining: (() => {
             const dailyDate = user.quote_daily_date
@@ -255,6 +257,64 @@ router.get('/today', auth, async (req, res, next) => {
       list: productList,
       ...quotaRes
     })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/hot', optionalAuth, async (req, res, next) => {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+
+    const products = await db.Product.findAll({
+      where: { status: 1 },
+      include: [
+        { model: db.Brand, as: 'Brand', attributes: ['id', 'name'] },
+        { model: db.Category, as: 'Category', attributes: ['id', 'name'] }
+      ],
+      order: [['sort_order', 'ASC']],
+      limit: 20
+    })
+
+    const productIds = products.map(p => p.id)
+    if (productIds.length === 0) {
+      return success(res, { list: [] })
+    }
+
+    const latestDates = await db.Price.findAll({
+      where: { product_id: { [Op.in]: productIds } },
+      attributes: ['product_id', [fn('MAX', col('effective_date')), 'latest_date']],
+      group: ['product_id'],
+      raw: true
+    })
+
+    const datePairs = latestDates.map(d => ({
+      product_id: d.product_id,
+      effective_date: d.latest_date
+    }))
+
+    const allPrices = datePairs.length > 0
+      ? await db.Price.findAll({
+          where: { [Op.or]: datePairs },
+          include: [{ model: db.ProductCondition, as: 'Condition', attributes: ['id', 'name', 'code'] }],
+          raw: true,
+          nest: true
+        })
+      : []
+
+    const priceMap = {}
+    for (const price of allPrices) {
+      const pid = price.product_id
+      if (!priceMap[pid]) priceMap[pid] = []
+      priceMap[pid].push(price)
+    }
+
+    const productList = products.map(p => ({
+      ...p.toJSON(),
+      Prices: priceMap[p.id] || []
+    }))
+
+    return success(res, { list: productList })
   } catch (err) {
     next(err)
   }
