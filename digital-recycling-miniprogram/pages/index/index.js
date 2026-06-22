@@ -288,8 +288,18 @@ Page({
     if (tabBar) {
       tabBar.setData({ activeTab: 'home' })
     }
-    // 自动加载最近门店（由 onLoad 触发,onShow 保持轻量,只刷新首屏数据）
-    this.loadHomeData()
+    // 首次加载由 onLoad → init 处理
+    if (this._hasLoaded) {
+      // 从其他页面返回：静默刷新数据（不触发 loading 覆盖，避免滚动位置丢失）
+      this.fetchHomeData().then(() => {
+        this.startBannerRotation()
+        this.startAnnouncementRotation()
+      }).catch(() => {})
+      // 恢复滚动位置
+      if (this._scrollTop > 0) {
+        wx.pageScrollTo({ scrollTop: this._scrollTop, duration: 0 })
+      }
+    }
   },
 
   onHide() {
@@ -308,6 +318,8 @@ Page({
 
   onPageScroll(e) {
     const scrollTop = e.scrollTop
+    // 保存滚动位置，用于从其他页面返回时恢复
+    this._scrollTop = scrollTop
     this.setData({ showBackTop: scrollTop > 600 })
     // 滚动时隐藏 FAB，停止 300ms 后再显示
     if (scrollTop > 200) {
@@ -325,6 +337,7 @@ Page({
     this.setData({ loading: true, networkError: false })
     this.fetchHomeData().then(() => {
       this.setData({ loading: false })
+      this._hasLoaded = true
       this.startBannerRotation()
       this.startAnnouncementRotation()
     }).catch(() => {
