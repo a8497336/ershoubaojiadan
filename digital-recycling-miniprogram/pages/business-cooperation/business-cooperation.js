@@ -6,8 +6,8 @@ Page({
       { icon: '🤝', title: '渠道代理', desc: '成为区域代理，享受专属权益' },
       { icon: '📊', title: '数据服务', desc: '行业数据报告，市场行情分析' }
     ],
-    contactPhone: '16618180111',
-    contactWechat: '16618180111'
+    contactPhone: '15555962610',
+    contactWechat: '15555962610'
   },
 
   handleCall() {

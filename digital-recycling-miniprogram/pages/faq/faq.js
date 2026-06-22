@@ -39,7 +39,7 @@ Page({
       },
       {
         q: '如何联系客服？',
-        a: '客服电话：16618180111（微信同号），工作时间为每天9:00-21:00。'
+        a: '客服电话：15555962610（微信同号），工作时间为每天9:00-21:00。'
       }
     ],
     activeIndex: -1
@@ -53,7 +53,7 @@ Page({
   },
 
   callPhone() {
-    wx.makePhoneCall({ phoneNumber: '16618180111' })
+    wx.makePhoneCall({ phoneNumber: '15555962610' })
   },
 
   goFeedback() {

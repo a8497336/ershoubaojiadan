@@ -46,12 +46,12 @@
     <view class="contact-info">
       <view class="contact-row" bindtap="handleCopyWechat">
         <text class="contact-label">微信号：</text>
-        <text class="contact-value">{{wechat}}</text>
+        <text class="contact-value">{{address.service_wechat}}</text>
         <text class="contact-action">复制</text>
       </view>
       <view class="contact-row" bindtap="handleCall">
         <text class="contact-label">客服电话：</text>
-        <text class="contact-value">{{address.phone}}</text>
+        <text class="contact-value">{{address.service_phone}}</text>
         <text class="contact-action">拨打</text>
       </view>
     </view>

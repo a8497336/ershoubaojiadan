@@ -5,9 +5,11 @@ Page({
     address: {
       name: '陈约',
       phone: '15555962610',
-      detail: '广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B'
+      detail: '广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B',
+      service_wechat: '',
+      service_phone: ''
     },
-    wechat: '16618180111'
+    wechat: '15555962610'
   },
 
   onLoad() {
@@ -22,7 +24,9 @@ Page({
           address: {
             name: res.data.receiver_name || this.data.address.name,
             phone: res.data.receiver_phone || this.data.address.phone,
-            detail: res.data.receiver_address || this.data.address.detail
+            detail: res.data.receiver_address || this.data.address.detail,
+            service_wechat: res.data.service_wechat ||  this.data.address.wechat,
+            service_phone: res.data.service_phone ||  this.data.address.phone
           }
         })
       }

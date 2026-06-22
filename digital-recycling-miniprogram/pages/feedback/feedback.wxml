@@ -37,10 +37,10 @@
   <view class="contact-section">
     <view class="contact-title">其他联系方式</view>
     <view class="contact-item" bindtap="callPhone">
-      <text>📞 客服电话：16618180111</text>
+      <text>📞 客服电话：15555962610</text>
     </view>
     <view class="contact-item" bindtap="copyWechat">
-      <text>💬 微信号：16618180111</text>
+      <text>💬 微信号：15555962610</text>
     </view>
   </view>
 </view>

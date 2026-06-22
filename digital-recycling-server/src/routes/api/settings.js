@@ -28,7 +28,9 @@ const QUOTE_SETTING_KEYS = [
   'receiver_phone',
   'receiver_address',
   'quote_rules',
-  'quote_footer_notes'
+  'quote_footer_notes',
+  'service_wechat',
+  'service_phone'
 ]
 
 router.get('/quote', async (req, res, next) => {
@@ -42,6 +44,8 @@ router.get('/quote', async (req, res, next) => {
       view_count: '61954098',
       receiver_name: '',
       receiver_phone: '15361862828',
+      service_wechat: '',
+      service_phone: '',
       receiver_address: '广东省深圳市福田区华强北街道深南中路2018号兴华大厦B座12楼12B',
       rules: '开机进系统/屏好/屏坏/不开机/废板 等机况定义说明...\n具体以实际检测为准，价格仅供参考',
       footer_notes: [
