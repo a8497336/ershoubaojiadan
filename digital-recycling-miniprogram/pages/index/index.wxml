@@ -348,7 +348,7 @@
       <text class="footer-title">数码回收真诚服务好每一位客户</text>
       <text class="footer-desc">深耕十余年始终为您提供最新最可靠的回收报价</text>
       <view class="footer-actions">
-        <view class="footer-action" bindtap="copyWechat">
+        <view class="footer-action" data-wxid="15361862828" bindtap="copyWechat">
           <text>💬 添加微信</text>
         </view>
         <view class="footer-action" bindtap="makePhoneCall" data-phone="15361862828">

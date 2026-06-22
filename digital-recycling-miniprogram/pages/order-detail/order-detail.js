@@ -204,7 +204,7 @@ Page({
   },
 
   contactService() {
-    wx.makePhoneCall({ phoneNumber: '15361862828' })
+    wx.makePhoneCall({ phoneNumber: '15555962610' })
   },
 
   goToHome() {
