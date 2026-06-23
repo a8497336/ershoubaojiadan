@@ -89,34 +89,23 @@ router.get('/today', auth, async (req, res, next) => {
 
     let dailyMax = 10
     if (!isVip) {
-      const dailySetting = await db.Setting.findOne({ where: { key: 'daily_quote_count' } })
+      const dailySetting = await db.Setting.findOne({ where: { key: 'free_scan_count' } })
       dailyMax = parseInt(dailySetting?.value || '10')
 
-      let quoteRemaining = parseInt(user.quote_remaining) || 0
+      let dailyCount = parseInt(user.quote_daily_count) || 0
+      const dailyDate = user.quote_daily_date
 
-      if (quoteRemaining > 0) {
-        quoteRemaining -= 1
+      if (dailyDate !== today) {
+        dailyCount = 1
         await user.update({
-          quote_remaining: quoteRemaining,
-          quote_daily_count: (parseInt(user.quote_daily_count) || 0) + 1,
+          quote_daily_count: 1,
           quote_daily_date: today
         })
+      } else if (dailyCount < dailyMax) {
+        dailyCount += 1
+        await user.update({ quote_daily_count: dailyCount })
       } else {
-        let dailyCount = parseInt(user.quote_daily_count) || 0
-        const dailyDate = user.quote_daily_date
-
-        if (dailyDate !== today) {
-          dailyCount = 1
-          await user.update({
-            quote_daily_count: 1,
-            quote_daily_date: today
-          })
-        } else if (dailyCount < dailyMax) {
-          dailyCount += 1
-          await user.update({ quote_daily_count: dailyCount })
-        } else {
-          return error(res, '今日查看次数已用完，开通会员可无限查看报价', 10007, 403)
-        }
+        return error(res, '今日查看次数已用完，开通会员可无限查看报价', 10007, 403)
       }
     }
 
@@ -140,7 +129,11 @@ router.get('/today', auth, async (req, res, next) => {
         ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
         : {
             isVip: false,
-            quoteRemaining: parseInt(user.quote_remaining) || 0,
+            quoteRemaining: (() => {
+              const dailyDate = user.quote_daily_date
+              if (dailyDate !== today) return dailyMax
+              return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
+            })(),
             quoteDailyRemaining: (() => {
               const dailyDate = user.quote_daily_date
               if (dailyDate !== today) return dailyMax
@@ -241,7 +234,11 @@ router.get('/today', auth, async (req, res, next) => {
       ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
       : {
           isVip: false,
-          quoteRemaining: parseInt(user.quote_remaining) || 0,
+          quoteRemaining: (() => {
+            const dailyDate = user.quote_daily_date
+            if (dailyDate !== today) return dailyMax
+            return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
+          })(),
           quoteDailyRemaining: (() => {
             const dailyDate = user.quote_daily_date
             if (dailyDate !== today) return dailyMax

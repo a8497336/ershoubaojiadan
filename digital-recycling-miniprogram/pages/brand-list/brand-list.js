@@ -88,6 +88,10 @@ Page({
 
   selectBrand(e) {
     const id = e.currentTarget.dataset.id
+    if(id === 2 || id === 1) {
+      this.goToFeaturePhone(id === 1 ? 'oldMan' : 'dianrong')
+      return
+    }
     this.setData({
       selectedBrandId: id,
       productsLoading: true,
@@ -189,6 +193,13 @@ Page({
       url += '?keyword=' + encodeURIComponent(keyword)
     }
     wx.navigateTo({ url })
+  },
+
+  goToFeaturePhone(e) {
+    const type = e  || 'oldMan'
+    wx.navigateTo({
+      url: '/pages/feature-phone-image/feature-phone-image?type=' + encodeURIComponent(type)
+    })
   },
 
   openProductDetail(e) {

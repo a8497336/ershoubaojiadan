@@ -201,8 +201,20 @@ router.put('/:id', adminAuth, async (req, res, next) => {
   try {
     const user = await db.User.findByPk(req.params.id)
     if (!user) return notFound(res, '用户不存在')
-    const { nickname, phone, points, scan_remaining, status, membership_id, membership_expire } = req.body
-    await user.update({ nickname, phone, points, scan_remaining, status, membership_id, membership_expire })
+    const { nickname, phone, points, scan_remaining, status, membership_id, membership_expire, quote_remaining } = req.body
+    const updateData = { nickname, phone, points, scan_remaining, status, quote_remaining }
+    if (membership_id) {
+      updateData.membership_id = membership_id
+      updateData.membership_expire = membership_expire
+    } else if (membership_id === null || membership_id === '' || membership_id === undefined) {
+      const freeScanSetting = await db.Setting.findOne({ where: { key: 'free_scan_count' } })
+      const freeScanCount = parseInt(freeScanSetting?.value || '10')
+      updateData.membership_id = null
+      updateData.membership_expire = null
+      updateData.quote_remaining = freeScanCount
+      updateData.quote_daily_count = 0
+    }
+    await user.update(updateData)
     return success(res, user, '更新成功')
   } catch (err) { next(err) }
 })

@@ -30,6 +30,40 @@
   font-weight: 500;
 }
 
+/* ===== 写死快捷入口：热门老年机 / 智能机(电容屏) ===== */
+.feature-entry-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  background: #fff;
+}
+.feature-entry-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  background: linear-gradient(135deg, #fff5f6, #fff);
+  border: 2rpx solid #ffe1e6;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(255,45,74,0.06);
+}
+.feature-entry-card:active {
+  background: #fff0f2;
+  transform: scale(0.98);
+}
+.feature-entry-icon {
+  font-size: 56rpx;
+  line-height: 1;
+  margin-bottom: 12rpx;
+}
+.feature-entry-text {
+  font-size: 28rpx;
+  color: #ff2d4a;
+  font-weight: 600;
+}
+
 /* ===== 搜索栏 ===== */
 .search-section {
   display: flex;

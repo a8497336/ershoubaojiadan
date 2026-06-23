@@ -20,7 +20,6 @@ Page({
     receiverName: '',
     receiverPhone: '',
     receiverAddress: '',
-    quoteRemaining: 0,
     quoteDailyRemaining: 0,
     isVip: false
   },
@@ -98,23 +97,13 @@ Page({
       const brandData = brandRes ? (brandRes.data || brandRes) : null
       const quoteConfig = brandData ? (brandData.quote_config || {}) : {}
 
-      const quoteRemaining = data.quoteRemaining !== undefined ? data.quoteRemaining : 0
       const quoteDailyRemaining = data.quoteDailyRemaining !== undefined ? data.quoteDailyRemaining : 0
       const isVip = data.isVip || false
 
       this.setData({
-        quoteRemaining,
         quoteDailyRemaining,
         isVip
       })
-
-      if (!isVip && quoteRemaining > 0 && quoteRemaining <= 5) {
-        wx.showToast({
-          title: '剩余' + quoteRemaining + '次免费查看，开通会员无限查看',
-          icon: 'none',
-          duration: 3000
-        })
-      }
 
       const processedList = rawList.map(item => {
         const priceMap = {}

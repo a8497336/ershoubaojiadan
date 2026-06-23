@@ -104,8 +104,10 @@ router.get('/status', auth, async (req, res, next) => {
     const isVip = user.membership_expire && new Date(user.membership_expire) > now
 
     if (user.membership_expire && new Date(user.membership_expire) <= now) {
+      const freeScanSetting = await db.Setting.findOne({ where: { key: 'free_scan_count' } })
+      const freeScanCount = parseInt(freeScanSetting?.value || '10')
       user.scan_remaining = 10
-      user.quote_remaining = 100
+      user.quote_remaining = freeScanCount
       user.quote_daily_count = 0
       await user.save()
     }

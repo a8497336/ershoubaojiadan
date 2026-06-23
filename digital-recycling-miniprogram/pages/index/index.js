@@ -1204,10 +1204,20 @@ Page({
       wx.switchTab({ url: '/pages/brand-list/brand-list' })
     }
   },
-
+  goToFeaturePhone(e) {
+    const type = e  || 'oldMan'
+    wx.navigateTo({
+      url: '/pages/feature-phone-image/feature-phone-image?type=' + encodeURIComponent(type)
+    })
+  },
   onBrandTap(e) {
     const id = e ? e.currentTarget.dataset.id : ''
     const name = e ? e.currentTarget.dataset.name : ''
+    console.log(id)
+    if(id === 2 || id === 1) {
+      this.goToFeaturePhone(id === 1 ? 'oldMan' : 'dianrong')
+      return
+    }
     if (id) {
       this.requireLogin('/pages/price-quote/price-quote?brandId=' + id + '&title=' + encodeURIComponent(name || ''))
     } else {
@@ -1613,11 +1623,12 @@ Page({
    * 悬浮条「电话」按钮：拨打门店电话（storeInfo.phone → contact_phone → CONTACT.SERVICE_PHONE 兜底）
    */
   onFabPhoneCall() {
+    
     const s = this.data.storeInfo
     // const phone = (s && (s.phone || s.contact_phone)) || CONTACT.SERVICE_PHONE
-    const phone = '15555962610'
-    if (!phone) { this.showToast('暂无联系电话'); return }
-    wx.makePhoneCall({ phoneNumber: String(phone) })
+    // const phone = '15555962610'
+    // if (!phone) { this.showToast('暂无联系电话'); return }
+    wx.makePhoneCall({ phoneNumber: '15555962610' })
   },
 
   /**

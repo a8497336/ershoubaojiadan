@@ -30,6 +30,7 @@ Page({
   loadUserInfo() {
     userApi.getProfile().then((res) => {
       const data = res.data || res
+      data.membershipExpired = !!(data.membershipId && !data.isVip)
       this.setData({ userInfo: data })
     }).catch(() => {})
   },

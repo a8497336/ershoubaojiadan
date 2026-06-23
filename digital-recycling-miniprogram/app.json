@@ -34,7 +34,8 @@
     "pages/my-favorites/my-favorites",
     "pages/price-changes/price-changes",
     "pages/sms-notify/sms-notify",
-    "pages/store-list/store-list"
+    "pages/store-list/store-list",
+    "pages/feature-phone-image/feature-phone-image"
   ],
   "window": {
     "backgroundTextStyle": "light",

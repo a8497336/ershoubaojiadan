@@ -2,6 +2,85 @@
 
 > 项目根目录下的汇总变更日志。所有需求变更完成后第一时间更新本文档。
 
+## 2026-06-22
+
+### 修复个人中心会员等级显示错误（始终显示"普通"）
+
+#### 问题
+
+`pages/profile/profile.wxml#L49` 个人中心 VIP 卡片不管用户实际开的是什么会员套餐，都显示"普通会员"。后台已经配置了月度、季度、半年等多种会员套餐，但前端读取不到会员类型。
+
+#### 根因
+
+WXML 第 49 行使用了后端不存在的字段名：
+
+```html
+<view class="vip-text">{{userInfo.member_level || userInfo.vip_level || '普通'}}会员</view>
+```
+
+后端 `/api/user/profile`（`src/routes/api/user.js#L177-L195`）实际返回的字段是 `planName`（来自 `MembershipPlan.name`），并不存在 `member_level` / `vip_level`。所以 `member_level` 和 `vip_level` 永远为 `undefined`，表达式 fall back 到 `'普通'`，**月度/季度/半年会员全都显示为"普通"**。
+
+#### 修复
+
+- **`digital-recycling-miniprogram/pages/profile/profile.wxml#L49`**
+
+  ```html
+  <!-- 修改前 -->
+  <view class="vip-text">{{userInfo.member_level || userInfo.vip_level || '普通'}}会员</view>
+
+  <!-- 修改后 -->
+  <view class="vip-text">{{userInfo.planName || '普通'}}会员</view>
+  ```
+
+  `planName` 来自后端 `getVipStatus`（`src/utils/helpers.js#L45-L59`）查询 `MembershipPlan.name` 的结果，会员到期（`isVip=false`）时为 `null`，此时 fall back 到 `'普通'`，逻辑合理。
+
+#### 兼容性
+
+- `profile.wxml#L50`、L53、L88 使用的 `userInfo.is_vip` 字段由 `profile.js#L86` 的 `data.is_vip = data.isVip || false` 兼容代码兜底，**无需修改**
+- `profile.js` / 后端 / 数据库 schema / 模型 / 迁移 / admin / app **全部未触碰**
+
+#### 验证
+
+- `node --check digital-recycling-miniprogram/pages/profile/profile.wxml` 语法 OK（XML）
+- 修改后：
+  - 月度会员 → 显示"月度会员" ✅
+  - 季度会员 → 显示"季度会员" ✅
+  - 半年会员 → 显示"半年会员" ✅
+  - 未开通会员 → 显示"普通会员" ✅
+  - 会员已过期（`planName=null`）→ 显示"普通会员" ✅
+
+#### 影响面
+
+- 仅修改 `profile.wxml` 1 个文件 1 行
+- 数据库模型/迁移：**未修改**（不涉及 schema 变更，不生成迁移文件）
+- 后端 server / admin / app：**未触碰**
+- 依赖：**未新增**
+
+---
+
+### 修复报价单页 VIP 状态不显示
+
+#### 问题
+报价单页（price-quote）VIP 用户始终看不到"会员无限查看"文字，`isVip` 始终为 `false`。
+
+#### 根因
+后端 `/prices/today` 接口在内部计算了 `isVip` 变量用于判断会员是否过期，但两处 `quotaRes` 对象均未将 `isVip` 字段返回给前端。前端 `price-quote.js` 第 103 行 `const isVip = data.isVip || false` 因 `data.isVip` 始终为 `undefined`，导致 `isVip` 永远为 `false`。
+
+#### 修复
+- `digital-recycling-server/src/routes/api/price.js`：两处 `quotaRes` 对象（空产品分支 line ~139、有产品分支 line ~240）均追加 `isVip` 字段
+
+### 修复进入报价页面扣2次查看次数
+
+#### 问题
+每次进入报价页面（price-quote）会扣除2次查看次数，而非预期的1次。
+
+#### 根因
+首页（index）的 `fetchHotPrices()` 方法调用了 `priceApi.getTodayPrices()` 获取热门报价数据，该接口会扣除用户查看次数。加上报价页面自身的 `loadTodayPrices()` 也调用同一接口，导致每次进入报价页面实际扣了2次。
+
+#### 修复
+- `digital-recycling-server/src/routes/api/price.js`：新增 `/prices/hot` 接口，返回热门报价数据（与 `/today` 格式相同），不扣用户查看次数，使用 `optionalAuth` 无需强制登录
+- `digital-recycling-miniprogram/pages/index/index.js`：`fetchHotPrices()` 方法从 `priceApi.getTodayPrices()` 改为 `contentApi.getHotPrices()`，使用独立的不扣次数接口
+
 ## 2026-06-21
 
 ### 修复 `wx.setClipboardData` errno 112（剪贴板权限未声明）

@@ -1,0 +1,107 @@
+@import '/styles/design-tokens.wxss';
+
+.feature-phone-page {
+  background-color: var(--color-background);
+  font-size: 24rpx;
+  color: var(--color-text-primary);
+  padding-bottom: 200rpx;
+}
+
+/* ===== 头部样式：复用 price-quote ===== */
+.header-section {
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  color: #fff;
+  padding: 12px 15px;
+}
+
+.header-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.9;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 16rpx;
+  letter-spacing: 2rpx;
+}
+
+.header-rules {
+  font-size: 18rpx;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.header-rules text {
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.rules-title {
+  font-weight: bold;
+}
+
+.header-quota {
+  text-align: center;
+  margin-bottom: 12rpx;
+}
+
+.quota-text {
+  display: inline-block;
+  font-size: 22rpx;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+  color: #fff;
+}
+
+.quota-text.vip {
+  background: rgba(255, 215, 0, 0.4);
+  font-weight: bold;
+}
+
+/* ===== 图片区样式 ===== */
+.image-section {
+  background-color: #fff;
+  padding: 20rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.feature-image {
+  width: 100%;
+  background: #fff;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.image-empty {
+  padding: 80rpx 0;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* ===== 底部备注：复用 price-quote ===== */
+.footer-note {
+  padding: 30rpx;
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  background-color: #fff;
+  margin-top: 20rpx;
+}
+
+.footer-note text {
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.note-title {
+  font-weight: bold;
+  color: var(--color-text-primary);
+}

@@ -84,6 +84,7 @@ Page({
     userApi.getProfile().then(res => {
       const data = (res.data || res || {})
       data.is_vip = data.isVip || false
+      data.membershipExpired = !!(data.membershipId && !data.isVip)
       app.globalData.userInfo = data
       this.setData({ userInfo: data })
     }).catch(() => {

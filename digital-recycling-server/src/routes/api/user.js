@@ -167,9 +167,11 @@ router.get('/profile', auth, async (req, res, next) => {
     const user = req.user
     const vipStatus = await getVipStatus(user)
     if (!vipStatus.isVip && user.membership_expire !== null) {
+      const freeScanSetting = await db.Setting.findOne({ where: { key: 'free_scan_count' } })
+      const freeScanCount = parseInt(freeScanSetting?.value || '10')
       await user.update({
         scan_remaining: 10,
-        quote_remaining: 100,
+        quote_remaining: freeScanCount,
         quote_daily_count: 0
       })
       await user.reload()
