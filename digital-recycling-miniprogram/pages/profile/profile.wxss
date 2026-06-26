@@ -9,18 +9,28 @@
 /* ===== 头部渐变 + 导航栏 ===== */
 .profile-header {
   background: var(--color-primary-gradient);
-  padding-top: 0;
+  /* profile-nav 已 fixed 顶部，这里用 statusBarHeight 占位让 .user-info-area 不贴顶 */
+  padding-top: var(--status-bar-h, 0px);
   padding-bottom: 60rpx;
   position: relative;
 }
+.profile-page {
+  /* 顶部 .profile-nav 占位（fixed），由 JS 测量后写入 --nav-h */
+  padding-top: var(--nav-h, 88rpx);
+}
 .profile-nav {
-  position: relative;
-  top: auto; left: 0; right: 0;
+  /* 固定顶部，含状态栏高度 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   min-height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24rpx;
+  background: var(--color-primary-gradient);
+  z-index: 1000;
 }
 .profile-nav .more-btn { color: #fff; font-size: 36rpx; letter-spacing: 4rpx; }
 .profile-nav .nav-title { color: #fff; font-size: 34rpx; font-weight: 500; position: absolute; left: 50%; transform: translateX(-50%); }

@@ -1,4 +1,4 @@
-<view class="cart-page">
+<view class="cart-page" style="{{pageStyle}}">
   <view class="nav-bar" style="padding-top: {{statusBarHeight}}px">
     <text class="title-text">回收车</text>
   </view>

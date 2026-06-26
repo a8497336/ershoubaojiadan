@@ -33,6 +33,12 @@ const routes = [
         meta: { title: '产品管理', icon: 'Goods' }
       },
       {
+        path: 'feature-phone-image',
+        name: 'FeaturePhoneImageManage',
+        component: () => import('@/views/feature-phone-image-manage/index.vue'),
+        meta: { title: '报价图片管理', icon: 'Picture' }
+      },
+      {
         path: 'price',
         name: 'PriceManage',
         component: () => import('@/views/price/index.vue'),

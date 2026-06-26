@@ -42,7 +42,16 @@
     
     <!-- 图例 -->
     <view class="chart-legend">
-      <view class="legend-item" wx:for="{{trendData.trendData}}" wx:key="code" wx:if="{{item.data && item.data.length > 0}}">
+      <view
+        class="legend-item {{hiddenConditions.indexOf(index) >= 0 ? 'legend-hidden' : ''}}"
+        wx:for="{{trendData.trendData}}"
+        wx:key="code"
+        wx:if="{{item.data && item.data.length > 0}}"
+        bindtap="toggleCondition"
+        data-condition-index="{{index}}"
+        hover-class="legend-item-hover"
+        hover-stay-time="50"
+      >
         <view class="legend-dot" style="background: {{lineColors[index % lineColors.length]}}"></view>
         <text class="legend-text">{{item.name}}</text>
       </view>

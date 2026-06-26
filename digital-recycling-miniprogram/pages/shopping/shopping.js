@@ -14,11 +14,27 @@ Page({
     loading: true,
     showDeleteConfirm: false,
     deleteTargetId: null,
-    statusBarHeight: 0
+    statusBarHeight: 0,
+    navHeightRpx: 88,
+    pageStyle: '--nav-h: 88rpx;'
   },
 
   onLoad() {
     this.setData({ statusBarHeight: app.globalData.statusBarHeight })
+  },
+
+  onReady() {
+    // 测量 nav-bar 实际高度（含状态栏），用于 .cart-page padding-top 占位，避免内容被 fixed 顶部遮挡
+    const query = wx.createSelectorQuery()
+    query.select('.nav-bar').boundingClientRect()
+    query.exec((res) => {
+      const navRect = res && res[0]
+      if (!navRect) return
+      const sysInfo = wx.getSystemInfoSync()
+      const rpxToPx = sysInfo.windowWidth / 750
+      const navH_Rpx = Math.ceil(navRect.height / rpxToPx)
+      this.setData({ navHeightRpx: navH_Rpx, pageStyle: `--nav-h: ${navH_Rpx}rpx;` })
+    })
   },
 
   onShow() {

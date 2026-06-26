@@ -304,6 +304,8 @@ Page({
     const dateRange = this.data.dateRange
 
     trendData.trendData.forEach((conditionData, lineIndex) => {
+      // 跳过被图例点击隐藏的成色
+      if ((this.data.hiddenConditions || []).indexOf(lineIndex) >= 0) return
       if (!conditionData.data || conditionData.data.length < 1) return
 
       const validData = conditionData.data
@@ -578,6 +580,35 @@ Page({
   goToOrder() {
     wx.switchTab({
       url: '/pages/shopping/shopping'
+    })
+  },
+
+  // 点击图例：单选模式（点击某个颜色 → 图表只显示该颜色，其他全部隐藏；再次点击当前唯一显示的颜色 → 恢复全部）
+  toggleCondition(e) {
+    const idx = parseInt(e.currentTarget.dataset.conditionIndex)
+    if (isNaN(idx)) return
+
+    const list = (this.data.trendData && this.data.trendData.trendData) || []
+    // 仅统计有数据的成色索引
+    const validIndices = list
+      .map((item, i) => (item.data && item.data.length > 0 ? i : -1))
+      .filter(i => i >= 0)
+    const current = this.data.hiddenConditions || []
+
+    // 判断 idx 是否当前「唯一显示」的成色：即其他所有有数据成色都已被隐藏
+    const isSoleVisible = validIndices.length > 0 && validIndices.every(i => i === idx || current.indexOf(i) >= 0)
+
+    let hidden = []
+    if (isSoleVisible) {
+      // 当前 idx 是唯一显示 → 再次点击恢复全部
+      hidden = []
+    } else {
+      // 其他状态（含全部显示 / 部分隐藏）→ 单选聚焦到 idx，隐藏其他有数据成色
+      hidden = validIndices.filter(i => i !== idx)
+    }
+
+    this.setData({ hiddenConditions: hidden }, () => {
+      this.drawChart()
     })
   }
 })

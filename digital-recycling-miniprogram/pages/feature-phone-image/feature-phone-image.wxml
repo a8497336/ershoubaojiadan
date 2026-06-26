@@ -6,7 +6,10 @@
       <text>更新时间：{{updateTime}}</text>
     </view>
     <view class="header-quota">
-      <block wx:if="{{isVip}}">
+      <block wx:if="{{!quotaLoaded}}">
+        <text class="quota-text">加载中…</text>
+      </block>
+      <block wx:elif="{{isVip}}">
         <text class="quota-text vip">会员无限查看</text>
       </block>
       <block wx:else>
@@ -23,8 +26,15 @@
 
   <!-- 图片区：替代原 price-table -->
   <view class="image-section">
-    <image wx:if="{{image}}" class="feature-image" src="{{image}}" mode="widthFix" bindtap="previewImage"></image>
-    <view wx:else class="image-empty">暂无可展示内容</view>
+    <block wx:if="{{accessGranted && image}}">
+      <image class="feature-image" src="{{image}}" mode="widthFix" bindtap="previewImage"></image>
+    </block>
+    <block wx:elif="{{!accessGranted}}">
+      <view class="image-empty">加载中…</view>
+    </block>
+    <block wx:else>
+      <view class="image-empty">暂无可展示内容</view>
+    </block>
   </view>
 
   <!-- 底部备注：与 price-quote 一致 -->

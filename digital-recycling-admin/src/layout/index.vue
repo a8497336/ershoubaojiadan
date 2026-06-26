@@ -27,6 +27,10 @@
           <el-icon><Goods /></el-icon>
           <template #title>产品管理</template>
         </el-menu-item>
+        <el-menu-item index="/feature-phone-image">
+          <el-icon><Picture /></el-icon>
+          <template #title>报价图片管理</template>
+        </el-menu-item>
         <el-menu-item index="/price">
           <el-icon><PriceTag /></el-icon>
           <template #title>报价管理</template>

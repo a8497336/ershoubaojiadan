@@ -117,3 +117,8 @@ export const deleteVideo = (id) => request.delete(`/admin/videos/${id}`)
 
 export const broadcastMessage = (data) => request.post('/admin/messages/broadcast', data)
 export const sendMessage = (data) => request.post('/admin/messages/send', data)
+
+// ========== 报价图片管理（老年机 / 智能机-电容屏） ==========
+export const getFeaturePhoneImages = () => request.get('/admin/feature-phone-images')
+export const updateFeaturePhoneImage = (type, data) => request.put(`/admin/feature-phone-images/${type}`, data)
+export const deleteFeaturePhoneImage = (type) => request.delete(`/admin/feature-phone-images/${type}`)

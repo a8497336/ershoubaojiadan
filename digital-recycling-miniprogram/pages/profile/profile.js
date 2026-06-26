@@ -56,8 +56,26 @@ Page({
   },
 
   onLoad() {
-    this.setData({ online: app.getNetworkStatus ? app.getNetworkStatus() : true, statusBarHeight: app.globalData.statusBarHeight })
+    this.setData({
+      online: app.getNetworkStatus ? app.getNetworkStatus() : true,
+      statusBarHeight: app.globalData.statusBarHeight,
+      pageStyle: `--status-bar-h: ${app.globalData.statusBarHeight || 0}px; --nav-h: 88rpx;`
+    })
     this.loadData()
+  },
+
+  onReady() {
+    // 测量 .profile-nav 实际高度（含状态栏），写入 --nav-h 用于 .profile-page padding-top 占位
+    const query = wx.createSelectorQuery()
+    query.select('.profile-nav').boundingClientRect()
+    query.exec((res) => {
+      const navRect = res && res[0]
+      if (!navRect) return
+      const sysInfo = wx.getSystemInfoSync()
+      const rpxToPx = sysInfo.windowWidth / 750
+      const navH_Rpx = Math.ceil(navRect.height / rpxToPx)
+      this.setData({ pageStyle: `--status-bar-h: ${app.globalData.statusBarHeight || 0}px; --nav-h: ${navH_Rpx}rpx;` })
+    })
   },
 
   onShow() {

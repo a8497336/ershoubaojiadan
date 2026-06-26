@@ -45,6 +45,11 @@ Page({
     announcementTimer: null,
     bannerTimer: null,
 
+    // ===== 公告详情弹窗 =====
+    noticeDetailVisible: false,
+    noticeDetail: { id: null, title: '', content: '', time: '' },
+    _announcementsCache: [],
+
     phoneBrands: [
       { bg: 'bg-xiaomi', icon: '📱', iconStyle: 'font-size:20rpx;', name: '热门老年机' },
       { bg: 'bg-apple', icon: '', iconStyle: 'font-size:20rpx;', name: '智能机/电容屏' },
@@ -369,16 +374,25 @@ Page({
       this.setData({ banners: bannerRes, announcements: announceRes })
 
       if (announceRes.length > 0) {
+        // 缓存原始公告数据，供点击公告展示详情用
+        this._announcementsCache = announceRes.map(a => ({
+          id: a.id,
+          title: a.title,
+          content: a.content || a.detail || a.description || '',
+          time: this.formatTimeAgo(a.created_at || a.createTime)
+        }))
         this.setData({
-          displayAnnouncements: announceRes.map(a => ({
+          displayAnnouncements: this._announcementsCache.map(a => ({
+            id: a.id,
             title: a.title,
-            time: this.formatTimeAgo(a.created_at || a.createTime)
+            time: a.time
           }))
         })
       } else {
+        this._announcementsCache = []
         this.setData({
           displayAnnouncements: [
-            { title: '东莞东城 冯先生 门店批量 收益8500元', time: '135分钟前' }
+            { id: 'default', title: '东莞东城 冯先生 门店批量 收益8500元', time: '135分钟前' }
           ]
         })
       }
@@ -1337,6 +1351,52 @@ Page({
   },
 
   onBannerChange(e) { this.setData({ bannerCurrent: e.detail.current }) },
+
+  /**
+   * 点击公告栏：展示公告详情弹窗
+   * 用 _announcementsCache 查找完整内容（content）
+   * 兜底：若只有占位公告（无 content），给用户提示
+   */
+  onNoticeTap(e) {
+    const id = e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id
+    const cache = this._announcementsCache || []
+    let detail = cache.find(item => String(item.id) === String(id))
+    if (!detail && this.data.displayAnnouncements.length > 0) {
+      // 兜底：取当前轮播到的 index
+      const idx = this.data.currentAnnouncementIndex || 0
+      detail = cache[idx]
+    }
+    if (!detail) {
+      wx.showToast({ title: '暂无公告详情', icon: 'none' })
+      return
+    }
+    if (!detail.content) {
+      wx.showToast({ title: '该公告暂无详细内容', icon: 'none' })
+      return
+    }
+    // 暂停轮播，避免弹窗打开后背后还在动
+    this.stopAnnouncementRotation()
+    this.setData({
+      noticeDetailVisible: true,
+      noticeDetail: {
+        id: detail.id,
+        title: detail.title,
+        content: detail.content,
+        time: detail.time
+      }
+    })
+  },
+
+  /**
+   * 关闭公告详情弹窗
+   */
+  onNoticeDetailClose() {
+    this.setData({ noticeDetailVisible: false })
+    // 恢复轮播
+    if (this.data.displayAnnouncements && this.data.displayAnnouncements.length > 1) {
+      this.startAnnouncementRotation()
+    }
+  },
 
   startBannerRotation() {
     this.stopBannerRotation()

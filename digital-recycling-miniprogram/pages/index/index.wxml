@@ -65,16 +65,17 @@
     </view>
 
     <!-- 公告栏 -->
-    <view class="notice-bar" wx:if="{{displayAnnouncements.length > 0}}">
+    <view class="notice-bar" wx:if="{{displayAnnouncements.length > 0}}" bindtap="onNoticeTap" data-id="{{displayAnnouncements[currentAnnouncementIndex].id}}">
       <view class="notice-tag">🔔 公告</view>
       <view class="notice-scroll-wrapper">
         <view class="notice-scroll-inner" style="transform: translateY(-{{currentAnnouncementIndex * 40}}rpx);">
-          <view class="notice-scroll-item" wx:for="{{displayAnnouncements}}" wx:key="index">
+          <view class="notice-scroll-item" wx:for="{{displayAnnouncements}}" wx:key="id">
             <text class="notice-text">{{item.title}}</text>
             <text class="notice-time">{{item.time}}</text>
           </view>
         </view>
       </view>
+      <view class="notice-arrow">›</view>
     </view>
   
     <!-- 加载中骨架(onLoad 自动调 _autoLoadNearbyStore 期间显示) -->
@@ -391,5 +392,23 @@
       </view>
     </view>
   </block>
+
+  <!-- 公告详情弹窗 -->
+  <view wx:if="{{noticeDetailVisible}}" class="notice-mask" bindtap="onNoticeDetailClose">
+    <view class="notice-modal" catchtap="">
+      <view class="notice-modal-header">
+        <text class="notice-modal-tag">🔔 公告</text>
+        <view class="notice-modal-close" bindtap="onNoticeDetailClose">×</view>
+      </view>
+      <view class="notice-modal-title">{{noticeDetail.title || '公告详情'}}</view>
+      <view class="notice-modal-time" wx:if="{{noticeDetail.time}}">{{noticeDetail.time}}</view>
+      <scroll-view class="notice-modal-body" scroll-y enhanced show-scrollbar="{{false}}">
+        <view class="notice-modal-content" user-select="{{true}}" space="nbsp">{{noticeDetail.content || '暂无详细内容'}}</view>
+      </scroll-view>
+      <view class="notice-modal-footer">
+        <view class="notice-modal-btn" bindtap="onNoticeDetailClose">我知道了</view>
+      </view>
+    </view>
+  </view>
 
 </view>

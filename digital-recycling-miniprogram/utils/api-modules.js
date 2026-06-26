@@ -150,6 +150,10 @@ const settingsApi = {
   getContactInfo: () => request({ url: '/settings/contact' })
 }
 
+const featurePhoneImageApi = {
+  get: (type) => request({ url: '/feature-phone-image', data: { type } })
+}
+
 module.exports = {
   authApi,
   userApi,
@@ -170,5 +174,6 @@ module.exports = {
   userStockApi,
   placesApi,
   settingsApi,
+  featurePhoneImageApi,
   uploadFile
 }

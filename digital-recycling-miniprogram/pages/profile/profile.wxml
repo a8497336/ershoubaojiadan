@@ -1,4 +1,4 @@
-<view class="profile-page">
+<view class="profile-page" style="{{pageStyle}}">
   <view class="profile-header">
     <view class="profile-nav" style="padding-top: {{statusBarHeight}}px">
       <!-- <view class="more-btn">●●●</view> -->

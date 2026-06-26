@@ -20,6 +20,7 @@ router.use('/roles', require('./role-manage'))
 router.use('/permissions', require('./permission-manage'))
 router.use('/logs', require('./log-manage'))
 router.use('/settings', require('./setting-manage'))
+router.use('/feature-phone-images', require('./feature-phone-image-manage'))
 router.use('/upload', require('./upload'))
 
 module.exports = router

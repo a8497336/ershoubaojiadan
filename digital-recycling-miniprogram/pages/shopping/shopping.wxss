@@ -3,6 +3,8 @@
 .cart-page {
   background: var(--color-background);
   min-height: 100vh;
+  /* 顶部 nav-bar 占位（fixed），由 JS 测量 nav-bar 实际高度后写入 --nav-h */
+  padding-top: var(--nav-h, 88rpx);
   padding-bottom: 200rpx;
 }
 
@@ -12,8 +14,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: sticky;
-  z-index: 100;
+  /* 固定顶部，含状态栏高度 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   box-shadow: var(--shadow-sm);
 }
 .title-text { color: var(--color-text-primary); font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
