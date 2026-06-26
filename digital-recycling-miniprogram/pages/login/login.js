@@ -36,12 +36,16 @@ Page({
     isAgreed: false,
     redirectUrl: '',
     loggingIn: false,
-    avatarUrl: ''
+    avatarUrl: '',
+    statusBarHeight: 0
   },
 
   onLoad(options) {
     if (options && options.redirect) {
       this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
+    }
+    if (app && app.globalData && typeof app.globalData.statusBarHeight === 'number') {
+      this.setData({ statusBarHeight: app.globalData.statusBarHeight })
     }
   },
 
@@ -140,13 +144,25 @@ Page({
     })
   },
 
+  /**
+   * 拦截原生导航栏左上角「返回」按钮 / Android 物理返回键
+   * 统一跳转到首页,与「暂不登录」按钮行为一致
+   * options.from: 'backbutton'(左上角/物理键) | 'navigateBack'(API 调用,本场景不会出现)
+   * 返回 true 阻止默认 navigateBack,避免和 switchTab 同时触发造成栈混乱
+   */
+  onNavBack() {
+    wx.switchTab({ url: '/pages/index/index' })
+    return true
+  },
+
   handleCancel() {
-    wx.navigateBack({
-      delta: 1,
-      fail: () => {
-        wx.switchTab({ url: '/pages/index/index' })
-      }
-    })
+    wx.switchTab({ url: '/pages/index/index' })
+    // wx.navigateBack({
+    //   delta: 1,
+    //   fail: () => {
+    //     wx.switchTab({ url: '/pages/index/index' })
+    //   }
+    // })
   },
 
   navigateToHome() {

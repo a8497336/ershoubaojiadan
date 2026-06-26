@@ -132,6 +132,13 @@ const { success, error, notFound, paginate } = require('../../utils/response')
 const db = require('../../models')
 const { Op } = require('sequelize')
 
+// 计算当日剩余查价次数（与小程序端 user.js 保持一致）
+const computeQuoteDailyRemaining = (user) => {
+  const today = new Date().toISOString().split('T')[0]
+  if (user.quote_daily_date !== today) return 10
+  return Math.max(0, 10 - (parseInt(user.quote_daily_count) || 0))
+}
+
 router.get('/', adminAuth, async (req, res, next) => {
   try {
     const { keyword, status, page = 1, pageSize = 20 } = req.query
@@ -159,6 +166,7 @@ router.get('/', adminAuth, async (req, res, next) => {
       const json = user.toJSON()
       json.plan_name = json.MembershipPlan ? json.MembershipPlan.name : null
       delete json.MembershipPlan
+      json.quoteDailyRemaining = computeQuoteDailyRemaining(user)
       return json
     })
 
@@ -176,7 +184,9 @@ router.get('/:id', adminAuth, async (req, res, next) => {
       include: [{ model: db.Wallet, as: 'Wallet' }]
     })
     if (!user) return notFound(res, '用户不存在')
-    return success(res, user)
+    const data = user.toJSON()
+    data.quoteDailyRemaining = computeQuoteDailyRemaining(user)
+    return success(res, data)
   } catch (err) { next(err) }
 })
 

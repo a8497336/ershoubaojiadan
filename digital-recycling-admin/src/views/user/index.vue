@@ -19,6 +19,7 @@
         <el-table-column prop="nickname" label="昵称" width="120" />
         <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column prop="points" label="积分" width="80" />
+        <el-table-column prop="quoteDailyRemaining" label="当日剩余次数" width="100" />
         <el-table-column prop="total_recycled" label="回收台数" width="90" />
         <el-table-column prop="total_amount" label="累计收益" width="110">
           <template #default="{ row }">¥{{ Number(row.total_amount).toLocaleString() }}</template>
@@ -88,7 +89,8 @@
         <el-form-item label="昵称"><el-input v-model="editForm.nickname" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="editForm.phone" /></el-form-item>
         <el-form-item label="积分"><el-input-number v-model="editForm.points" :min="0" /></el-form-item>
-        <el-form-item label="每日查价次数"><el-input-number v-model="editForm.quote_remaining" :min="0" /></el-form-item>
+        <el-form-item label="当日剩余次数"><el-input v-model="editForm.quoteDailyRemaining" disabled /></el-form-item>
+        <!-- <el-form-item label="每日查价次数"><el-input-number v-model="editForm.quote_remaining" :min="0" /></el-form-item> -->
         <el-form-item label="会员类型">
           <el-select v-model="editForm.membership_id" placeholder="选择会员类型" clearable style="width: 100%">
             <el-option v-for="p in membershipPlans" :key="p.id" :label="p.name" :value="p.id" />

@@ -73,7 +73,7 @@ Page({
       const brands = res.data || res || []
       this.setData({ brands: Array.isArray(brands) ? brands : [] })
       if (brands.length > 0) {
-        this.selectBrand({ currentTarget: { dataset: { id: brands[0].id } } })
+        this.selectBrand({ currentTarget: { dataset: { id: brands[2].id } } })
       }
     }).catch(() => {
       this.setData({ brands: [] })
