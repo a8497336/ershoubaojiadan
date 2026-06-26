@@ -1,5 +1,5 @@
 {
   "navigationBarTitleText": "积分商城",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "usingComponents": { "loading-skeleton": "/components/common/loading-skeleton/loading-skeleton", "loading-spinner": "/components/common/loading-spinner/loading-spinner", "empty-state": "/components/common/empty-state/empty-state" }
 }
