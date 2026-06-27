@@ -411,4 +411,7 @@
     </view>
   </view>
 
+  <!-- 弹窗广告 -->
+  <popup-ad adData="{{popupAdData}}" visible="{{popupAdVisible}}" bind:close="onPopupAdClose" />
+
 </view>

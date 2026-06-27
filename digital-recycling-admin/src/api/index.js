@@ -69,6 +69,7 @@ export const getBrandRanking = (params) => request.get('/admin/statistics/brand-
 
 // ========== 用户 ==========
 export const getUsers = (params) => request.get('/admin/users', { params })
+export const exportUsers = (params) => request.get('/admin/users/export', { params, responseType: 'blob' })
 export const getUserDetail = (id) => request.get(`/admin/users/${id}`)
 export const createUser = (data) => request.post('/admin/users', data)
 export const updateUser = (id, data) => request.put(`/admin/users/${id}`, data)
@@ -103,6 +104,12 @@ export const getAnnouncements = (params) => request.get('/admin/announcements', 
 export const createAnnouncement = (data) => request.post('/admin/announcements', data)
 export const updateAnnouncement = (id, data) => request.put(`/admin/announcements/${id}`, data)
 export const deleteAnnouncement = (id) => request.delete(`/admin/announcements/${id}`)
+
+// ========== 弹窗广告管理 ==========
+export const getPopupAds = (params) => request.get('/admin/popup-ads', { params })
+export const createPopupAd = (data) => request.post('/admin/popup-ads', data)
+export const updatePopupAd = (id, data) => request.put(`/admin/popup-ads/${id}`, data)
+export const deletePopupAd = (id) => request.delete(`/admin/popup-ads/${id}`)
 
 export const getStores = (params) => request.get('/admin/stores', { params })
 export const createStore = (data) => request.post('/admin/stores', data)

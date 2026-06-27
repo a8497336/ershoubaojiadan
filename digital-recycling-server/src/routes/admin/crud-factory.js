@@ -212,5 +212,6 @@ module.exports = {
   bannerManage: createCrudRouter(db.Banner, 'Banner'),
   announcementManage: createCrudRouter(db.Announcement, '公告'),
   storeManage: createCrudRouter(db.Store, '门店'),
-  videoManage: createCrudRouter(db.Video, '视频')
+  videoManage: createCrudRouter(db.Video, '视频'),
+  popupAdManage: createCrudRouter(db.PopupAd, '弹窗广告')
 }

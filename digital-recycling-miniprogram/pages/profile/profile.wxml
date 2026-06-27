@@ -1,29 +1,27 @@
 <view class="profile-page" style="{{pageStyle}}">
   <view class="profile-header">
     <view class="profile-nav" style="padding-top: {{statusBarHeight}}px">
-      <!-- <view class="more-btn">●●●</view> -->
       <view class="nav-title">个人中心</view>
-      <!-- <view class="capsule">
-        <text>━</text>
-        <text>○</text>
-      </view> -->
     </view>
 
-    <view class="user-info-area">
-      <view class="user-avatar" bindtap="changeAvatar">
+    <view class="user-info-area" id="userInfoArea">
+      <button class="user-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
         <image wx:if="{{userInfo.avatar}}" src="{{userInfo.avatar}}" mode="aspectFill" />
         <view wx:else class="avatar-placeholder">
           <text class="avatar-em">{{userInfo.nickname || userInfo.name || '用'}}</text>
         </view>
         <view class="avatar-edit-tag">更换头像</view>
-      </view>
+      </button>
       <view class="user-details">
-        <view class="u-name">{{userInfo.nickname || userInfo.name || '用户'}}</view>
+        <input class="u-name-input" type="nickname" value="{{userInfo.nickname || userInfo.name || ''}}" placeholder="请输入昵称" bind:blur="onNicknameBlur" maxlength="20" />
         <view class="u-id">编号：{{userInfo.id || userInfo.userId || '--'}}</view>
         <view class="u-phone" wx:if="{{userInfo.phone}}">
           <text class="u-phone-icon">📞</text>
           <text>{{userInfo.phone}}</text>
         </view>
+        <button wx:else class="phone-bind-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
+          绑定手机号
+        </button>
       </view>
     </view>
 

@@ -4,6 +4,7 @@ Page({
   data: {
     points: 0,
     isSigned: false,
+    signing: false,
     logs: [],
     loading: true,
     page: 1,
@@ -63,7 +64,8 @@ Page({
   },
 
   async handleSignIn() {
-    if (this.data.isSigned) return
+    if (this.data.isSigned || this.data.signing) return
+    this.setData({ signing: true })
     try {
       await pointsApi.signIn()
       wx.showToast({ title: '签到成功', icon: 'success' })
@@ -72,7 +74,13 @@ Page({
       this.setData({ page: 1, hasMore: true, logs: [] })
       this.fetchPointsLogs()
     } catch (err) {
-      wx.showToast({ title: err.message || '签到失败', icon: 'none' })
+      if (err && err.code === 10005) {
+        this.setData({ isSigned: true })
+        this.fetchPointsBalance()
+      }
+      wx.showToast({ title: (err && err.message) || '签到失败', icon: 'none' })
+    } finally {
+      this.setData({ signing: false })
     }
   }
 })

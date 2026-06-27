@@ -59,7 +59,15 @@ const db = require('../../models')
 
 router.get('/balance', auth, async (req, res, next) => {
   try {
-    return success(res, { points: req.user.points })
+    const today = new Date().toISOString().split('T')[0]
+    const existing = await db.PointsLog.findOne({
+      where: {
+        user_id: req.userId,
+        source: 'sign',
+        created_at: { [db.Sequelize.Op.gte]: today }
+      }
+    })
+    return success(res, { points: req.user.points, is_signed: !!existing })
   } catch (err) {
     next(err)
   }

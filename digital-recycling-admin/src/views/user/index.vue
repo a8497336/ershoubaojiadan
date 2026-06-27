@@ -6,10 +6,14 @@
           <span>用户管理</span>
           <div class="header-actions">
             <el-button type="primary" @click="handleAdd">新增用户</el-button>
-            <el-input v-model="keyword" placeholder="搜索用户名/手机号" clearable style="width: 240px" @clear="loadData" @keyup.enter="loadData">
+            <el-input v-model="filters.phone" placeholder="手机号" clearable style="width: 140px" @clear="loadData" @keyup.enter="loadData" />
+            <el-input v-model="filters.referrer" placeholder="推荐人" clearable style="width: 120px" @clear="loadData" @keyup.enter="loadData" />
+            <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="加入开始" end-placeholder="加入结束" value-format="YYYY-MM-DD" style="width: 240px" @change="loadData" />
+            <el-input v-model="filters.keyword" placeholder="搜索用户/手机号/编号" clearable style="width: 200px" @clear="loadData" @keyup.enter="loadData">
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
             <el-button type="primary" @click="loadData">搜索</el-button>
+            <el-button type="success" @click="handleExport">导出Excel</el-button>
           </div>
         </div>
       </template>
@@ -18,6 +22,9 @@
         <el-table-column prop="user_no" label="用户编号" width="120" />
         <el-table-column prop="nickname" label="昵称" width="120" />
         <el-table-column prop="phone" label="手机号" width="130" />
+        <el-table-column prop="referrer" label="推荐人" width="100">
+          <template #default="{ row }">{{ row.referrer || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="points" label="积分" width="80" />
         <el-table-column prop="quoteDailyRemaining" label="当日剩余次数" width="100" />
         <el-table-column prop="total_recycled" label="回收台数" width="90" />
@@ -88,6 +95,7 @@
       <el-form :model="editForm" label-width="80px">
         <el-form-item label="昵称"><el-input v-model="editForm.nickname" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="editForm.phone" /></el-form-item>
+        <el-form-item label="推荐人"><el-input v-model="editForm.referrer" placeholder="请输入推荐人" /></el-form-item>
         <el-form-item label="积分"><el-input-number v-model="editForm.points" :min="0" /></el-form-item>
         <el-form-item label="当日剩余次数"><el-input v-model="editForm.quoteDailyRemaining" disabled /></el-form-item>
         <!-- <el-form-item label="每日查价次数"><el-input-number v-model="editForm.quote_remaining" :min="0" /></el-form-item> -->
@@ -111,6 +119,7 @@
         <el-descriptions-item label="用户编号">{{ detailData.user_no }}</el-descriptions-item>
         <el-descriptions-item label="昵称">{{ detailData.nickname }}</el-descriptions-item>
         <el-descriptions-item label="手机号">{{ detailData.phone }}</el-descriptions-item>
+        <el-descriptions-item label="推荐人">{{ detailData.referrer || '-' }}</el-descriptions-item>
         <el-descriptions-item label="积分">{{ detailData.points }}</el-descriptions-item>
         <el-descriptions-item label="回收台数">{{ detailData.total_recycled }}</el-descriptions-item>
         <el-descriptions-item label="累计收益">¥{{ Number(detailData.total_amount || 0).toLocaleString() }}</el-descriptions-item>
@@ -141,14 +150,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders, getMembershipPlans } from '@/api'
+import { getUsers, exportUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders, getMembershipPlans } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const submitLoading = ref(false)
 const detailLoading = ref(false)
 const tableData = ref([])
-const keyword = ref('')
+const filters = ref({ keyword: '', phone: '', referrer: '' })
+const dateRange = ref(null)
 const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
@@ -192,13 +202,51 @@ const statusMap = {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getUsers({ keyword: keyword.value, page: page.value, pageSize: pageSize.value })
+    const params = {
+      keyword: filters.value.keyword,
+      phone: filters.value.phone,
+      referrer: filters.value.referrer,
+      page: page.value,
+      pageSize: pageSize.value
+    }
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.date_from = dateRange.value[0]
+      params.date_to = dateRange.value[1]
+    }
+    const res = await getUsers(params)
     tableData.value = res.data.list
     total.value = res.data.pagination.total
   } catch (error) {
     ElMessage.error(error.message || '加载用户列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const handleExport = async () => {
+  try {
+    const params = {
+      keyword: filters.value.keyword,
+      phone: filters.value.phone,
+      referrer: filters.value.referrer
+    }
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.date_from = dateRange.value[0]
+      params.date_to = dateRange.value[1]
+    }
+    const res = await exportUsers(params)
+    const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `用户列表_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error) {
+    ElMessage.error(error.message || '导出失败')
   }
 }
 
@@ -313,9 +361,13 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 </style>

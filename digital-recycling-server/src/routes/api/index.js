@@ -23,5 +23,6 @@ router.use('/user-stock', require('./userStock'))
 router.use('/settings', require('./settings'))
 router.use('/scan', require('./scan'))
 router.use('/places', require('./places'))
+router.use('/popup-ads', require('./popup-ads'))
 
 module.exports = router

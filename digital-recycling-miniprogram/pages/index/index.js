@@ -35,6 +35,11 @@ Page({
     networkError: false,
     online: true,
 
+    // 弹窗广告
+    popupAdData: null,
+    popupAdVisible: false,
+    _popupAdClosedKey: 'popup_ad_closed',
+
     currentCategorySection: null,
     currentBrands: [],
     brandsLoading: false,
@@ -345,6 +350,8 @@ Page({
       this._hasLoaded = true
       this.startBannerRotation()
       this.startAnnouncementRotation()
+      // 弹窗广告加载延迟一会在数据就绪后触发
+      this._tryShowPopupAd()
     }).catch(() => {
       this.setData({ loading: false, networkError: true })
     })
@@ -1696,6 +1703,42 @@ Page({
    */
   onFabQuestion() {
     wx.navigateTo({ url: '/pages/faq/faq' })
+  },
+
+  // ===== 弹窗广告 =====
+  _tryShowPopupAd() {
+    // 仅首次进入时检查弹窗（不重复弹）
+    if (this._popupChecked) return
+    this._popupChecked = true
+
+    contentApi.getPopupAds().then(res => {
+      const ad = (res && res.data) || res || null
+      if (!ad || ad.status !== 1) return
+
+      // 校验生效时间
+      const now = Date.now()
+      if (ad.start_time && new Date(ad.start_time).getTime() > now) return
+      if (ad.end_time && new Date(ad.end_time).getTime() < now) return
+
+      // 仅首次：检查本地存储
+      if (ad.show_frequency === 'first') {
+        const closed = wx.getStorageSync(this.data._popupAdClosedKey)
+        if (closed) return
+      }
+
+      // 有图片才展示
+      if (!ad.images || ad.images.length === 0) return
+
+      this.setData({ popupAdData: ad, popupAdVisible: true })
+    }).catch(() => {/* 静默失败 */})
+  },
+
+  onPopupAdClose() {
+    const ad = this.data.popupAdData
+    if (ad && ad.show_frequency === 'first') {
+      wx.setStorageSync(this.data._popupAdClosedKey, true)
+    }
+    this.setData({ popupAdVisible: false })
   },
 
   navigateToLogin() {

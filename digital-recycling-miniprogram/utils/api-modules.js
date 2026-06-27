@@ -118,7 +118,8 @@ const contentApi = {
   getStores: () => request({ url: '/stores' }),
   getVideos: (category) => request({ url: '/videos', data: { category } }),
   getHotPrices: () => request({ url: '/prices/hot' }),
-  getBrandsByCategory: (id) => request({ url: `/categories/${id}/brands` })
+  getBrandsByCategory: (id) => request({ url: `/categories/${id}/brands` }),
+  getPopupAds: () => request({ url: '/popup-ads/current' })
 }
 
 const searchApi = {

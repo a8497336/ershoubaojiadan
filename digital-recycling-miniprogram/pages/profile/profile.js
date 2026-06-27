@@ -1,6 +1,5 @@
 const app = getApp()
-const userApi = require('../../utils/api-modules').userApi
-const messageApi = require('../../utils/api-modules').messageApi
+const { userApi, authApi, messageApi } = require('../../utils/api-modules')
 const { CONTACT } = require('../../utils/constants')
 const { checkLogin } = require('../../utils/common')
 
@@ -104,6 +103,7 @@ Page({
       data.is_vip = data.isVip || false
       data.membershipExpired = !!(data.membershipId && !data.isVip)
       app.globalData.userInfo = data
+
       this.setData({ userInfo: data })
     }).catch(() => {
       this.setData({ userInfo: user })
@@ -196,23 +196,67 @@ Page({
     }
   },
 
-  changeAvatar() {
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      success: (res) => {
-        const tempPath = res.tempFilePaths[0]
-        userApi.uploadAvatar(tempPath).then(uploadRes => {
-          const url = uploadRes.data.url || tempPath
-          const info = this.data.userInfo
-          info.avatar = url
-          this.setData({ userInfo: info })
-          app.globalData.userInfo = info
-          wx.showToast({ title: '头像更新成功', icon: 'success' })
-        }).catch(() => {
-          wx.showToast({ title: '上传失败', icon: 'error' })
-        })
+  // 微信 chooseAvatar 回调：选择头像后上传
+  onChooseAvatar(e) {
+    const avatarUrl = e.detail.avatarUrl
+    if (!avatarUrl) return
+
+    wx.showLoading({ title: '上传中...' })
+    userApi.uploadAvatar(avatarUrl).then(uploadRes => {
+      wx.hideLoading()
+      const url = uploadRes.data?.url || uploadRes.url || avatarUrl
+      const info = { ...this.data.userInfo, avatar: url }
+      this.setData({ userInfo: info })
+      app.globalData.userInfo = info
+
+      // 更新后端记录
+      userApi.updateProfile({ avatar: url }).catch(() => {})
+
+      wx.showToast({ title: '头像更新成功', icon: 'success' })
+    }).catch(() => {
+      wx.hideLoading()
+      wx.showToast({ title: '上传失败，请重试', icon: 'error' })
+    })
+  },
+
+  // 昵称 blur 回调：失焦时保存
+  onNicknameBlur(e) {
+    const nickname = e.detail.value
+    if (!nickname || nickname === this.data.userInfo.nickname) return
+
+    userApi.updateProfile({ nickname }).then(() => {
+      const info = { ...this.data.userInfo, nickname }
+      this.setData({ userInfo: info })
+      app.globalData.userInfo = info
+      wx.showToast({ title: '昵称已更新', icon: 'success' })
+    }).catch(() => {
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    })
+  },
+
+  // 微信 getPhoneNumber 回调：获取手机号
+  onGetPhoneNumber(e) {
+    const { code, errMsg } = e.detail
+    if (!code) {
+      if (errMsg && errMsg.indexOf('deny') > -1) {
+        wx.showToast({ title: '您取消了授权', icon: 'none' })
       }
+      return
+    }
+
+    wx.showLoading({ title: '获取中...' })
+    authApi.bindPhone(code).then(res => {
+      wx.hideLoading()
+      const phone = res.data?.phone || res.phone
+      if (phone) {
+        const info = { ...this.data.userInfo, phone }
+        this.setData({ userInfo: info })
+        app.globalData.userInfo = info
+        wx.showToast({ title: '手机号绑定成功', icon: 'success' })
+      }
+    }).catch(err => {
+      wx.hideLoading()
+      wx.showToast({ title: err.message || '绑定失败', icon: 'none' })
     })
   },
 

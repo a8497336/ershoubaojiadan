@@ -4,6 +4,7 @@
   "enablePullDownRefresh": false,
   "onReachBottomDistance": 100,
   "usingComponents": {
-    "loading-spinner": "/components/common/loading-spinner/loading-spinner"
+    "loading-spinner": "/components/common/loading-spinner/loading-spinner",
+    "popup-ad": "/components/popup-ad/popup-ad"
   }
 }

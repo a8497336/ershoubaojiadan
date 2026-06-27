@@ -33,11 +33,11 @@ const request = (options) => {
             reject(Object.assign({ statusCode: res.statusCode }, res.data || { message: '请求失败' }))
           }
         } else if (res.statusCode === 404) {
-          reject({ statusCode: 404, message: '请求的资源不存在' })
+          reject(Object.assign({ statusCode: 404 }, res.data || { message: '请求的资源不存在' }))
         } else if (res.statusCode >= 500) {
-          reject({ statusCode: res.statusCode, message: '服务器错误，请稍后重试' })
+          reject(Object.assign({ statusCode: res.statusCode }, res.data || { message: '服务器错误，请稍后重试' }))
         } else {
-          reject({ statusCode: res.statusCode, message: `请求错误(${res.statusCode})` })
+          reject(Object.assign({ statusCode: res.statusCode }, res.data || { message: `请求错误(${res.statusCode})` }))
         }
       },
       fail: (err) => {

@@ -76,6 +76,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TINYINT,
       defaultValue: 1
     },
+    referrer: {
+      type: DataTypes.STRING(50)
+    },
     last_login_at: {
       type: DataTypes.DATE
     }

@@ -3,6 +3,55 @@
 > 本文件记录项目根目录 `c:\Users\17798\Desktop\陈峰\数码回收` 下所有需求的变更留痕。
 > 时间统一使用 UTC+8（Asia/Shanghai）。
 
+## 2026-06-27（修复每日签到按钮状态与错误提示）
+
+### 背景
+- 小程序「我的积分」页签到后按钮仍显示「每日签到」且可再次点击，再次点击提示「请求错误」，但后端实际返回 `{code:10005,message:"今日已签到"}`。
+- 根因 1：后端 `/api/points/balance` 仅返回 `{ points }`，未返回 `is_signed`，导致前端 `fetchPointsBalance` 永远把 `isSigned` 置为 `false`，签到成功后又被重置。
+- 根因 2：前端 `utils/api.js` 对非 200 状态码（如 400）统一返回 `请求错误(statusCode)`，忽略了响应体中后端给出的 `message`，导致重复签到时看不到「今日已签到」提示。
+
+### 后端
+- **Task 1 - `/api/points/balance` 返回签到状态**（`digital-recycling-server/src/routes/api/points.js`）
+  - 新增查询当日 `source='sign'` 的 `PointsLog` 记录（与 `/sign` 路由采用相同的 UTC 日期判定逻辑，保持一致）。
+  - 响应体由 `{ points }` 调整为 `{ points, is_signed }`，`is_signed` 为布尔值。
+  - 无模型/迁移变更。
+
+### 小程序端
+- **Task 2 - 修复请求层错误信息透传**（`digital-recycling-miniprogram/utils/api.js`）
+  - 404 / 5xx / 其他非 200 状态码的 reject 对象改为 `Object.assign({ statusCode }, res.data || { message: 原默认文案 })`，优先使用后端响应体中的 `message`/`code`，后端未返回 body 时回退到原默认文案。
+  - 行为更准确，不引入新依赖，不影响 `statusCode===200` 分支。
+- **Task 3 - 签到防重复点击与状态兜底**（`digital-recycling-miniprogram/pages/my-points/my-points.js`）
+  - `data` 新增 `signing` 标志位，`handleSignIn` 入口判断 `isSigned || signing` 拦截重复点击。
+  - `try/catch` 改为 `try/catch/finally`，`finally` 中复位 `signing`。
+  - catch 中识别 `err.code === 10005`（今日已签到），主动将 `isSigned` 置 `true` 并刷新余额，避免极端情况下状态卡死。
+  - toast 文案优先取 `err.message`（现已能拿到后端的「今日已签到」）。
+
+## 2026-06-26（会员中心接入微信支付 V2）+ 修复 user_stock 外键定义）
+
+### 背景
+- 执行 `npm run db:sync`（`sequelize.sync({alter:true})`）同步模型新字段到数据库，过程中遇到三类阻断问题并逐一修复。
+
+### 数据库变更（通过 MySQL MCP 执行）
+- **清理 users 表重复索引**：users 表因历史多次 `sync({alter:true})` 累积 64 个索引（达 MySQL 上限），其中 61 个为重复的 `openid_2..openid_32`、`user_no_2..user_no_31`。通过单条 `ALTER TABLE users DROP INDEX ...`（61 个 DROP）批量清理，清理后仅保留 PRIMARY、openid、user_no 三个索引。
+- **清理孤立外键引用**：users 表 4 条测试数据（id 276/279/282/285）的 `membership_id` 指向不存在的 `membership_plans.id`，导致无法添加外键约束。按会员降级约定将这 4 条记录的 `membership_id`、`membership_expire` 置为 NULL。
+- **新增字段同步**：
+  - `users.referrer` VARCHAR(50) NULL（推荐人字段）。
+  - `membership_plans.product_id` 注释更新为「微信小程序虚拟支付商品 ID」。
+  - `user_stock` 表字段注释补全（购入价格/备注/是否已卖出/卖出价格/卖出时间）。
+
+### 模型定义修复（`digital-recycling-server/src/models/index.js`）
+- **UserStock 关联 NOT NULL + SET NULL 矛盾修复**：
+  - 原定义：`UserStock.userId` / `productId` 为 `allowNull: false`，但关联未指定 `onDelete`，Sequelize 默认 `ON DELETE SET NULL`，与 NOT NULL 列矛盾，报错 `ER_FK_COLUMN_NOT_NULL`。
+  - 修复：为 `db.User.hasMany(db.UserStock)` 与 `db.UserStock.belongsTo(db.User)`、`db.Product.hasMany(db.UserStock)` 与 `db.UserStock.belongsTo(db.Product)` 显式增加 `onDelete: 'CASCADE'`（用户/产品删除时级联删除其库存，语义正确）。
+  - `conditionId` 为可空字段，保留默认 `SET NULL`，未改动。
+- 影响范围：仅 user_stock 表的 user_id、product_id 外键删除行为，不影响现有数据查询逻辑。
+
+### 验证结果
+- `users.referrer` 字段已存在（varchar(50), nullable）。
+- `user_stock` 外键：`user_stock_ibfk_1`(user_id→CASCADE)、`user_stock_ibfk_2`(product_id→CASCADE)、`user_stock_ibfk_3`(condition_id→SET NULL)。
+- users 表索引数恢复正常（10，含 PRIMARY、openid、user_no 及外键自动索引）。
+- `npm run db:sync` 退出码 0，全部表同步完成。
+
 ## 2026-06-26（会员中心接入微信支付 V2）
 
 ### 背景

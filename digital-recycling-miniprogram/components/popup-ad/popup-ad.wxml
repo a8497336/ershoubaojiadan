@@ -1,0 +1,52 @@
+<!-- 弹窗广告 -->
+<view class="popup-overlay {{adData.popup_type === 'fullscreen' ? 'fullscreen' : 'local'}}" wx:if="{{visible && adData}}" catchtap="close">
+
+  <!-- 弹窗主体 -->
+  <view class="popup-box {{adData.popup_type === 'fullscreen' ? 'fullscreen-box' : 'local-box'}}" catchtap="noop">
+
+    <!-- 图片轮播（主体） -->
+    <view class="image-wrap">
+      <swiper
+        class="popup-swiper"
+        style="height: {{adData.popup_type === 'fullscreen' ? '70vh' : '600rpx'}}"
+        indicator-dots="{{adData.images.length > 1}}"
+        indicator-color="rgba(255,255,255,0.4)"
+        indicator-active-color="#ffffff"
+        current="{{currentIndex}}"
+        bindchange="onSwiperChange"
+        circular="{{false}}"
+        autoplay="{{false}}"
+      >
+        <swiper-item wx:for="{{adData.images}}" wx:key="index" catchtap="onImageTap">
+          <image class="popup-image" src="{{item.url}}" mode="aspectFill" lazy-load="{{true}}" />
+        </swiper-item>
+      </swiper>
+
+      <!-- 标题叠加在图片顶部 -->
+      <view class="title-bar" wx:if="{{adData.title}}">
+        <view class="title-bg"></view>
+        <text class="title-text">{{adData.title}}</text>
+      </view>
+
+      <!-- 图片数量标识 -->
+      <view class="image-count" wx:if="{{adData.images.length > 1}}">
+        <text>{{currentIndex + 1}} / {{adData.images.length}}</text>
+      </view>
+    </view>
+
+    <!-- 底部操作区 -->
+    <view class="action-bar">
+      <view class="action-btn" catchtap="onImageTap">
+        <text>{{currentLink ? '立即查看' : '我知道了'}}</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- 关闭按钮：弹窗外部下方（市面常见样式） -->
+  <view class="close-circle" catchtap="onClose">
+    <view class="close-line close-line-1"></view>
+    <view class="close-line close-line-2"></view>
+  </view>
+
+</view>

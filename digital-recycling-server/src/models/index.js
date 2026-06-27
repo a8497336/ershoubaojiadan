@@ -57,6 +57,7 @@ db.RolePermission = require('./RolePermission')(sequelize, Sequelize)
 db.AdminLog = require('./AdminLog')(sequelize, Sequelize)
 db.Setting = require('./Setting')(sequelize, Sequelize)
 db.UserStock = require('./UserStock')(sequelize, Sequelize)
+db.PopupAd = require('./PopupAd')(sequelize, Sequelize)
 
 db.Category.hasMany(db.Brand, { foreignKey: 'category_id', as: 'Brands' })
 db.Brand.belongsTo(db.Category, { foreignKey: 'category_id', as: 'Category' })
@@ -131,11 +132,11 @@ db.Permission.belongsToMany(db.Role, {
   as: 'Roles'
 })
 
-db.User.hasMany(db.UserStock, { foreignKey: 'user_id', as: 'UserStocks' })
-db.UserStock.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
+db.User.hasMany(db.UserStock, { foreignKey: 'user_id', as: 'UserStocks', onDelete: 'CASCADE' })
+db.UserStock.belongsTo(db.User, { foreignKey: 'user_id', as: 'User', onDelete: 'CASCADE' })
 
-db.Product.hasMany(db.UserStock, { foreignKey: 'product_id', as: 'UserStocks' })
-db.UserStock.belongsTo(db.Product, { foreignKey: 'product_id', as: 'Product' })
+db.Product.hasMany(db.UserStock, { foreignKey: 'product_id', as: 'UserStocks', onDelete: 'CASCADE' })
+db.UserStock.belongsTo(db.Product, { foreignKey: 'product_id', as: 'Product', onDelete: 'CASCADE' })
 
 db.ProductCondition.hasMany(db.UserStock, { foreignKey: 'condition_id', as: 'UserStocks' })
 db.UserStock.belongsTo(db.ProductCondition, { foreignKey: 'condition_id', as: 'Condition' })

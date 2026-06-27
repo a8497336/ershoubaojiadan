@@ -69,6 +69,12 @@ const routes = [
         meta: { title: '内容管理', icon: 'PictureFilled' }
       },
       {
+        path: 'popup-ad',
+        name: 'PopupAdManage',
+        component: () => import('@/views/popup-ad/index.vue'),
+        meta: { title: '弹窗广告', icon: 'Notification' }
+      },
+      {
         path: 'statistics',
         name: 'Statistics',
         component: () => import('@/views/statistics/index.vue'),

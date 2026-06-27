@@ -47,6 +47,10 @@
           <el-icon><PictureFilled /></el-icon>
           <template #title>内容管理</template>
         </el-menu-item>
+        <el-menu-item index="/popup-ad">
+          <el-icon><Notification /></el-icon>
+          <template #title>弹窗广告</template>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <template #title>数据统计</template>

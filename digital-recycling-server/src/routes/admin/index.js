@@ -22,5 +22,6 @@ router.use('/logs', require('./log-manage'))
 router.use('/settings', require('./setting-manage'))
 router.use('/feature-phone-images', require('./feature-phone-image-manage'))
 router.use('/upload', require('./upload'))
+router.use('/popup-ads', require('./popup-manage'))
 
 module.exports = router
