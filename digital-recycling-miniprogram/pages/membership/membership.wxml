@@ -27,9 +27,9 @@
             <text class="plan-original">¥{{item.original_price}}</text>
           </view>
           <view class="plan-subscribers" wx:if="{{item.subscriber_count > 0}}">{{item.subscriber_count}} 人已开通</view>
-          <!-- <button class="plan-buy-btn" wx:if="{{userInfo.membershipExpired && item.id === userInfo.membershipId}}" bindtap="onPurchase" data-plan-id="{{item.id}}">立刻续期</button>
+          <button class="plan-buy-btn" wx:if="{{userInfo.membershipExpired && item.id === userInfo.membershipId}}" bindtap="onPurchase" data-plan-id="{{item.id}}">立刻续期</button>
           <button class="plan-buy-btn" wx:elif="{{userInfo.isVip && item.id === userInfo.membershipId}}" disabled>已开通</button>
-          <button class="plan-buy-btn" wx:else bindtap="onPurchase" disabled data-plan-id="{{item.id}}">立即开通(功能开发中)</button> -->
+          <button class="plan-buy-btn" wx:else bindtap="onPurchase" data-plan-id="{{item.id}}">立即开通</button>
         </view>
       </view>
     </view>

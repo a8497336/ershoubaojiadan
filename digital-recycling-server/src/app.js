@@ -32,6 +32,9 @@ app.get('/admin/{*splat}', (req, res) => {
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
+// 微信支付 V2 回调以 XML 格式 POST,需要 text 中间件解析为字符串
+app.use('/api/membership/pay-notify', express.text({ type: 'text/xml', limit: '5mb' }))
+
 app.use('/api', require('./routes/api'))
 app.use('/api/admin', require('./routes/admin'))
 

@@ -56,49 +56,75 @@ Page({
   },
 
   doPurchase(planId) {
-    if (typeof wx.requestVirtualPayment !== 'function') {
-      wx.showModal({
-        title: '请升级微信',
-        content: '当前微信版本不支持虚拟支付,请升级到最新版本后再试',
-        showCancel: false
-      })
-      return
-    }
-
+    console.log('[membership] doPurchase 开始, planId=', planId)
     wx.showLoading({ title: '创建订单...' })
     membershipApi.purchase(planId).then((res) => {
       wx.hideLoading()
       const data = res.data || res
-      if (!data.signData) {
+      console.log('[membership] purchase 返回完整数据:', JSON.stringify(data))
+      // 后端返回 { orderNo, amount, planName, timeStamp, nonceStr, package, signType, paySign }
+      if (!data.paySign || !data.package) {
+        console.error('[membership] 订单数据异常,缺少 paySign/package', data)
         wx.showToast({ title: '订单数据异常,稍后重试', icon: 'none' })
         return
       }
-      // 后端返回 { mode, signData, orderNo, amount, planName, productId }
-      wx.requestVirtualPayment({
-        signData: data.signData,
-        mode: data.mode || 'long_series_goods',
+      const orderNo = data.orderNo
+      console.log('[membership] 调起 wx.requestPayment, orderNo=', orderNo)
+      console.log('[membership] wx.requestPayment 参数:', JSON.stringify({
+        timeStamp: data.timeStamp,
+        nonceStr: data.nonceStr,
+        package: data.package,
+        signType: data.signType || 'MD5',
+        paySign: data.paySign
+      }))
+      wx.requestPayment({
+        timeStamp: data.timeStamp,
+        nonceStr: data.nonceStr,
+        package: data.package,
+        signType: data.signType || 'MD5',
+        paySign: data.paySign,
         success: (payRes) => {
-          // payRes.errMsg === 'requestVirtualPayment:ok'
+          console.log('[membership] wx.requestPayment success:', JSON.stringify(payRes))
           wx.showToast({ title: '支付成功', icon: 'success' })
           this.loadUserInfo()
+          // 兜底：主动查单确保后端入账
+          this.queryPaymentStatus(orderNo)
         },
         fail: (payErr) => {
-          // payErr.errMsg: 'requestVirtualPayment:fail cancel' / 'fail ...'
+          console.warn('[membership] wx.requestPayment fail:', JSON.stringify(payErr))
           const errMsg = (payErr && payErr.errMsg) || '未知错误'
+          console.log(errMsg)
           if (errMsg.includes('cancel')) {
-            // 用户主动取消,不弹错误
-            return
+            wx.showToast({ title: '已取消', icon: 'none' })
+          } else {
+            wx.showToast({ title: '支付失败：' + errMsg, icon: 'none' })
           }
-          wx.showToast({ title: '支付失败：' + errMsg, icon: 'none' })
+          // 兜底：主动查单（用户可能实际已支付但前端回调失败）
+          this.queryPaymentStatus(orderNo)
         },
-        complete: () => {
-          // 无论成功失败都重新加载用户信息(后端回调可能延迟到达)
+        complete: (payComplete) => {
+          console.log('[membership] wx.requestPayment complete:', JSON.stringify(payComplete))
+          // 最终兜底：无论成功失败都重新加载用户信息
           this.loadUserInfo()
         }
       })
     }).catch((err) => {
+      console.error('[membership] purchase 接口失败:', JSON.stringify(err))
       wx.hideLoading()
       wx.showToast({ title: '创建订单失败', icon: 'none' })
+    })
+  },
+
+  // 主动查单（应对微信回调延迟或丢失）
+  queryPaymentStatus(orderNo) {
+    if (!orderNo) return
+    membershipApi.queryPaymentStatus(orderNo).then((res) => {
+      const data = res.data || res
+      if (data && data.status === 'paid') {
+        this.loadUserInfo()
+      }
+    }).catch(() => {
+      // 静默失败，不打扰用户
     })
   },
 

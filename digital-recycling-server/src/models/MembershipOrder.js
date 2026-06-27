@@ -41,6 +41,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(64),
       allowNull: true,
       comment: '微信支付订单号(由微信虚拟支付回调写入,用于对账)'
+    },
+    prepay_id: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      comment: '微信支付预支付会话 ID(unifiedorder 返回,用于查单)'
     }
   }, {
     tableName: 'membership_orders',
