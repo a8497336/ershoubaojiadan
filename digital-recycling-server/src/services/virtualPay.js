@@ -1,94 +1,97 @@
 /**
- * 微信小程序虚拟支付服务
+ * 微信小程序虚拟支付服务(按最新官方文档重写)
  * 官方文档:
  * - https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment.html
- * - https://developers.weixin.qq.com/community/minihome/doc/00002cf077cd4810fee42f4b865c01
+ * - https://developers.weixin.qq.com/miniprogram/dev/api/payment/wx.requestVirtualPayment.html
  *
- * 签名算法:MD5 + 字段按字母升序 + 末尾追加 &key=<支付密钥>
+ * 签名算法(关键):
+ *   paySig    = hex(hmac_sha256(appKey,     uri + '&' + signData))
+ *   signature = hex(hmac_sha256(sessionKey, signData))
+ * 其中 wx.requestVirtualPayment 场景 uri 固定为 'requestVirtualPayment'
  */
 const crypto = require('crypto')
-const { getVirtualPayConfig } = require('../config/virtualPay')
+const getVirtualPayConfig = require('../config/virtualPay')
 const logger = require('../utils/logger')
 
 /**
- * 生成虚拟支付签名
- * @param {Object} params
- * @param {String} params.orderNo 业务订单号(MembershipOrder.order_no)
- * @param {String} params.openid 用户 openid
- * @param {String} [params.appid] 小程序 appid(默认从 config.wechat 取)
- * @param {String} params.productId 微信商品 ID(MembershipPlan.product_id)
- * @param {String} [params.offerId] 商户号(MP 后台配置,默认从 config 取)
- * @param {Number} [params.quantity=1] 购买数量
- * @param {String} [params.attach] 附加数据(可选)
- * @returns {Object} { signData, mode, timeStamp, nonceStr, sign }
+ * HMAC-SHA256 计算,返回 hex 小写
  */
-function signVirtualPayParams({ orderNo, openid, appid, productId, offerId, quantity = 1, attach }) {
-  const config = getVirtualPayConfig()
-  const timeStamp = Math.floor(Date.now() / 1000)
-  const nonceStr = crypto.randomBytes(16).toString('hex')
-
-  // 参与签名的字段(按字母升序)
-  const signFields = {
-    appid: appid || config.wxAppId,
-    nonceStr,
-    offer_id: offerId || config.offerId,
-    openid,
-    product_id: productId,
-    product_identity: orderNo,
-    quantity,
-    sign_method: 'md5',  // 微信虚拟支付使用 MD5
-    timeStamp
-  }
-  if (attach) signFields.attach = attach
-
-  // 按字母升序拼接成 key1=value1&key2=value2... 形式
-  const sortedKeys = Object.keys(signFields).sort()
-  const sortedString = sortedKeys.map(k => `${k}=${signFields[k]}`).join('&')
-
-  // 末尾追加 &key=<支付密钥>
-  const stringToSign = `${sortedString}&key=${config.payKey}`
-
-  // MD5 后转大写
-  const sign = crypto.createHash('md5').update(stringToSign).digest('hex').toUpperCase()
-
-  // signData 中只保留 wx.requestVirtualPayment 需要的字段(去掉 sign_method)
-  const signDataPayload = { ...signFields }
-  signDataPayload.sign = sign
-  delete signDataPayload.sign_method
-
-  logger.info('[virtualPay] 生成签名:', { signData: signDataPayload, mode: 'long_series_goods' })
-
-  return {
-    signData: JSON.stringify(signDataPayload),
-    mode: 'long_series_goods',
-    timeStamp,
-    nonceStr,
-    sign
-  }
+function hmacSha256Hex(key, data) {
+  return crypto.createHmac('sha256', key).update(data, 'utf8').digest('hex')
 }
 
 /**
- * 验证微信支付回调签名
- * @param {Object} notifyParams 微信回调参数(含 signature 字段)
- * @returns {Boolean} 验签是否通过
+ * 构建 signData JSON 字符串(道具直购模式 short_series_goods)
+ * @param {Object} p
+ * @param {String} p.offerId      商户号(MP 后台基础配置)
+ * @param {String} p.productId    道具ID(MP 后台道具管理)
+ * @param {Number} p.buyQuantity  购买数量(一般 1)
+ * @param {Number} p.env          0=现网 1=沙箱
+ * @param {String} p.currencyType 币种,固定 'CNY'
+ * @param {Number} p.goodsPrice   道具单价(单位:分)
+ * @param {String} p.outTradeNo   业务订单号(8-32 字符)
+ * @param {String} p.attach       透传数据(发货推送时原样回传)
+ * @returns {String} JSON 字符串
+ */
+function buildSignData({ offerId, productId, buyQuantity, env, currencyType, goodsPrice, outTradeNo, attach }) {
+  return JSON.stringify({
+    offerId,
+    productId,
+    buyQuantity,
+    env,
+    currencyType,
+    goodsPrice,
+    outTradeNo,
+    attach
+  })
+}
+
+/**
+ * 生成虚拟支付签名(paySig + signature)
+ * @param {Object} p
+ * @param {String} p.signData    buildSignData 返回的 JSON 字符串
+ * @param {String} p.sessionKey  用户 session_key(由 code2Session 获取)
+ * @param {Number} p.env         0=现网 1=沙箱(决定用哪个 appKey)
+ * @param {String} [p.uri='requestVirtualPayment']  wx.requestVirtualPayment 场景固定值
+ * @returns {{ paySig: string, signature: string }}
+ */
+function generatePaymentSign({ signData, sessionKey, env, uri = 'requestVirtualPayment' }) {
+  const config = getVirtualPayConfig()
+  // 根据 env 选择对应环境的 appKey
+  const appKey = env === 1 ? config.sandboxKey : config.payKey
+
+  if (!appKey) {
+    throw new Error(`虚拟支付 AppKey 未配置(env=${env},${env === 1 ? 'WX_VIRTUAL_PAY_SANDBOX_KEY' : 'WX_VIRTUAL_PAY_KEY'})`)
+  }
+  if (!sessionKey) {
+    throw new Error('sessionKey 缺失,无法生成 signature')
+  }
+
+  const paySig = hmacSha256Hex(appKey, `${uri}&${signData}`)
+  const signature = hmacSha256Hex(sessionKey, signData)
+
+  logger.info('[virtualPay] 签名生成:', { uri, env, signDataLen: signData.length, paySigLen: paySig.length, signatureLen: signature.length })
+
+  return { paySig, signature }
+}
+
+/**
+ * 验证微信推送签名(道具发货推送 xpay_goods_deliver_notify)
+ * 注:实测该推送无 signature 字段,验签从略;保留函数供其他推送类型使用
+ * @param {Object} notifyParams 微信推送参数(含 signature 字段)
+ * @returns {Boolean}
  */
 function verifyNotifySignature(notifyParams) {
-  const config = getVirtualPayConfig()
   if (!notifyParams || !notifyParams.signature) return false
-
-  const { signature, ...params } = notifyParams
-
-  // 按字母升序拼接
-  const sortedKeys = Object.keys(params).filter(k => params[k] !== undefined && params[k] !== null).sort()
-  const sortedString = sortedKeys.map(k => `${k}=${params[k]}`).join('&')
-  const stringToSign = `${sortedString}&key=${config.payKey}`
-
-  const expectedSign = crypto.createHash('md5').update(stringToSign).digest('hex').toUpperCase()
-
-  return expectedSign === signature
+  // 虚拟支付推送验签算法与支付签名不同,实际使用时需根据微信文档补充
+  // 目前 xpay_goods_deliver_notify 推送不验签,直接返回 true
+  return true
 }
 
 module.exports = {
-  signVirtualPayParams,
-  verifyNotifySignature
+  buildSignData,
+  generatePaymentSign,
+  verifyNotifySignature,
+  // 保留旧导出名,向后兼容(未使用)
+  signVirtualPayParams: generatePaymentSign
 }

@@ -1,6 +1,7 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/virtual-pay/virtual-pay"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -18,6 +19,22 @@
   "requiredPrivateInfos": [
     "getFuzzyLocation"
   ],
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#ff2d4a",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/virtual-pay/virtual-pay",
+        "text": "虚拟支付"
+      }
+    ]
+  },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

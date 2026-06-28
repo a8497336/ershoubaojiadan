@@ -17,6 +17,54 @@
         </div>
       </template>
 
+      <div v-if="activeTab !== 'message'" class="search-bar">
+        <!-- Banner 查询栏 -->
+        <template v-if="activeTab === 'banner'">
+          <el-input v-model="queryForm.title" placeholder="请输入标题" clearable style="width: 200px" @keyup.enter="handleSearch" />
+          <el-select v-model="queryForm.status" placeholder="状态" clearable style="width: 130px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </template>
+        <!-- 公告 查询栏 -->
+        <template v-if="activeTab === 'announcement'">
+          <el-input v-model="queryForm.title" placeholder="请输入标题" clearable style="width: 200px" @keyup.enter="handleSearch" />
+          <el-select v-model="queryForm.type" placeholder="类型" clearable style="width: 130px">
+            <el-option label="普通" :value="1" />
+            <el-option label="重要" :value="2" />
+            <el-option label="紧急" :value="3" />
+          </el-select>
+          <el-select v-model="queryForm.status" placeholder="状态" clearable style="width: 130px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </template>
+        <!-- 门店 查询栏 -->
+        <template v-if="activeTab === 'store'">
+          <el-input v-model="queryForm.keyword" placeholder="名称/联系人/电话/地址" clearable style="width: 240px" @keyup.enter="handleSearch" />
+          <el-select v-model="queryForm.status" placeholder="状态" clearable style="width: 130px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </template>
+        <!-- 视频 查询栏 -->
+        <template v-if="activeTab === 'video'">
+          <el-input v-model="queryForm.title" placeholder="请输入标题" clearable style="width: 200px" @keyup.enter="handleSearch" />
+          <el-select v-model="queryForm.category" placeholder="分类" clearable style="width: 160px">
+            <el-option label="查看报价" value="查看报价" />
+            <el-option label="实用功能" value="实用功能" />
+            <el-option label="下单相关" value="下单相关" />
+            <el-option label="收入相关" value="收入相关" />
+          </el-select>
+          <el-select v-model="queryForm.status" placeholder="状态" clearable style="width: 130px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </template>
+        <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
+        <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      </div>
+
       <template v-if="activeTab === 'banner'">
         <el-table :data="tableData" v-loading="loading" stripe>
           <el-table-column prop="id" label="ID" width="60" />
@@ -130,6 +178,8 @@
           </el-form-item>
         </el-form>
       </template>
+
+
 
       <el-pagination v-if="activeTab !== 'message'" v-model:current-page="page" v-model:page-size="pageSize" :total="total" layout="total, prev, pager, next" style="margin-top: 16px; justify-content: flex-end" @current-change="loadData" />
     </el-card>
@@ -249,9 +299,12 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { Search, Refresh } from '@element-plus/icons-vue'
 import { getBanners, createBanner, updateBanner, deleteBanner, getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, getStores, createStore, updateStore, deleteStore, getVideos, createVideo, updateVideo, deleteVideo, broadcastMessage, sendMessage as sendMsg, geocodeAddress } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-
+// 查询条件（按 Tab 使用子集）
+const defaultQueryForm = () => ({ title: '', keyword: '', status: '', type: '', category: '' })
+const queryForm = ref(defaultQueryForm())
 const activeTab = ref('banner')
 const loading = ref(false)
 const tableData = ref([])
@@ -372,11 +425,33 @@ const apiMap = {
   video: { list: getVideos, create: createVideo, update: updateVideo, delete: deleteVideo }
 }
 
+const buildListParams = () => {
+  const params = { page: page.value, pageSize: pageSize.value }
+  const { title, keyword, status, type, category } = queryForm.value
+  // 不同 Tab 使用的查询字段集合不同，未填写的字段不发送到后端
+  if (activeTab.value === 'banner') {
+    if (title) params.keyword = title
+    if (status !== '' && status !== null && status !== undefined) params.status = status
+  } else if (activeTab.value === 'announcement') {
+    if (title) params.keyword = title
+    if (type !== '' && type !== null && type !== undefined) params.type = type
+    if (status !== '' && status !== null && status !== undefined) params.status = status
+  } else if (activeTab.value === 'store') {
+    if (keyword) params.keyword = keyword
+    if (status !== '' && status !== null && status !== undefined) params.status = status
+  } else if (activeTab.value === 'video') {
+    if (title) params.keyword = title
+    if (category) params.category = category
+    if (status !== '' && status !== null && status !== undefined) params.status = status
+  }
+  return params
+}
+
 const loadData = async () => {
   if (activeTab.value === 'message') return
   loading.value = true
   try {
-    const res = await apiMap[activeTab.value].list({ page: page.value, pageSize: pageSize.value })
+    const res = await apiMap[activeTab.value].list(buildListParams())
     tableData.value = res.data.list || res.data
     total.value = res.data.pagination?.total || 0
   } catch (e) {
@@ -384,6 +459,17 @@ const loadData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  page.value = 1
+  loadData()
+}
+
+const handleReset = () => {
+  queryForm.value = defaultQueryForm()
+  page.value = 1
+  loadData()
 }
 
 const handleAdd = () => {
@@ -530,6 +616,7 @@ onMounted(loadData)
 .header-actions {
   display: flex;
   gap: 12px;
+  align-items: center;  
 }
 
 .banner-uploader {
@@ -613,5 +700,16 @@ onMounted(loadData)
   color: #999;
   margin-top: 8px;
   line-height: 1.4;
+}
+
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  /* margin-bottom: 16px; */
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 4px;
 }
 </style>

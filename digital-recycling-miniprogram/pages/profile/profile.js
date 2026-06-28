@@ -1,7 +1,7 @@
 const app = getApp()
 const { userApi, authApi, messageApi } = require('../../utils/api-modules')
 const { CONTACT } = require('../../utils/constants')
-const { checkLogin } = require('../../utils/common')
+const { checkLogin, clearAllData } = require('../../utils/common')
 
 Page({
   data: {
@@ -19,8 +19,7 @@ Page({
 
     pointActivities: [
       { icon: '⭐', label: '我的积分' },
-      { icon: '🎁', label: '积分抽奖' },
-      { icon: '🛒', label: '积分商城' },
+      // { icon: '🛒', label: '积分商城' },
       { icon: '👥', label: '邀请好友' }
     ],
 
@@ -143,9 +142,8 @@ Page({
     const index = e.currentTarget.dataset.index
     switch (index) {
       case 0: wx.navigateTo({ url: '/pages/my-points/my-points' }); break
-      case 1: wx.navigateTo({ url: '/pages/points-lottery/points-lottery' }); break
-      case 2: wx.navigateTo({ url: '/pages/points-mall/points-mall' }); break
-      case 3: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
+      case 1: wx.navigateTo({ url: '/pages/points-mall/points-mall' }); break
+      case 2: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
     }
   },
 
@@ -262,5 +260,21 @@ Page({
 
   goToMyPoints() { wx.navigateTo({ url: '/pages/my-points/my-points' }) },
 
-  goToMembership() { wx.navigateTo({ url: '/pages/membership/membership' }) }
+  goToMembership() { wx.navigateTo({ url: '/pages/membership/membership' }) },
+
+  onLogout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '确定要退出当前账号吗？',
+      confirmText: '退出',
+      confirmColor: '#ff2d4a',
+      success: (res) => {
+        if (!res.confirm) return
+        clearAllData().then(() => {
+          app.globalData.userInfo = {}
+          wx.reLaunch({ url: '/pages/login/login' })
+        })
+      }
+    })
+  }
 })

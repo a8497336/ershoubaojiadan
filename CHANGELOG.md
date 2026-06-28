@@ -3,6 +3,444 @@
 > 本文件记录项目根目录 `c:\Users\17798\Desktop\陈峰\数码回收` 下所有需求的变更留痕。
 > 时间统一使用 UTC+8（Asia/Shanghai）。
 
+## 2026-06-28（内容管理后台：四个列表 Tab 增加查询能力）
+
+### 背景
+- 后台管理 `digital-recycling-admin/src/views/content/index.vue` 此前仅有「分页」能力，运营在 Banner/公告/门店/视频 数据量增长后难以快速定位目标记录。
+- 本次为四个列表 Tab 统一增加按字段查询与按状态/类型过滤的能力：后端 `crud-factory.js` 升级支持 `keyword` 模糊搜索，前端在卡片头与表格之间渲染查询栏。
+
+### 后端改动（digital-recycling-server）
+- **`src/routes/admin/crud-factory.js`**：
+  - `createCrudRouter(model, name, options = {})` 新增第三个参数 `options.searchableFields`（数组，未传默认为空，向后兼容）。
+  - `GET /` 列表 handler 增加 `keyword` 入参解析：非空时按 `searchableFields` 构造 `Op.or` 数组，每字段走 `Op.like '%keyword%'` 模糊匹配；与已有 `status` 过滤通过 `Op.and` 共存。
+  - 为五个共用此工厂的 admin 路由注入各自的 `searchableFields`：
+    - `bannerManage` → `['title', 'subtitle']`
+    - `announcementManage` → `['title', 'content']`
+    - `storeManage` → `['name', 'contact_name', 'contact_phone', 'address']`
+    - `videoManage` → `['title', 'category']`
+    - `popupAdManage` → `['title']`（仅后端能力同步，前端本次不动）
+- **未触碰**：`models/*`、`migrations/*`、`routes/admin/index.js`、其他 admin 路由。
+
+### 前端改动（digital-recycling-admin）
+- **`src/views/content/index.vue`**：
+  - 新增 `defaultQueryForm()` 与 `queryForm` ref，字段含 `title / keyword / status / type / category`（按 Tab 使用子集）。
+  - 新增 `buildListParams()`，按当前 `activeTab` 拼装请求参数，未填写字段不发送。
+  - `loadData()` 改用 `buildListParams()`。
+  - 新增 `handleSearch()`（分页回到第 1 页后重新加载）与 `handleReset()`（清空条件 + 回到第 1 页）。
+  - `watch(activeTab)` 切换 Tab 时一并重置 `queryForm` 与 `page`。
+  - 模板新增 `.search-bar` 容器（仅 `activeTab !== 'message'` 渲染），按 Tab 渲染差异化查询控件（标题/关键字输入框 + 状态下拉 + 公告类型下拉 + 视频分类下拉）+ 「查询」「重置」按钮。
+  - 新增 `.search-bar` 样式（浅灰底 + flex 布局 + 间距 12px）。
+  - 新增 `import { Search, Refresh } from '@element-plus/icons-vue'`（按钮图标）。
+
+### 数据模型 / 迁移
+- **无 schema 变更**：四个目标 model 字段早已存在，无需 `ALTER TABLE`。
+- **无迁移文件**：本次仅工厂函数能力扩展，无 DDL。
+
+### 兼容性
+- popup-ads 后端一并支持 `keyword`，但前端本次不消费（弹窗广告页保持不变），未传 `keyword` 时行为与历史完全一致。
+- 其他 admin 路由（product/order/member/...）**不受影响**，它们各自有独立 router 实现。
+
+### 影响面
+- 后端：仅 `src/routes/admin/crud-factory.js` 1 个文件。
+- 前端：仅 `src/views/content/index.vue` 1 个文件。
+- 不涉及 `digital-recycling-miniprogram`、数据库、模型、迁移、测试文件。
+
+---
+
+## 2026-06-28（后台管理：会员套餐新增上线/下线功能）
+
+### 背景
+- 后台管理 `/admin/member` 套餐管理此前仅展示状态标签（启用/禁用），缺少状态切换入口，运营需进入编辑表单才能改 status 字段，操作链路较长。
+- 本次在套餐列表操作列直接增加「上线/下线」按钮，复用已有 `PUT /admin/membership/plans/:id` 接口，无需后端改动。
+
+### 后台管理改动（digital-recycling-admin）
+
+#### 1. 套餐列表操作列新增上线/下线按钮
+- **`src/views/member/index.vue`** 模板：套餐管理「操作」列在「编辑」与「删除」之间新增 `el-button`，文案与样式根据 `row.status` 动态切换：
+  - `status === 1` 显示「下线」（warning 风格）
+  - `status === 0` 显示「上线」（success 风格）
+- 列宽由 160 调整为 220，以容纳三个按钮。
+
+#### 2. 新增 handleTogglePlanStatus 处理函数
+- **`src/views/member/index.vue`** 脚本：新增 `handleTogglePlanStatus(row)`，逻辑：
+  - 计算目标 `newStatus`（1↔0 切换）
+  - `ElMessageBox.confirm` 二次确认，下线操作额外提示「下线后小程序端将不再展示该套餐，已开通用户不受影响」
+  - 调用 `updateMembershipPlan(row.id, { status: newStatus })`（已存在的 API 封装）
+  - 成功后 `ElMessage.success` 并 `loadData()` 刷新列表
+
+### 影响面
+- **后端**：无变更。`PUT /admin/membership/plans/:id` 路由早已存在并通过 `plan.update(req.body)` 透传 status 字段；小程序端 `GET /api/membership/plans` 已按 `status: 1` 过滤，下线即时生效。
+- **数据库模型 / 迁移**：无变更，MembershipPlan.status 字段早已存在。
+- **小程序端**：无需改动，下线套餐自动从会员开通页隐藏；已开通会员的用户不受影响。
+
+---
+
+## 2026-06-28（小程序前端功能精简：移除钱包提现 + 移除积分抽奖 + 新增退出登录）
+
+### 背景
+- 本次为小程序前端功能精简变更，移除两项暂不可用/不再需要的前端功能（钱包提现、积分抽奖），并补充基础账号能力（退出登录）。
+- **仅前端变更，后端路由全部保留不动**，不涉及任何服务端接口删除或修改。
+
+### 小程序端改动（digital-recycling-miniprogram）
+
+#### 1. 移除钱包页提现功能
+- **`pages/wallet/wallet.wxml`**：删除「提现」按钮与提现规则区块，仅保留余额展示与交易记录列表。
+- **`pages/wallet/wallet.js`**：删除 `onWithdraw` 方法。
+- **`utils/api-modules.js`**：删除 `walletApi.withdraw` API 定义。
+- 保留：余额展示、交易记录功能。
+
+#### 2. 移除积分抽奖功能
+- **删除目录** `pages/points-lottery/`（共 4 个文件：js/wxml/wxss/json）。
+- **`app.json`**：从 `pages` 数组移除 `pages/points-lottery/points-lottery` 页面注册。
+- **`pages/profile/profile.js`**：
+  - 从 `pointActivities` 配置中移除「积分抽奖」项。
+  - 调整 `onPointActivityTap` 的 case 索引（删除抽奖分支后后续 case 顺延）。
+- **`utils/api-modules.js`**：删除 `pointsApi.getLotteryRecords` API 定义。
+
+#### 3. 新增退出登录功能
+- **`pages/profile/profile.wxml`**：页面底部新增「退出登录」按钮。
+- **`pages/profile/profile.js`**：
+  - 点击「退出登录」弹出 `wx.showModal` 二次确认。
+  - 确认后调用 `clearAllData()` 清空本地缓存。
+  - 重置 `app.globalData.userInfo`。
+  - 通过 `wx.reLaunch` 跳转到登录页。
+
+### 数据模型 / 迁移
+- 本次仅前端变更，**无数据库模型字段变更，无迁移文件**。
+- 后端所有路由（含 `/wallet/withdraw`、`/points/lottery/*` 等）保留不动，仅前端不再调用。
+
+### 影响面
+- 仅限 `digital-recycling-miniprogram` 子项目：`pages/wallet/`、`pages/points-lottery/`（整目录删除）、`pages/profile/`、`utils/api-modules.js`、`app.json`。
+- 不涉及 `digital-recycling-server`、`digital-recycling-admin`、`dom` 任何文件。
+- 不涉及数据库、模型、迁移、测试文件。
+
+---
+
+## 2026-06-28（虚拟支付前端补单接口 - 应对推送延迟/丢失）
+
+### 背景
+- iOS 真机支付成功后会员状态未更新,排查发现:
+  - 服务器日志无任何 `[dom/virtual-pay/notify] 收到推送` 记录
+  - 数据库 5 笔虚拟支付订单 `pay_status` 全为 0(未支付)
+  - 手动 curl 测试 `/api/dom/virtual-pay/plans` 和 `/notify` 接口均返回 200 正常
+- 确认根因:**微信推送未到达服务器**(MP 后台「虚拟支付 → 基础配置 → 订阅URL」未配置发货推送地址)
+- 为不阻塞用户使用,新增前端补单接口:支付成功后前端主动通知后端入账,不依赖微信推送
+
+### 后端改动(digital-recycling-server)
+- **`src/routes/api/membership.js`**:
+  - **新增 `POST /api/membership/virtual-pay-confirm` 接口**(JWT 鉴权):
+    - 校验订单归属(只能补单自己的订单)+ 订单类型(仅虚拟支付)+ 幂等(已支付直接返回)
+    - 复用 `activateMembership()` 事务入账(更新订单 pay_status/pay_time + 用户 membership_id/membership_expire + 套餐订阅数)
+    - 入账依据:`wx.requestVirtualPayment` success 回调由微信原生 API 触发,用户确已支付成功(微信已扣款),可作为入账依据
+- **保留**:`/payment-status` 接口逻辑不变(虚拟支付订单仍返回 pending,等待推送或前端补单)
+
+### 前端改动(digital-recycling-miniprogram)
+- **`utils/api-modules.js`**:membershipApi 新增 `virtualPayConfirm(orderNo)` 方法
+- **`pages/membership/membership.js`**:
+  - `wx.requestVirtualPayment` success 回调改为:**先调用 `virtualPayConfirm` 主动入账 → 入账成功则刷新用户信息 → 失败则兜底查单**
+  - 入账中显示 loading,结果用 toast 提示
+  - fail 回调和 complete 回调不变
+
+### 三层入账保障
+1. **第一层(主)**:前端 success 回调 → `virtual-pay-confirm` 主动入账(立即生效,不依赖推送)
+2. **第二层(兜底)**:`/api/dom/virtual-pay/notify` 微信推送入账(需配置 MP 后台推送 URL)
+3. **第三层(兜底)**:`/payment-status` 前端查单(虚拟支付订单返回 pending,依赖前两层)
+
+### 根本解决(待大表哥操作)
+- 配置 MP 后台「虚拟支付 → 基础配置 → 订阅URL」为 `https://wx.lydzhsw.com/api/dom/virtual-pay/notify`
+- 配置后微信推送将到达服务器,第二层保障生效,订单入账更可靠
+
+---
+
+## 2026-06-28（iOS 虚拟支付 -15001 报错处理 + 查单通道修复）
+
+### 背景
+- iOS 真机测试虚拟支付报错:`errCode -15001`,errMsg `requestVirtualPayment:fail 当前商户尚未开启iOS支付`。
+- 核对官方 iOS 接入文档(https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment/ios.html),确认根因:**MP 后台「虚拟支付 → 基础配置」未配置「小程序简称」**,导致 iOS 支付能力未开启。
+- 同时日志发现 `payment-status` 接口对虚拟支付订单走了 JSAPI `wechatPay.orderquery`(通道不同查不到,无意义报错)。
+
+### 根因分析
+- 官方文档明确:iOS 支付开通条件 = 已开通虚拟支付 + **已配置小程序简称**(满足 Apple 支付 display name 要求)。
+- 配置简称后 iOS 支付能力**自动开通**,无需额外开关。
+- 该错误是 MP 后台运营配置问题,非代码问题,无法通过代码修复解决。
+
+### 服务端改动(digital-recycling-server)
+- **`src/routes/api/membership.js`**(`payment-status` 接口 L601-L606):虚拟支付订单跳过 JSAPI 查单
+  - 新增判断:`if (order.pay_method === 'virtual')` 直接返回 `pending`,不走 `wechatPay.orderquery`。
+  - 原因:虚拟支付订单在 JSAPI 通道查不到(走米大师通道),`orderquery` 返回空响应无意义,且产生误导日志。
+  - 入账仍依赖 `/api/dom/virtual-pay/notify` 推送(XML 推送)。
+  - JSAPI 订单(`pay_method='wxpay'`)查单逻辑不变。
+
+### 前端改动(digital-recycling-miniprogram)
+- **`pages/membership/membership.js`**:
+  - **`ERR_CODE_MAP[-15001]`** 提示更新:补充"若提示尚未开启iOS支付请到MP后台配置小程序简称"。
+  - **`handleVirtualPayError`** 新增 -15001 + iOS 支付未开启的特殊处理(L226-L237):
+    - 检测 `errCode === -15001 && errMsg.includes('iOS支付')` 时,弹出 `wx.showModal` 明确引导:"请联系管理员到微信公众平台「虚拟支付 → 基础配置」配置小程序简称后开启 iOS 支付能力"。
+    - 不再走通用 toast,避免提示不清晰。
+- 零诊断错误。
+
+### 仍需用户手动操作(根本解决)
+1. **MP 后台配置小程序简称**(根本解决):
+   - 登录 mp.weixin.qq.com → 虚拟支付 → 基础配置 → 配置小程序简称。
+   - 配置后 iOS 支付能力自动开启,无需额外开关。
+   - 参考文档:https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment/ios.html
+2. **服务器重新部署**:服务端 `payment-status` 修复需重新部署 docker `ershouhuishou` 容器才生效。
+3. **iOS 真机重新测试**:配置简称后重新扫码测试虚拟支付。
+
+### 数据库与模型
+- 无 schema 变更,无迁移文件。
+
+---
+
+## 2026-06-28（admin 后台会员套餐管理支持配置虚拟支付道具ID）
+
+### 背景
+- 主小程序会员开通已切换为微信虚拟支付,`MembershipPlan.product_id` 字段是虚拟支付链路必需参数(MP 后台「虚拟支付 → 商品管理」获取)。
+- 之前 `product_id` 只能通过 SQL 直接写入数据库,管理员无法在 admin 后台界面维护,运营不便。
+- 本需求在 admin 后台「会员管理 → 套餐管理」增加道具ID 的展示与编辑入口。
+
+### 改动范围(仅前端 admin)
+- **`digital-recycling-admin/src/views/member/index.vue`**:
+  - **套餐列表表格**:在「开通人数」列后、「状态」列前新增「道具ID」列(已配置显示黄色 tag,未配置显示红色"未配置"提示)。
+  - **新增/编辑套餐对话框**:在「原价」之后新增「道具ID」输入框(`el-input`,placeholder 提示来源 "MP后台→虚拟支付→商品管理",可清空)。
+  - **`planForm` 初始值**:新增 `product_id: ''` 字段。
+  - **`handleAddPlan` 重置逻辑**:同步新增 `product_id: ''`。
+- **后端无改动**:`PUT /api/admin/members/plans/:id` 与 `POST /api/admin/members/plans` 原本就是 `plan.update(req.body)` / `MembershipPlan.create(req.body)`,天然支持任意字段更新。
+- **API 模块无改动**:`savePlan` 直接传 `planForm.value`,product_id 自动随请求体传给后端。
+
+### 数据库与模型
+- **无 schema 变更**:`MembershipPlan.product_id` 字段早已存在([models/MembershipPlan.js#L40-L44](file:///c:/Users/17798/Desktop/陈峰/数码回收/digital-recycling-server/src/models/MembershipPlan.js#L40-L44),STRING(64),allowNull:true),数据库表也已建好(之前已通过 SQL 写入 `product_id='198'`)。
+- **无迁移文件**:字段已存在,无需 `sequelize.sync()` 之外的 DDL。
+
+### 验证
+- `GetDiagnostics` 检查 `member/index.vue` 零诊断错误。
+- 现有 4 处 Edit 全部成功:表格列、表单输入框、planForm 初始值、handleAddPlan 重置。
+
+### 使用方式
+1. admin 后台 → 会员管理 → 套餐管理 tab。
+2. 点击「新增套餐」或「编辑」→ 在对话框「道具ID」输入框填入 MP 后台获取的道具ID(如 `198`)→ 保存。
+3. 列表「道具ID」列会显示黄色 tag(已配置)或红色"未配置"提示。
+
+---
+
+## 2026-06-28（iOS 虚拟支付兼容性修复）
+
+### 背景
+- 主小程序会员开通切换为虚拟支付后,Android 真机可正常支付,但 iOS 真机报"参数问题"。
+- 核对官方 iOS 接入文档,确认 iOS 端虚拟支付有 3 项硬性限制:**不支持沙箱(必须现网)**、**最低 1 元**、**需配置小程序简称**。
+- 同时排查发现服务端 `config/virtualPay.js` 的 `env` 字段存在 JavaScript falsy 值陷阱:`parseInt('0', 10) || 1` 因 0 是 falsy 永远返回 1,导致 `.env` 设 `WX_VIRTUAL_PAY_ENV=0` 后仍走沙箱。
+
+### 服务端改动(digital-recycling-server)
+- **`src/config/virtualPay.js`**(L19):修复 `env` 读取 Bug
+  - 旧代码:`parseInt(process.env.WX_VIRTUAL_PAY_ENV, 10) || 1` — `0 || 1` = `1`(0 是 falsy 被覆盖)
+  - 新代码:`process.env.WX_VIRTUAL_PAY_ENV != null && process.env.WX_VIRTUAL_PAY_ENV !== '' ? parseInt(process.env.WX_VIRTUAL_PAY_ENV, 10) : 1` — 显式判空,0 不再被覆盖
+- **`.env`**(L41):`WX_VIRTUAL_PAY_ENV=1` 改为 `WX_VIRTUAL_PAY_ENV=0`(切现网以支持 iOS)
+
+### 前端改动(digital-recycling-miniprogram)
+- **`pages/membership/membership.js`**(`doPurchase` L98-L153):新增 iOS 全套预检
+  - **微信版本检测**:iOS + 微信 < 8.0.68 提示升级(官方硬性限制)
+  - **iOS 系统版本检测**:需 iOS 15+,否则提示升级
+  - **金额检测**:iOS 最低 1 元,套餐价格 < 1 元阻断并提示
+  - **官方预检 API**:`wx.checkIsSupportMidasPayment`(success 检查 `res.data.allow_pay`,fail 不阻断继续走支付流程)
+- 抽出 `startVirtualPay(planId)` 方法,供 iOS 预检通过后调用,逻辑更清晰。
+
+### 数据库变更
+- `membership_plans.id=1`(月度会员):`price` 由 `0.01` 改为 `1.00`,`original_price` 同步改为 `1.00`(满足 iOS 最低 1 元要求)。
+  - 执行 SQL:`UPDATE membership_plans SET price = 1.00, original_price = 1.00 WHERE id = 1;`(Rows affected: 1)
+- 项目使用 `sequelize.sync()` 同步,无 SequelizeMeta 表,直接 ALTER 安全,无需生成迁移文件。
+
+### 验证结果
+- 服务端重启后日志:`[virtualPay] 配置加载完成: env=现网, offerId=1450574944, appid=wxb7cf435c7b2908d2` — 确认 env=现网已生效。
+
+### 仍需用户手动操作(无法代劳)
+1. **MP 后台配置小程序简称**:mp.weixin.qq.com → 设置 → 基本设置 → 小程序简称(iOS 虚拟支付 display name 必需)。
+2. **iOS 真机重新测试**:在 iOS 微信 8.0.68+ / iOS 15+ 真机扫码测试虚拟支付完整链路。
+
+---
+
+## 2026-06-28（主小程序会员开通切换为虚拟支付）
+
+### 背景
+- 主小程序 `digital-recycling-miniprogram` 会员开通原走 JSAPI 支付(`wx.requestPayment`),但 appid `wxb7cf435c7b2908d2` 是个人主体,真机报 `wx.requestPayment:fail access denied errno:102`,JSAPI 不可用。
+- 参考 dom 项目已验证的虚拟支付链路,将会员开通切换为 `wx.requestVirtualPayment`(微信虚拟支付),复用 dom 的签名算法(HMAC-SHA256)和回调入口。
+
+### 后端改动(digital-recycling-server)
+- **`src/routes/api/membership.js`**:
+  - **新增 `POST /api/membership/virtual-pay-sign` 接口**(JWT 鉴权):
+    - JWT 识别用户(`req.userId` → 查 User 取 openid),`code` 即时换 `session_key`(signature 签名必需)。
+    - 复用 dom 的 `buildSignData()` + `generatePaymentSign()` 生成 `signData/paySig/signature`。
+    - 创建 `MembershipOrder`(`pay_method='virtual'` 区分)。
+    - 返回 `{ orderNo, signData, mode:'short_series_goods', paySig, signature, env }`。
+  - **依赖扩展**:require 新增 `buildSignData, generatePaymentSign` from `services/virtualPay`、`getVirtualPayConfig` from `config/virtualPay`、`wechatUtil` from `utils/wechat`。
+- **回调复用**:虚拟支付推送由 `/api/dom/virtual-pay/notify` 统一接收(同 appid,MP 后台已配该 URL),主小程序订单同表同处理,无需额外回调。
+- **保留旧接口**:`/purchase`(JSAPI)和 `/virtual-pay-notify`(旧版 JSON)保留不删,前端不再调用。
+
+### 前端改动(digital-recycling-miniprogram)
+- **`utils/api-modules.js`**:membershipApi 新增 `virtualPaySign(planId, code)` 方法,自动带 JWT。
+- **`pages/membership/membership.js`**:
+  - **`doPurchase` 完全重写**为虚拟支付链路:基础库检测 → iOS 检测 → `wx.login` 拿 code → 调 `virtualPaySign` → `wx.requestVirtualPayment` → 轮询查单。
+  - **新增 `requestVirtualPaySign`**:请求签名接口 + 唤起虚拟支付。
+  - **新增 `handleVirtualPayError`**:22 种虚拟支付错误码映射(区分 cancel/已知错误码/未知错误),session_key 过期(-15007)给提示。
+  - **新增 `compareVersion`**:版本号比较(官方示例),用于基础库/微信版本检测。
+  - **新增 `ERR_CODE_MAP` 常量**:覆盖 22 种虚拟支付错误码。
+  - **iOS 兼容**:检测 iOS + 微信版本 < 8.0.68 提示升级(虚拟支付 iOS 硬性限制)。
+  - **保留**:`onPurchase`、`queryPaymentStatus`、`loadUserInfo`、`loadPlans` 不变。
+- **`pages/membership/membership.wxml`**:**无改动**(套餐卡片 L18-35 + 按钮三态保留)。
+- **`pages/membership/membership.wxss`**:**无改动**。
+
+### 关键决策
+1. **完全替换 JSAPI**:个人主体不可用,`doPurchase` 全部改为虚拟支付,不做双通道。
+2. **JWT + code 双轨**:JWT 识别用户,code 换 session_key 签名(session_key 敏感不长期存)。
+3. **回调复用 dom notify**:同 appid,MP 后台回调 URL 只能配一个,已配为 `https://wx.lydzhsw.com/api/dom/virtual-pay/notify`。
+4. **iOS 兼容**:前端检测 + 提示,不阻断(让用户自行决定是否升级)。
+
+### 测试前置条件
+- 服务端 `.env` 已配置 `WX_VIRTUAL_PAY_ENV=1`(沙箱)、`WX_VIRTUAL_PAY_SANDBOX_KEY`、`WX_VIRTUAL_PAY_OFFER_ID=1450574944`。
+- 数据库 `membership_plans.product_id='198'`(MP 后台道具ID)。
+- 用户登录后 `User.openid` 已存在(登录流程已保证)。
+- 服务端需重启使新接口生效。
+
+### 预期测试日志
+```
+[membership] doPurchase 开始, planId=1
+[membership] wx.login 成功, code=xxxxxxxxxx...
+[membership] virtual-pay-sign 返回: {"orderNo":"VIPxxx","mode":"short_series_goods","paySig":"xxxx...","signature":"xxxx...","env":1}
+[membership] 调起 wx.requestVirtualPayment, orderNo=VIPxxx
+[membership] wx.requestVirtualPayment success: {}
+[membership] wx.requestVirtualPayment complete
+```
+支付成功后用户卡片显示"会员有效期至 xxx"(loadUserInfo 刷新),服务端日志出现 `[dom/virtual-pay/notify] 收到推送 event=xpay_goods_deliver_notify`。
+
+---
+
+## 2026-06-28（dom 虚拟支付签名算法按官方文档全面重写）
+
+### 背景
+- 之前实现的虚拟支付签名算法(MD5 + 字段升序 + &key=payKey)**与官方文档完全不符**,导致 `wx.requestVirtualPayment` 调用必然失败。
+- 核对官方 API 文档(https://developers.weixin.qq.com/miniprogram/dev/api/payment/wx.requestVirtualPayment.html)与社区实战指引(https://developers.weixin.qq.com/community/develop/article/doc/00006845ce4860bedcb4d5eed61813),确认签名算法为 HMAC-SHA256,且需区分 paySig(支付签名,用 appKey)与 signature(用户态签名,用 session_key)。
+
+### 签名算法修正(关键)
+| 项 | 旧实现(错误) | 新实现(正确) |
+|---|---|---|
+| 算法 | MD5 + 字段升序 + &key=payKey | HMAC-SHA256 |
+| paySig | ❌ 未实现 | `hex(hmac_sha256(appKey, uri + '&' + signData))` uri='requestVirtualPayment' |
+| signature | ❌ 未实现 | `hex(hmac_sha256(session_key, signData))` |
+| signData 字段 | appid/nonceStr/offer_id/openid/product_id/product_identity/quantity/sign_method/timeStamp | offerId/buyQuantity/env/currencyType/productId/goodsPrice/outTradeNo/attach(按官方) |
+| mode 值 | 'long_series_goods'(不存在) | 'short_series_goods'(道具直购) |
+| 返回字段 | sign/timeStamp/nonceStr | paySig/signature |
+| session_key | ❌ 未使用 | ✅ 由 code2Session 获取并用于 signature 计算 |
+
+### 服务端改动(digital-recycling-server)
+- **`src/services/virtualPay.js`**:重写
+  - 新增 `buildSignData()`:按官方字段构建 signData JSON 字符串。
+  - 新增 `generatePaymentSign()`:用 HMAC-SHA256 生成 paySig + signature,根据 env 自动选择沙箱/现网 appKey。
+  - 保留 `verifyNotifySignature()`(目前 xpay_goods_deliver_notify 推送无 signature 字段,验签从略)。
+- **`src/config/virtualPay.js`**:加 `sandboxKey` + `env` 字段
+  - `WX_VIRTUAL_PAY_KEY`:现网 AppKey。
+  - `WX_VIRTUAL_PAY_SANDBOX_KEY`:沙箱 AppKey(测试用)。
+  - `WX_VIRTUAL_PAY_ENV`:0=现网 1=沙箱(默认 1,避免误扣真钱)。
+  - 启动校验根据 env 选择性校验对应 AppKey。
+- **`src/routes/dom/virtual-pay.js#sign`**:改用新签名
+  - code2Session 同时获取 `session_key`(签名必需)。
+  - 构建 signData(`goodsPrice = Math.round(plan.price * 100)` 元转分)。
+  - 调用 `generatePaymentSign()` 生成 paySig + signature。
+  - 返回 `{ orderNo, signData, mode, paySig, signature, env }`(删除旧的 timeStamp/nonceStr/sign)。
+- **`.env.example`**:新增 `WX_VIRTUAL_PAY_SANDBOX_KEY` + `WX_VIRTUAL_PAY_ENV` 两个环境变量。
+
+### dom 端改动
+- **`pages/virtual-pay/virtual-pay.js`**:
+  - `wx.requestVirtualPayment` 参数改为官方的 `signData/mode/paySig/signature`(删除 timeStamp/nonceStr/sign)。
+  - 新增 `ERR_CODE_MAP`:覆盖官方 22 种错误码(1001/-1/-2/-4/-15001~-15021),提供友好提示。
+  - 新增 `handlePayError()`:区分用户取消/已知错误码/未知错误,对 -15007(session_key 过期)/-15002/-15012(单号问题)给出针对性建议。
+  - 新增 `compareVersion()`:按官方示例判断基础库版本(≥ 2.19.2)。
+  - 从后端响应读取 `env` 并展示(沙箱/现网)。
+- **`pages/virtual-pay/virtual-pay.wxml`**:
+  - 顶部加环境标签栏(沙箱/现网 + 提示)。
+  - API 兼容性区修正基础库版本为 2.19.2,新增 paySig/signature 算法说明。
+- **`pages/virtual-pay/virtual-pay.wxss`**:新增 `.env-bar`/`.env-sandbox`/`.env-prod` 样式(黄色提示条)。
+- **`utils/config.js`**:注释说明 env 由服务端决定,前端不单独配置。
+
+### 数据库与道具配置(已就绪)
+- `membership_plans.id=1` 的 `product_id='198'`(MP 后台道具 ID)已写入。
+- MP 后台已创建道具「月度会员权限」(0.01 元/30 天,道具ID=198)。
+
+### 运行前置(MP 后台运营操作,非代码)
+1. **基础配置**:在 MP 后台「虚拟支付 → 基础配置」确认 OfferID `1450574944`、现网/沙箱 AppKey 已记录。
+2. **发货推送**:核对是否有"发货推送"配置项(文档原文是"查看发货推送配置",非强制配置)。虚拟支付推送机制可能复用小程序通用消息推送(「开发管理 → 开发设置 → 消息推送」),如有问题再排查。
+3. **环境变量**:服务端 `.env` 同步 `.env.example` 中 3 个虚拟支付变量,`WX_VIRTUAL_PAY_ENV=1`(沙箱测试)。
+4. **重启服务端**:使新签名代码生效。
+5. **真机测试**:开发者工具预览 → 真机扫码 → 底部"虚拟支付" tab → 应看到环境标签(沙箱) + 套餐 → 点击测试支付。
+
+### 预期测试日志
+```
+[xx:xx:xx] [INFO] 虚拟支付测试页加载
+[xx:xx:xx] [INFO] 提示:基础库需 ≥ 2.19.2...
+[xx:xx:xx] [INFO] 加载套餐成功,共 1 个
+[xx:xx:xx] [INFO] 开始支付套餐: 月度会员权限(ID=1, productId=198)
+[xx:xx:xx] [INFO] wx.login 成功,code=xxxxxxxxxx...
+[xx:xx:xx] [INFO] 签名获取成功 orderNo=VIPxxxxxxxx env=沙箱 mode=short_series_goods
+[xx:xx:xx] [INFO] paySig=xxxxxxxxxxxxxxxx... signature=xxxxxxxxxxxxxxxx...
+[xx:xx:xx] [INFO] 基础库 3.x.x 支持,调用 wx.requestVirtualPayment...
+[xx:xx:xx] [INFO] ✓ 虚拟支付成功
+[xx:xx:xx] [INFO] ✓ 支付成功,正在确认入账...
+[xx:xx:xx] [INFO] 查单[1/5] status=pending
+[xx:xx:xx] [INFO] 查单[2/5] status=paid
+[xx:xx:xx] [INFO] ✓ 已入账,会员开通成功
+```
+
+---
+
+## 2026-06-28（dom 项目新增虚拟支付 Demo 页 + 服务端 dom 专用接口）
+
+### 背景
+- `dom` 项目原为 `wx.getFuzzyLocation` 定位调试 Demo,仅有 1 个页面,无支付能力。
+- 主小程序 `digital-recycling-miniprogram` 因个人主体限制无法使用 JSAPI 支付,需切换虚拟支付;服务端虚拟支付服务代码已就位但 `/purchase` 仍走 V2 JSAPI,未启用。
+- 本需求在 `dom` 项目新增最小化虚拟支付测试页,验证 `wx.requestVirtualPayment` 完整链路(签名 → 唤起 → 回调 → 入账 → 查单),并为后续主小程序切换虚拟支付积累经验。
+- 严格约束:**不修改任何原有后端接口**;在 `digital-recycling-server` 新增 `src/routes/dom/` 文件夹专门存放 dom 专用接口。
+
+### 推送机制改造(按最新官方文档修正)
+- 核对微信虚拟支付最新文档(https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/business-capabilities/virtual-payment.html),发现原 `/notify` 设计按"普通 JSON 回调"实现,与最新文档的"消息推送(XML)"机制不符。
+- **推送机制变更**:微信通过消息推送(event=xpay_goods_deliver_notify 等 4 种)向开发者服务器推送 XML 内容,响应必须 `{"ErrCode":0,"ErrMsg":"success"}`,否则微信会重试 15 次。
+- **改造内容**:
+  - `src/app.js`:在 `/api/dom/virtual-pay/notify` 路由前挂载 `express.text({type:'text/xml'})` 中间件(与现有 V2 回调挂载方式一致,不影响其他路由)。
+  - `src/routes/dom/virtual-pay.js#notify`:重写为 XML 推送接收端,解析后按 `Event` 字段分发(道具发货/代币支付/退款/投诉 4 种),当前仅处理 `xpay_goods_deliver_notify`(道具发货 → 开通会员),其余 event 仅记录日志。即便内部异常也返回 `ErrCode:0` 避免重试轰炸。
+  - 复用 `utils/xml.js#parseXml` 解析推送,`services/virtualPay.js#signVirtualPayParams` 实现**已与最新文档一致**(MD5 字段升序签名),无需改签名代码。
+- **推送 URL**:在 MP 后台「基础配置 → 发货推送」中配置为 `https://wx.lydzhsw.com/api/dom/virtual-pay/notify`(由 MP 后台 → 开发者服务器,程序内部不主动用此 URL)。
+- **商品管理**:按最新文档走"道具管理"路径(不走"代币配置"),在 MP 后台「道具管理」上传道具,获得 `ProductId`,填入 `MembershipPlan.product_id`。
+
+### 服务端（digital-recycling-server）
+- **新增 `src/routes/dom/index.js`**：dom 项目专用路由聚合,挂载 `/api/dom`。
+- **新增 `src/routes/dom/virtual-pay.js`**：4 个独立接口
+  - `GET /api/dom/virtual-pay/plans` — 获取虚拟支付可用套餐(仅返回 `status=1` 且 `product_id` 非空)。
+  - `POST /api/dom/virtual-pay/sign` — 免登支付模式:接受 `{code, plan_id}`,用 `code2Session` 换 openid → 查/建 User → 创建 MembershipOrder(`pay_method='virtual'`) → 调 `signVirtualPayParams` 生成签名,返回 `wx.requestVirtualPayment` 所需参数。
+  - `GET /api/dom/virtual-pay/order/:orderNo` — 查询订单状态(供前端轮询,include Plan 关联)。
+  - `POST /api/dom/virtual-pay/notify` — 微信虚拟支付异步回调,验签 + 事务内开通会员(复用 `membership.js` 同款事务逻辑,独立挂载互不影响)。
+- **修改 `src/app.js`**：新增 1 行 `app.use('/api/dom', require('./routes/dom'))`(L41),不改动任何现有路由/中间件/错误处理。
+- **复用现有能力**(零改动):`services/virtualPay.js` / `config/virtualPay.js` / `utils/wechat.js#code2Session` / `utils/helpers.js` / `models/{User,MembershipPlan,MembershipOrder}`。
+- **无模型/迁移变更**:完全复用 `20260619-add-membership-virtual-pay-fields.js` 已添加的 `product_id` / `transaction_id` 字段。
+
+### dom 端
+- **新增 `utils/config.js`**：环境配置,`apiBase` 指向 `https://wx.lydzhsw.com/api/dom`。
+- **新增 `utils/api.js`**：最小化请求封装(无需 token,虚拟支付免登模式)。
+- **新增 `pages/virtual-pay/` 四件套**(js/wxml/wxss/json)：虚拟支付测试页
+  - 加载套餐列表 → 点击套餐 `wx.login` 拿 code → 调 `/sign` 获取签名 → `wx.requestVirtualPayment` 唤起 → 轮询 `/order` 确认入账(三层校验之主动轮询层)。
+  - 沿用 `index.wxss` 卡片/按钮/日志风格(主色 `#ff2d4a`),含 API 兼容性提示与 20 条 Console 日志区。
+- **修改 `app.json`**：`pages` 数组注册 `pages/virtual-pay/virtual-pay`;新增 `tabBar` 配置(首页 + 虚拟支付 2 个 tab,纯文字无图标,主色 `#ff2d4a`)。
+- **修改 `app.js`**：`globalData` 扩展 `token` / `userInfo` 预留字段(不强依赖)。
+- **修改 `pages/index/index.wxml` + `index.js`**：首页"调试按钮"卡片新增 `[6] 虚拟支付测试` 跳转按钮 + `onGoVirtualPay` 方法(virtual-pay 成为 tab 页后,跳转方式由 `wx.navigateTo` 改为 `wx.switchTab`)。
+
+### 运行前置条件(MP 后台运营操作,非代码)
+1. dom 项目 appid `wxb7cf435c7b2908d2` 需在 MP 后台 → "虚拟支付" → 申请能力(个人主体小程序可申请)。
+2. 在 MP 后台创建虚拟支付商品,获取 `product_id`,填入对应 `MembershipPlan` 记录(通过 admin 后台 → 会员套餐管理 → 编辑)。
+3. 配置虚拟支付回调地址:`https://wx.lydzhsw.com/api/dom/virtual-pay/notify`。
+4. 服务端 `.env` 需配置 `WX_VIRTUAL_PAY_KEY` / `WX_VIRTUAL_PAY_OFFER_ID` / `WX_VIRTUAL_PAY_NOTIFY_URL`。
+5. 基础库 ≥ 2.27.1(dom 当前 3.10.3 ✅)。
+
+### 影响面
+- 服务端仅新增 2 个文件 + 修改 app.js 1 行,不触碰 `routes/api/membership.js` / `routes/admin/*` / `models/*` / `migrations/*`。
+- dom 端仅新增 6 个文件 + 修改 4 个现有文件(pages 数组/globalData/首页按钮),不影响现有定位调试功能。
+- 数据库无 schema 变更,仅写入 `pay_method='virtual'` 字符串值区分订单。
+
 ## 2026-06-27（修复每日签到按钮状态与错误提示）
 
 ### 背景

@@ -1,0 +1,76 @@
+<!--pages/virtual-pay/virtual-pay.wxml - 虚拟支付测试页-->
+<view class="page">
+  <!-- 环境标签 -->
+  <view class="env-bar">
+    <text class="env-label">当前环境:</text>
+    <text class="env-value {{env === 1 ? 'env-sandbox' : 'env-prod'}}">{{env === 1 ? '沙箱(不扣真钱)' : '现网(扣真钱)'}}</text>
+    <text class="env-tip">(由服务端 .env 的 WX_VIRTUAL_PAY_ENV 决定)</text>
+  </view>
+
+  <!-- 套餐列表卡片 -->
+  <view class="card">
+    <view class="card-title">虚拟支付套餐</view>
+    <view wx:if="{{loading}}" class="card-content mono">加载中...</view>
+    <view wx:elif="{{plans.length === 0}}" class="card-content mono empty-hint">
+      暂无可用套餐
+      需在后台为 MembershipPlan 配置 product_id
+    </view>
+    <view wx:else>
+      <view wx:for="{{plans}}" wx:key="id" class="plan-item">
+        <view class="plan-info">
+          <text class="plan-name">{{item.name}}</text>
+          <text class="plan-desc">{{item.duration_days}}天 | productId={{item.product_id}}</text>
+        </view>
+        <view class="plan-price">¥{{item.price}}</view>
+        <button class="btn btn-primary btn-sm" data-id="{{item.id}}" bindtap="onPay" loading="{{paying}}" disabled="{{paying}}">
+          测试支付
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支付结果卡片 -->
+  <view class="card" wx:if="{{payResult}}">
+    <view class="card-title">支付结果</view>
+    <view class="card-content mono {{payResult.indexOf('✗') !== -1 ? 'status-error' : (payResult.indexOf('✓') !== -1 ? 'status-success' : '')}}">
+      {{payResult}}
+    </view>
+    <view wx:if="{{orderNo}}" class="card-content mono order-no" bindtap="onCopyOrderNo">
+      订单号: {{orderNo}} (点击复制)
+    </view>
+  </view>
+
+  <!-- Console 日志卡片 -->
+  <view class="card">
+    <view class="card-title">Console 日志(最近 20 条)</view>
+    <view class="log-list">
+      <view wx:if="{{consoleLogs.length === 0}}" class="log-empty">暂无日志</view>
+      <view wx:for="{{consoleLogs}}" wx:key="index" class="log-item log-{{item.indexOf('ERROR') !== -1 ? 'error' : (item.indexOf('WARN') !== -1 ? 'warn' : 'info')}}">
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- API 兼容性提示 -->
+  <view class="card footer-card">
+    <view class="card-title">API 兼容性</view>
+    <view class="api-check">
+      <view class="api-row">
+        <text class="api-name">wx.requestVirtualPayment</text>
+        <text class="api-status">要求 SDKVersion ≥ 2.19.2</text>
+      </view>
+      <view class="api-row">
+        <text class="api-name">wx.login</text>
+        <text class="api-status">基础能力</text>
+      </view>
+      <view class="api-row">
+        <text class="api-name">paySig</text>
+        <text class="api-status">HMAC-SHA256(appKey, uri&amp;signData)</text>
+      </view>
+      <view class="api-row">
+        <text class="api-name">signature</text>
+        <text class="api-status">HMAC-SHA256(sessionKey, signData)</text>
+      </view>
+    </view>
+  </view>
+</view>

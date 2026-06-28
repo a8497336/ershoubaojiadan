@@ -189,6 +189,16 @@ Page({
     }
   },
 
+  // [6] 跳转虚拟支付测试页(virtual-pay 为 tabBar 页,必须用 switchTab)
+  onGoVirtualPay() {
+    this.log('--- 开始: [6] 跳转虚拟支付测试页 ---')
+    wx.switchTab({
+      url: '/pages/virtual-pay/virtual-pay',
+      success: () => this.log('跳转成功'),
+      fail: (err) => this.log('跳转失败: ' + (err.errMsg || ''), 'error')
+    })
+  },
+
   // 复制最近一次定位结果到剪贴板
   onCopyLocation() {
     const loc = app.globalData.lastLocation

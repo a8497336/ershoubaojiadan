@@ -81,20 +81,20 @@ const membershipApi = {
   getPlans: () => request({ url: '/membership/plans' }),
   getStatus: () => request({ url: '/membership/status' }),
   purchase: (planId) => request({ url: '/membership/purchase', method: 'POST', data: { plan_id: planId } }),
-  queryPaymentStatus: (orderNo) => request({ url: '/membership/payment-status/' + orderNo })
-  // 真实支付回调由后端 /api/membership/pay-notify 接收（微信支付 V2）
+  virtualPaySign: (planId, code) => request({ url: '/membership/virtual-pay-sign', method: 'POST', data: { plan_id: planId, code } }),
+  queryPaymentStatus: (orderNo) => request({ url: '/membership/payment-status/' + orderNo }),
+  // 虚拟支付前端补单(应对推送延迟/丢失,前端 success 回调主动入账)
+  virtualPayConfirm: (orderNo) => request({ url: '/membership/virtual-pay-confirm', method: 'POST', data: { orderNo } })
 }
 
 const walletApi = {
   getInfo: () => request({ url: '/wallet/info' }),
-  getLogs: (data) => request({ url: '/wallet/logs', data }),
-  withdraw: (amount) => request({ url: '/wallet/withdraw', method: 'POST', data: { amount } })
+  getLogs: (data) => request({ url: '/wallet/logs', data })
 }
 
 const pointsApi = {
   getBalance: () => request({ url: '/points/balance' }),
   getLogs: (data) => request({ url: '/points/logs', data }),
-  getLotteryRecords: () => request({ url: '/points/lottery-records' }),
   getProducts: (data) => request({ url: '/points/products', data }),
   exchange: (productId) => request({ url: '/points/exchange', method: 'POST', data: { product_id: productId } }),
   signIn: () => request({ url: '/points/sign', method: 'POST' })

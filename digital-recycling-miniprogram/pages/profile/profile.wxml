@@ -100,4 +100,8 @@
       <text>{{item.label}}</text>
     </view>
   </view>
+
+  <view class="logout-section">
+    <view class="logout-btn" bindtap="onLogout">退出登录</view>
+  </view>
 </view>

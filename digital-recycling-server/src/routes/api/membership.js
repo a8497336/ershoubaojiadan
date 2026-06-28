@@ -127,9 +127,11 @@ const router = require('express').Router()
 const { auth } = require('../../middlewares/auth')
 const { success, error, notFound } = require('../../utils/response')
 const { generateOrderNo } = require('../../utils/helpers')
-const { verifyNotifySignature } = require('../../services/virtualPay')
+const { buildSignData, generatePaymentSign, verifyNotifySignature } = require('../../services/virtualPay')
+const getVirtualPayConfig = require('../../config/virtualPay')
 const wechatConfig = require('../../config/wechat')
 const wechatPay = require('../../services/wechatPay')
+const wechatUtil = require('../../utils/wechat')
 const { parseXml } = require('../../utils/xml')
 const logger = require('../../utils/logger')
 const db = require('../../models')
@@ -281,6 +283,123 @@ router.post('/purchase', auth, async (req, res, next) => {
     }, '订单创建成功，请完成支付')
   } catch (err) {
     logger.error('[membership/purchase] 异常:', err.stack || err)
+    next(err)
+  }
+})
+
+/**
+ * @openapi
+ * /api/membership/virtual-pay-sign:
+ *   post:
+ *     tags: [小程序-会员]
+ *     summary: 生成虚拟支付签名(会员开通)
+ *     description: |
+ *       JWT 鉴权。主小程序会员开通专用虚拟支付下单接口。
+ *       JWT 用于识别用户(req.userId → 查 User 取 openid),code 用于即时换 session_key(signature 签名必需)。
+ *       返回 wx.requestVirtualPayment 所需参数(signData/mode/paySig/signature)。
+ *       回调复用 /api/dom/virtual-pay/notify(同 appid,MP 后台已统一配置)。
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [plan_id, code]
+ *             properties:
+ *               plan_id: { type: integer, description: 会员套餐ID }
+ *               code: { type: string, description: wx.login 返回的 code(用于换 session_key) }
+ *     responses:
+ *       200:
+ *         description: 返回 orderNo/signData/mode/paySig/signature/env
+ */
+router.post('/virtual-pay-sign', auth, async (req, res, next) => {
+  try {
+    const { plan_id, code } = req.body
+    if (!plan_id || !code) return error(res, 'plan_id 和 code 必填', 422, 422)
+
+    // 1. JWT 识别用户(不用 code 换 openid,直接查 User)
+    const user = await db.User.findByPk(req.userId)
+    if (!user || !user.openid) {
+      logger.error('[membership/virtual-pay-sign] 用户未登录或缺少 openid', { userId: req.userId, hasOpenid: !!user?.openid })
+      return error(res, '用户未登录或缺少 openid,请重新登录', 10011, 400)
+    }
+
+    // 2. 校验虚拟支付配置(env 决定用哪个 AppKey)
+    const vpConfig = getVirtualPayConfig()
+    const env = vpConfig.env
+    const appKey = env === 1 ? vpConfig.sandboxKey : vpConfig.payKey
+    if (!appKey || !vpConfig.offerId) {
+      logger.error('[membership/virtual-pay-sign] 虚拟支付未配置', { env, hasAppKey: !!appKey, hasOfferId: !!vpConfig.offerId })
+      const missing = env === 1 ? 'WX_VIRTUAL_PAY_SANDBOX_KEY' : 'WX_VIRTUAL_PAY_KEY'
+      return error(res, `虚拟支付未配置(${missing} / WX_VIRTUAL_PAY_OFFER_ID)`, 10020, 500)
+    }
+
+    // 3. 查套餐(必须有 product_id)
+    const plan = await db.MembershipPlan.findByPk(plan_id)
+    if (!plan || plan.status !== 1 || !plan.product_id) {
+      return error(res, '套餐不可用或未配置虚拟支付商品ID', 10021, 400)
+    }
+
+    // 4. code 换 session_key(用于 signature 签名,session_key 敏感不长期存)
+    let wxData
+    try {
+      wxData = await wechatUtil.code2Session(code)
+    } catch (e) {
+      logger.error('[membership/virtual-pay-sign] code2Session 失败:', e.message)
+      return error(res, '微信登录失败: ' + e.message, 10001, 400)
+    }
+    if (!wxData.sessionKey) {
+      logger.error('[membership/virtual-pay-sign] sessionKey 缺失', { openid: wxData.openid })
+      return error(res, 'session_key 获取失败,无法生成签名', 10001, 400)
+    }
+
+    // 5. 创建订单(pay_method='virtual' 区分虚拟支付)
+    const order = await db.MembershipOrder.create({
+      user_id: user.id,
+      plan_id: plan.id,
+      order_no: generateOrderNo('VIP'),
+      amount: plan.price,
+      pay_method: 'virtual',
+      pay_status: 0
+    })
+    logger.info('[membership/virtual-pay-sign] 订单创建', { orderNo: order.order_no, userId: user.id, planId: plan.id, env })
+
+    // 6. 构建 signData(道具直购模式 short_series_goods)
+    const goodsPrice = Math.round(plan.price * 100)  // 元转分
+    const signData = buildSignData({
+      offerId: vpConfig.offerId,
+      productId: plan.product_id,
+      buyQuantity: 1,
+      env: env,
+      currencyType: 'CNY',
+      goodsPrice: goodsPrice,
+      outTradeNo: order.order_no,
+      attach: `plan_${plan.id}`
+    })
+
+    // 7. 生成签名(paySig 用 appKey,signature 用 session_key)
+    const { paySig, signature } = generatePaymentSign({
+      signData,
+      sessionKey: wxData.sessionKey,
+      env: env
+    })
+    logger.info('[membership/virtual-pay-sign] 签名生成', { orderNo: order.order_no, productId: plan.product_id, env, goodsPrice })
+
+    // 8. 返回 wx.requestVirtualPayment 所需参数
+    return success(res, {
+      orderNo: order.order_no,
+      planName: plan.name,
+      amount: plan.price,
+      signData,
+      mode: 'short_series_goods',
+      paySig,
+      signature,
+      env
+    }, '签名生成成功')
+  } catch (err) {
+    logger.error('[membership/virtual-pay-sign] 异常:', err.stack || err)
     next(err)
   }
 })
@@ -479,7 +598,14 @@ router.get('/payment-status/:orderNo', auth, async (req, res, next) => {
       return success(res, { orderNo, status: 'paid', paidAt: order.pay_time })
     }
 
-    // 2. 未支付:主动向微信查单,命中 SUCCESS 则补单入账
+    // 2. 虚拟支付订单:不走 JSAPI orderquery(通道不同查不到),直接返回 pending,
+    //    入账依赖 /api/dom/virtual-pay/notify 推送
+    if (order.pay_method === 'virtual') {
+      logger.info('[membership/payment-status] 虚拟支付订单等待推送入账', { orderNo })
+      return success(res, { orderNo, status: 'pending' })
+    }
+
+    // 3. JSAPI 订单:主动向微信查单,命中 SUCCESS 则补单入账
     const queryResult = await wechatPay.orderquery(orderNo)
     logger.info('[membership/payment-status] 查单结果', { orderNo, trade_state: queryResult.trade_state })
 
@@ -494,6 +620,45 @@ router.get('/payment-status/:orderNo', auth, async (req, res, next) => {
     return success(res, { orderNo, status: 'pending' })
   } catch (err) {
     logger.error('[membership/payment-status] 异常:', err.stack || err)
+    next(err)
+  }
+})
+
+/**
+ * 虚拟支付前端补单接口(应对推送延迟或丢失)
+ * 前端 wx.requestVirtualPayment success 回调触发,主动入账
+ * 注:wx.requestVirtualPayment success 由微信原生 API 触发,用户确已支付成功(微信已扣款),可作为入账依据
+ */
+router.post('/virtual-pay-confirm', auth, async (req, res, next) => {
+  try {
+    const { orderNo } = req.body
+    if (!orderNo) return error(res, 'orderNo 必填', 422, 422)
+
+    const order = await db.MembershipOrder.findOne({ where: { order_no: orderNo } })
+    if (!order) return notFound(res, '订单不存在')
+
+    // 1. 校验订单归属(只能补单自己的订单)
+    if (order.user_id !== req.userId) {
+      return error(res, '无权操作此订单', 403, 403)
+    }
+
+    // 2. 校验订单类型(仅虚拟支付订单可补单)
+    if (order.pay_method !== 'virtual') {
+      return error(res, '非虚拟支付订单,不可补单', 400, 400)
+    }
+
+    // 3. 幂等:已支付直接返回
+    if (order.pay_status === 1) {
+      return success(res, { orderNo, status: 'paid', paidAt: order.pay_time }, '订单已支付')
+    }
+
+    // 4. 主动入账(复用 activateMembership)
+    await activateMembership(order, { transaction_id: '', prepay_id: '' })
+    logger.info('[membership/virtual-pay-confirm] 前端补单入账成功', { orderNo, userId: order.user_id, planId: order.plan_id })
+
+    return success(res, { orderNo, status: 'paid', paidAt: order.pay_time }, '入账成功')
+  } catch (err) {
+    logger.error('[membership/virtual-pay-confirm] 异常:', err.stack || err)
     next(err)
   }
 })

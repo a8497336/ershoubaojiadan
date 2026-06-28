@@ -154,18 +154,28 @@
  *       - bearerAuth: []
  */
 
-const createCrudRouter = (model, name) => {
+const createCrudRouter = (model, name, options = {}) => {
   const router = require('express').Router()
   const { adminAuth } = require('../../middlewares/adminAuth')
   const { success, notFound, paginate } = require('../../utils/response')
   const { Op } = require('sequelize')
   const db = require('../../models')
+  const searchableFields = Array.isArray(options.searchableFields) ? options.searchableFields : []
 
   router.get('/', adminAuth, async (req, res, next) => {
     try {
-      const { page = 1, pageSize = 20, status } = req.query
-      const where = {}
-      if (status !== undefined && status !== '') where.status = status
+      const { page = 1, pageSize = 20, status, keyword } = req.query
+      const andConditions = []
+      if (status !== undefined && status !== '') {
+        andConditions.push({ status })
+      }
+      if (keyword !== undefined && keyword !== '' && searchableFields.length > 0) {
+        const like = `%${keyword}%`
+        andConditions.push({
+          [Op.or]: searchableFields.map((field) => ({ [field]: { [Op.like]: like } }))
+        })
+      }
+      const where = andConditions.length > 0 ? { [Op.and]: andConditions } : {}
       const { offset, limit } = paginate(page, pageSize)
       const { count, rows } = await model.findAndCountAll({
         where,
@@ -209,9 +219,9 @@ const createCrudRouter = (model, name) => {
 
 const db = require('../../models')
 module.exports = {
-  bannerManage: createCrudRouter(db.Banner, 'Banner'),
-  announcementManage: createCrudRouter(db.Announcement, '公告'),
-  storeManage: createCrudRouter(db.Store, '门店'),
-  videoManage: createCrudRouter(db.Video, '视频'),
-  popupAdManage: createCrudRouter(db.PopupAd, '弹窗广告')
+  bannerManage: createCrudRouter(db.Banner, 'Banner', { searchableFields: ['title', 'subtitle'] }),
+  announcementManage: createCrudRouter(db.Announcement, '公告', { searchableFields: ['title', 'content'] }),
+  storeManage: createCrudRouter(db.Store, '门店', { searchableFields: ['name', 'contact_name', 'contact_phone', 'address'] }),
+  videoManage: createCrudRouter(db.Video, '视频', { searchableFields: ['title', 'category'] }),
+  popupAdManage: createCrudRouter(db.PopupAd, '弹窗广告', { searchableFields: ['title'] })
 }

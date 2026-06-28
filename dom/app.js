@@ -20,6 +20,9 @@ App({
     // 最近一次隐私查询结果
     privacySetting: null,
     // 启动时间（用于日志标识）
-    bootTime: new Date().toISOString()
+    bootTime: new Date().toISOString(),
+    // 虚拟支付测试预留字段（dom 端采用免登模式,不强依赖 token）
+    token: null,
+    userInfo: null
   }
 })

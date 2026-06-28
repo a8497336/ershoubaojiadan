@@ -30,6 +30,10 @@
     <button class="btn btn-ghost" bindtap="onClearCache" hover-class="btn-hover">
       [5] 清除定位缓存
     </button>
+
+    <button class="btn btn-secondary" bindtap="onGoVirtualPay" hover-class="btn-hover">
+      [6] 虚拟支付测试 wx.requestVirtualPayment
+    </button>
   </view>
 
   <!-- 隐私状态 -->

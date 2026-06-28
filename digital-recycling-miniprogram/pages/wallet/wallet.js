@@ -64,30 +64,6 @@ Page({
     })
   },
 
-  onWithdraw() {
-    wx.showModal({
-      title: '提现',
-      content: `当前余额：¥${this.data.balance}`,
-      editable: true,
-      placeholderText: '请输入提现金额',
-      success: (res) => {
-        if (res.confirm && res.content) {
-          const amount = parseFloat(res.content)
-          if (isNaN(amount) || amount <= 0) {
-            wx.showToast({ title: '请输入有效金额', icon: 'none' })
-            return
-          }
-          walletApi.withdraw(amount).then(() => {
-            wx.showToast({ title: '提现申请已提交', icon: 'success' })
-            this.loadBalance()
-          }).catch((err) => {
-            wx.showToast({ title: err.message || '提现失败', icon: 'none' })
-          })
-        }
-      }
-    })
-  },
-
   onLogTap(e) {
     const log = this.data.logs[e.currentTarget.dataset.index]
     if (log && log.id) {

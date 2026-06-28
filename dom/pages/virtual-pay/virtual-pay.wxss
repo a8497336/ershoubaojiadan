@@ -1,0 +1,247 @@
+/* pages/virtual-pay/virtual-pay.wxss - 虚拟支付测试页样式 */
+/* 沿用 index.wxss 的卡片/按钮/日志风格,保持 demo 项目视觉一致 */
+
+.page {
+  padding: 24rpx 24rpx 60rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 环境标签 */
+.env-bar {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background-color: #fff8e6;
+  border-radius: 12rpx;
+  margin-bottom: 24rpx;
+  border: 1rpx solid #ffe58f;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.env-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.env-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 4rpx 16rpx;
+  border-radius: 6rpx;
+}
+
+.env-sandbox {
+  color: #fa8c16;
+  background-color: #fff2e8;
+}
+
+.env-prod {
+  color: #ff2d4a;
+  background-color: #fff0f0;
+}
+
+.env-tip {
+  font-size: 22rpx;
+  color: #999;
+  width: 100%;
+}
+
+/* 卡片 */
+.card {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  padding-left: 16rpx;
+  border-left: 6rpx solid #ff2d4a;
+  line-height: 1.4;
+}
+
+.card-content {
+  font-size: 26rpx;
+  color: #555;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.card-content.mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: #f8f8f8;
+  padding: 16rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #eee;
+  font-size: 24rpx;
+}
+
+.empty-hint {
+  color: #999;
+  white-space: pre-wrap;
+  text-align: center;
+}
+
+.status-success {
+  color: #28b940 !important;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #ff2d4a !important;
+  font-weight: 600;
+}
+
+.order-no {
+  margin-top: 12rpx;
+  color: #2980b9;
+}
+
+/* 套餐项 */
+.plan-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx dashed #eee;
+  gap: 16rpx;
+}
+
+.plan-item:last-child {
+  border-bottom: none;
+}
+
+.plan-info {
+  flex: 1;
+}
+
+.plan-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  display: block;
+}
+
+.plan-desc {
+  font-size: 22rpx;
+  color: #999;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.plan-price {
+  font-size: 32rpx;
+  color: #ff2d4a;
+  font-weight: 600;
+}
+
+/* 按钮 */
+.btn {
+  display: block;
+  padding: 16rpx 24rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  text-align: center;
+  border: none;
+  line-height: 1.5;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background-color: #ff2d4a;
+  color: #fff;
+}
+
+.btn-sm {
+  padding: 12rpx 20rpx;
+  font-size: 24rpx;
+}
+
+.btn[disabled] {
+  opacity: 0.5;
+}
+
+/* 日志区 */
+.log-list {
+  background-color: #1e1e1e;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.log-empty {
+  color: #888;
+  font-size: 24rpx;
+  text-align: center;
+  padding: 20rpx 0;
+}
+
+.log-item {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 22rpx;
+  line-height: 1.6;
+  word-break: break-all;
+  padding: 4rpx 0;
+  white-space: pre-wrap;
+}
+
+.log-info {
+  color: #d4d4d4;
+}
+
+.log-warn {
+  color: #dcdcaa;
+}
+
+.log-error {
+  color: #f48771;
+  font-weight: 500;
+}
+
+/* API 兼容性区 */
+.api-check {
+  background-color: #f8f8f8;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  border: 1rpx solid #eee;
+}
+
+.api-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8rpx 0;
+  border-bottom: 1rpx dashed #eee;
+  font-size: 24rpx;
+}
+
+.api-row:last-child {
+  border-bottom: none;
+}
+
+.api-name {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  color: #333;
+  font-weight: 500;
+}
+
+.api-status {
+  color: #999;
+  font-size: 22rpx;
+}
+
+/* 底部卡片 */
+.footer-card {
+  margin-bottom: 0;
+}

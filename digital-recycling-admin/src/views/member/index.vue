@@ -25,15 +25,24 @@
             <template #default="{ row }">¥{{ row.original_price }}</template>
           </el-table-column>
           <el-table-column prop="subscriber_count" label="开通人数" width="100" />
+          <el-table-column prop="product_id" label="道具ID" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.product_id" type="warning" size="small">{{ row.product_id }}</el-tag>
+              <span v-else style="color: #f56c6c">未配置</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="80">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="160">
+          <el-table-column label="操作" width="220">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="handleEditPlan(row)">编辑</el-button>
-              <el-button type="danger" link size="small" @click="handleDeletePlan(row)">删除</el-button>
+              <el-button :type="row.status === 1 ? 'warning' : 'success'" link size="small" @click="handleTogglePlanStatus(row)">
+                {{ row.status === 1 ? '下线' : '上线' }}
+              </el-button>
+              <!-- <el-button type="danger" link size="small" @click="handleDeletePlan(row)">删除</el-button> -->
             </template>
           </el-table-column>
         </el-table>
@@ -115,6 +124,9 @@
         <el-form-item label="原价" prop="original_price">
           <el-input-number v-model="planForm.original_price" :min="0" :precision="2" />
         </el-form-item>
+        <el-form-item label="道具ID" prop="product_id">
+          <el-input v-model="planForm.product_id" placeholder="虚拟支付道具ID(MP后台→虚拟支付→商品管理)" clearable />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="planVisible = false">取消</el-button>
@@ -142,7 +154,8 @@ const planForm = ref({
   key_code: '',
   duration_days: 30,
   price: 0,
-  original_price: 0
+  original_price: 0,
+  product_id: ''
 })
 
 const planRules = {
@@ -199,7 +212,8 @@ const handleAddPlan = () => {
     key_code: '',
     duration_days: 30,
     price: 0,
-    original_price: 0
+    original_price: 0,
+    product_id: ''
   }
   planVisible.value = true
 }
@@ -223,6 +237,21 @@ const handleDeletePlan = async (row) => {
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+const handleTogglePlanStatus = async (row) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const actionText = newStatus === 1 ? '上线' : '下线'
+  try {
+    await ElMessageBox.confirm(`确定${actionText}套餐「${row.name}」？${newStatus === 0 ? '下线后小程序端将不再展示该套餐，已开通用户不受影响。' : ''}`, '提示', { type: 'warning' })
+    await updateMembershipPlan(row.id, { status: newStatus })
+    ElMessage.success(`${actionText}成功`)
+    loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '操作失败')
     }
   }
 }

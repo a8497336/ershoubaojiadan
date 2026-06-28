@@ -37,6 +37,10 @@ app.use('/api/membership/pay-notify', express.text({ type: 'text/xml', limit: '5
 
 app.use('/api', require('./routes/api'))
 app.use('/api/admin', require('./routes/admin'))
+// dom(Demo)项目专用接口:独立于主小程序,不影响现有 API
+// 微信虚拟支付消息推送是 XML 格式,需在路由前挂 text/xml 解析中间件
+app.use('/api/dom/virtual-pay/notify', express.text({ type: 'text/xml', limit: '5mb' }))
+app.use('/api/dom', require('./routes/dom'))
 
 app.use(express.static(path.join(__dirname, '..', 'public', 'app')))
 app.get('/{*splat}', (req, res) => {
