@@ -7,12 +7,19 @@ const authApi = {
       if (extra.encryptedData) data.encryptedData = extra.encryptedData
       if (extra.iv) data.iv = extra.iv
       if (extra.location) data.location = extra.location
+      if (extra.inviteCode) data.extra = { inviteCode: extra.inviteCode }
     }
     return request({ url: '/auth/wx-login', method: 'POST', data })
   },
   bindPhone: (code) => request({ url: '/auth/phone-bind', method: 'POST', data: { code } }),
   bindPhoneNoLogin: (code) => request({ url: '/auth/phone-bind-nologin', method: 'POST', data: { code } }),
   checkToken: () => request({ url: '/auth/check-token' })
+}
+
+const inviteApi = {
+  getQrCode: () => request({ url: '/user/invite-qr-code' }),
+  getStats: () => request({ url: '/user/invite-stats' }),
+  getRecords: (data) => request({ url: '/user/invite-records', data })
 }
 
 const userApi = {
@@ -29,6 +36,10 @@ const userApi = {
   getRedPackets: (data) => request({ url: '/red-packets', data }),
   getRecordings: (data) => request({ url: '/user/recordings', data }),
   getFavorites: (data) => request({ url: '/user/favorites', data }),
+  addFavorite: (brandId) => request({ url: '/user/favorites', method: 'POST', data: { brand_id: brandId } }),
+  removeFavorite: (id) => request({ url: `/user/favorites/${id}`, method: 'DELETE' }),
+  removeFavoriteByBrand: (brandId) => request({ url: `/user/favorites/brand/${brandId}`, method: 'DELETE' }),
+  checkFavorite: (brandId) => request({ url: `/user/favorites/check/${brandId}` }),
   uploadAvatar: (filePath) => uploadFile(filePath, '/user/avatar')
 }
 
@@ -157,6 +168,7 @@ const featurePhoneImageApi = {
 
 module.exports = {
   authApi,
+  inviteApi,
   userApi,
   categoryApi,
   brandApi,

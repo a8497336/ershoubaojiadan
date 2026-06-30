@@ -197,7 +197,7 @@
     <!-- 常用报价 -->
     <view class="common-quote-header">
       <text class="active">常用报价</text>
-      <text class="more" bindtap="goToPriceQuote">查看全部 ></text>
+      <text class="more" bindtap="goToFavorites">查看全部 ></text>
     </view>
     <!-- 搜索栏 -->
     <view class="search-bar">

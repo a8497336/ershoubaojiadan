@@ -5,9 +5,12 @@ const originalPage = Page
 Page = function (options) {
   if (!options.onShareAppMessage) {
     options.onShareAppMessage = function () {
+      const appInstance = getApp()
+      const userInfo = appInstance && appInstance.globalData ? appInstance.globalData.userInfo : {}
+      const inviteCode = userInfo ? (userInfo.userNo || userInfo.userId) : ''
       return {
         title: '联赢电子回收网 - 专业数码产品回收平台',
-        path: '/pages/index/index'
+        path: inviteCode ? `/pages/index/index?invite_code=${inviteCode}` : '/pages/index/index'
       }
     }
   }

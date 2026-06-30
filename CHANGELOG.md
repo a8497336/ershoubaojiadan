@@ -3,6 +3,98 @@
 > 本文件记录项目根目录 `c:\Users\17798\Desktop\陈峰\数码回收` 下所有需求的变更留痕。
 > 时间统一使用 UTC+8（Asia/Shanghai）。
 
+## 2026-06-29（报价单收藏功能）
+
+### 新增功能
+- **报价单页面收藏/取消收藏**：在 `pages/price-quote/price-quote` 页面标题旁增加收藏按钮（☆/⭐），支持收藏当前查看的品牌报价单，点击可切换收藏状态。
+- **收藏报价单列表**：完善 `pages/my-favorites/my-favorites` 页面，展示用户收藏的品牌列表，支持点击跳转到对应品牌报价单，支持滑动取消收藏。
+- **首页常用报价入口**：首页"常用报价 → 查看全部"改为跳转到收藏列表页面（`pages/my-favorites`），方便用户快速查看收藏的报价单。
+- **我的页面收藏入口**：`pages/profile/profile` 中 VIP 特权区的「收藏报价单」入口保持跳转到收藏列表。
+
+### 后端变更
+- **新增模型** `src/models/Favorite.js`：收藏表，字段 `id`、`user_id`、`brand_id`，联合唯一索引 `(user_id, brand_id)`。
+- **模型注册** `src/models/index.js`：注册 Favorite 模型，添加 User/Favorite/Brand 关联关系。
+- **新增接口** `src/routes/api/user.js`：
+  - `GET /api/user/favorites` - 获取收藏列表（分页，含品牌和分类信息）
+  - `POST /api/user/favorites` - 添加收藏（body: `{ brand_id }`）
+  - `DELETE /api/user/favorites/:id` - 按收藏ID取消收藏
+  - `DELETE /api/user/favorites/brand/:brandId` - 按品牌ID取消收藏
+  - `GET /api/user/favorites/check/:brandId` - 检查是否已收藏
+
+### 前端变更
+- **`utils/api-modules.js`**：userApi 新增 `addFavorite`、`removeFavorite`、`removeFavoriteByBrand`、`checkFavorite` 方法。
+- **`pages/price-quote/price-quote.js`**：新增 `checkFavoriteStatus`（页面加载时检查收藏状态）、`toggleFavorite`（切换收藏/取消收藏）。
+- **`pages/price-quote/price-quote.wxml`**：header-title 内增加收藏按钮，仅在有 brandId 时显示。
+- **`pages/price-quote/price-quote.wxss`**：新增 `.favorite-btn` 和 `.favorite-btn.favorited` 样式。
+- **`pages/my-favorites/my-favorites.js`**：重写为品牌收藏列表逻辑，新增 `onRemoveFavorite` 取消收藏方法，`onShow` 时自动刷新列表。
+- **`pages/my-favorites/my-favorites.wxml`**：重写为品牌卡片布局，展示品牌图标、名称、分类，支持点击跳转和侧滑取消收藏。
+- **`pages/my-favorites/my-favorites.wxss`**：重写样式，新增品牌图标渐变色类（bg-apple、bg-huawei 等）。
+- **`pages/index/index.js`**：新增 `goToFavorites` 方法，跳转到收藏列表。
+- **`pages/index/index.wxml`**：常用报价"查看全部"的 bindtap 从 `goToPriceQuote` 改为 `goToFavorites`。
+
+### 数据库
+- 自动创建 `favorites` 表（项目使用 `sequelize.sync()` 自动同步），无需手动执行迁移。
+
+---
+
+## 2026-06-29（小程序：修复海报生成失败及扫码入口）
+
+### Bug 修复
+- **`pages/invite-friends/invite-friends.js`**：旧版 Canvas（`canvas-id`）是原生组件，被 CSS 定位到屏幕外（`left: -9999px`）后不渲染，导致 `canvasToTempFilePath` 失败。改用新版 Canvas 2D API（`type="2d"`，非原生组件），使用 `canvas.createImage()` 加载图片、`wx.canvasToTempFilePath({ canvas })` 导出。
+- **`pages/invite-friends/invite-friends.wxml`**：Canvas 标签从 `canvas-id="posterCanvas"` 改为 `type="2d" id="posterCanvas"`，尺寸调整为 375x600 CSS px。
+- **`pages/index/index.js`**：扫海报小程序码进入时，微信通过 `options.scene` 传递参数而非 `invite_code`。`_handleInviteCode` 增加 `scene` 参数解析（`decodeURIComponent`），兼容分享链接和扫码两种入口。
+- **`src/utils/wechat.js`**：`getAccessToken` 缺少错误处理和缓存，微信返回错误时 access_token 为 undefined 导致后续接口失败。增加内存缓存（提前 5 分钟刷新）和 errcode 错误抛出。
+
+---
+
+## 2026-06-29（小程序：修复邀请好友跳转错误及邀请链路问题）
+
+### Bug 修复
+- **`pages/profile/profile.js`**：`onPointActivityTap` 中「积分商城」已注释但 switch 仍保留旧 case 索引，导致点击「邀请好友」（index 1）错误跳转到积分商城。修正 case 1 直接跳转 `invite-friends`。
+- **`pages/index/index.js`**：`_handleInviteCode` 返回 true 阻止了 `init()` 执行，导致用户从邀请链接登录后返回首页时 `_hasLoaded` 为 false，首页空白。改为不阻止首页数据加载。
+- **`app.js`**：全局分享中 `inviteCode` 仅读取 `userInfo.userNo`，但 `/user/profile` 返回字段名为 `userId`，导致分享路径丢失邀请码。兼容读取 `userNo || userId`。
+
+---
+
+## 2026-06-29（小程序：优化邀请好友功能）
+
+### 背景
+- 小程序现有邀请页为旧版「邀好友 分佣金」设计，与新业务目标不符。
+- 需要建立完整的邀请裂变链路：好友分享携带邀请码、新用户登录注册即给邀请人发放奖励、海报分享、邀请数据统计。
+
+### 后端改动（digital-recycling-server）
+- **`src/routes/api/user.js`**：
+  - 优化 `/invite-stats` 接口，使用 `count`/`sum` 分离查询替代 `findOne` + 聚合函数，避免数据库严格模式下的不确定性。
+- **`src/routes/admin/setting-manage.js`**：
+  - 在 `/api/admin/settings` GET 接口中自动初始化 `invite_reward_times` 默认配置项（默认值 `10`，描述「邀请好友成功奖励的报价查看次数」），确保后台首次调用即可见可配。
+
+### 前端改动（digital-recycling-miniprogram）
+- **`utils/api-modules.js`**：
+  - 新增 `inviteApi`：封装 `/user/invite-qr-code`、`/user/invite-stats`、`/user/invite-records`。
+  - 修改 `authApi.wxLogin`：支持通过 `extra.inviteCode` 向后端传递邀请码。
+- **`pages/index/index.js`**：
+  - `onLoad` 解析 `options.invite_code`；未登录时跳转登录页并携带邀请码；已登录老用户直接忽略。
+- **`pages/login/login.js`**：
+  - `onLoad` 接收 `invite_code` 参数并写入 `data`。
+  - `handleLogin` 调用 `wxLogin` 时传入 `{ inviteCode: ... }`。
+- **`pages/invite-friends/invite-friends.js/wxml/wxss`**：
+  - 重写邀请页：展示邀请码、成功邀请数、累计奖励次数、小程序码、最近邀请记录。
+  - 新增「分享好友」（`open-type="share"`）和「保存海报」（Canvas 绘制完整海报并保存相册）功能。
+  - 邀请规则更新为新用户登录即奖励、老用户无效。
+- **`app.js`**：
+  - 全局默认 `onShareAppMessage` 携带当前用户 `invite_code`，实现任意页面分享均可追踪邀请来源。
+
+### 数据模型 / 迁移
+- 新增 `digital-recycling-server/migrations/20260629-create-invitations.js` 迁移文件（已前置创建），用于创建 `invitations` 表。
+- `users` 表 `referrer`、`quote_remaining` 字段已存在，无需额外迁移。
+
+### 影响面
+- 后端：`src/routes/api/user.js`、`src/routes/admin/setting-manage.js`。
+- 前端：`utils/api-modules.js`、`pages/index/index.js`、`pages/login/login.js`、`pages/invite-friends/*`、`app.js`。
+- 数据库：执行 `20260629-create-invitations.js` 迁移后新增 `invitations` 表。
+
+---
+
 ## 2026-06-28（内容管理后台：四个列表 Tab 增加查询能力）
 
 ### 背景

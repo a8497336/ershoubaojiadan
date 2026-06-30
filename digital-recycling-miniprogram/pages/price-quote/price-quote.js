@@ -1,4 +1,4 @@
-const { priceApi, cartApi, searchApi, brandApi } = require('../../utils/api-modules')
+const { priceApi, cartApi, searchApi, brandApi, userApi } = require('../../utils/api-modules')
 
 Page({
   data: {
@@ -21,7 +21,9 @@ Page({
     receiverPhone: '',
     receiverAddress: '',
     quoteDailyRemaining: 0,
-    isVip: false
+    isVip: false,
+    isFavorited: false,
+    favoriteId: null
   },
 
   // 防止重複調用的標記
@@ -42,6 +44,56 @@ Page({
     })
 
     this.loadTodayPrices({ brand_id: brandId, category, product_id: productId })
+    this.checkFavoriteStatus()
+  },
+
+  // 检查收藏状态
+  checkFavoriteStatus() {
+    const { brandId } = this.data
+    if (!brandId) return
+    const token = wx.getStorageSync('token')
+    if (!token) return
+    userApi.checkFavorite(brandId).then(res => {
+      const data = res.data || res || {}
+      this.setData({
+        isFavorited: data.isFavorited || false,
+        favoriteId: data.id || null
+      })
+    }).catch(() => {})
+  },
+
+  // 切换收藏
+  toggleFavorite() {
+    const { brandId, isFavorited, favoriteId } = this.data
+    if (!brandId) return
+
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+
+    if (isFavorited) {
+      // 取消收藏
+      userApi.removeFavoriteByBrand(brandId).then(() => {
+        this.setData({ isFavorited: false, favoriteId: null })
+        wx.showToast({ title: '已取消收藏', icon: 'none' })
+      }).catch(() => {
+        wx.showToast({ title: '操作失败', icon: 'none' })
+      })
+    } else {
+      // 添加收藏
+      userApi.addFavorite(brandId).then(res => {
+        const data = res.data || res || {}
+        this.setData({
+          isFavorited: true,
+          favoriteId: data.id || null
+        })
+        wx.showToast({ title: '收藏成功', icon: 'success' })
+      }).catch(() => {
+        wx.showToast({ title: '操作失败', icon: 'none' })
+      })
+    }
   },
 
   onShow() {

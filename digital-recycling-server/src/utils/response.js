@@ -79,6 +79,7 @@ const validateError = (res, message = '参数校验失败', errors = []) => {
 module.exports = {
   success,
   paginate,
+  paginateResponse,
   error,
   unauthorized,
   forbidden,

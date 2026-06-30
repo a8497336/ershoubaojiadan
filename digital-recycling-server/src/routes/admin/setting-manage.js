@@ -38,11 +38,24 @@ const { adminAuth } = require('../../middlewares/adminAuth')
 const { success } = require('../../utils/response')
 const db = require('../../models')
 
+const DEFAULT_SETTINGS = {
+  invite_reward_times: { value: '10', description: '邀请好友成功奖励的报价查看次数' }
+}
+
 router.get('/', adminAuth, async (req, res, next) => {
   try {
     const settings = await db.Setting.findAll()
     const result = {}
     settings.forEach(s => { result[s.key] = s.value })
+
+    // 自动初始化默认配置项
+    for (const [key, config] of Object.entries(DEFAULT_SETTINGS)) {
+      if (!(key in result)) {
+        await db.Setting.create({ key, value: config.value, description: config.description })
+        result[key] = config.value
+      }
+    }
+
     return success(res, result)
   } catch (err) { next(err) }
 })

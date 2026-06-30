@@ -194,7 +194,7 @@ Page({
     consoleLogs: []
   },
 
-  onLoad() {
+  onLoad(options) {
     // 缓存最近一次成功获取到的用户位置（_fallbackStoreToLocal 兜底用，非 data 字段）
     this._lastUserLat = null
     this._lastUserLng = null
@@ -203,9 +203,37 @@ Page({
       pageStyle: `--status-bar-h: ${app.globalData.statusBarHeight || 0}px;`,
       online: app.getNetworkStatus ? app.getNetworkStatus() : true
     })
+
+    // 处理邀请码：未登录时携带 invite_code 进入登录页（不阻止首页数据加载）
+    this._handleInviteCode(options)
+
     this._loadSystemInfoDevTest()
     this.init()
     this._autoLoadNearbyStore()
+  },
+
+  _handleInviteCode(options) {
+    // 优先从分享链接的 invite_code 参数获取
+    let inviteCode = options && options.invite_code
+
+    // 扫小程序码进入：从 scene 参数解析（微信会传入 encode 后的 scene）
+    if (!inviteCode && options && options.scene) {
+      inviteCode = decodeURIComponent(options.scene)
+    }
+
+    if (!inviteCode) return
+
+    const token = wx.getStorageSync('token')
+    if (token) {
+      // 老用户已登录，忽略邀请码
+      return
+    }
+
+    // 未登录，跳转登录页并携带邀请码
+    app.globalData.pendingInviteCode = inviteCode
+    wx.navigateTo({
+      url: `/pages/login/login?invite_code=${inviteCode}&redirect=${encodeURIComponent('/pages/index/index')}`
+    })
   },
 
   onReady() {
@@ -1249,6 +1277,7 @@ Page({
   goToScanPrice() { wx.switchTab({ url: '/pages/scan-price/scan-price' }) },
   goToInvite() { wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }) },
   goToPriceQuote() { this._precheckQuoteAndNavigate('/pages/price-quote/price-quote') },
+  goToFavorites() { wx.navigateTo({ url: '/pages/my-favorites/my-favorites' }) },
   goToVideoList() { wx.navigateTo({ url: '/pages/video-list/video-list' }) },
   goToRecyclingProcess() { wx.navigateTo({ url: '/pages/recycling-process/recycling-process' }) },
 

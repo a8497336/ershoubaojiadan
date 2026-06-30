@@ -158,9 +158,11 @@
 
 const router = require('express').Router()
 const { auth } = require('../../middlewares/auth')
-const { success, notFound } = require('../../utils/response')
+const { success, error, notFound, paginateResponse, paginate } = require('../../utils/response')
 const { getVipStatus } = require('../../utils/helpers')
 const db = require('../../models')
+const wechatUtil = require('../../utils/wechat')
+const { Sequelize } = require('sequelize')
 
 router.get('/profile', auth, async (req, res, next) => {
   try {
@@ -290,6 +292,213 @@ router.delete('/addresses/:id', auth, async (req, res, next) => {
     if (!address) return notFound(res, '地址不存在')
     await address.destroy()
     return success(res, null, '删除成功')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 邀请二维码缓存：memory cache，5 分钟
+const qrCodeCache = new Map()
+const QR_CACHE_TTL = 5 * 60 * 1000
+
+router.get('/invite-qr-code', auth, async (req, res, next) => {
+  try {
+    const user = req.user
+    const cacheKey = user.user_no
+    const cached = qrCodeCache.get(cacheKey)
+    if (cached && Date.now() - cached.time < QR_CACHE_TTL) {
+      return success(res, { qrCodeUrl: cached.url })
+    }
+
+    const qrPath = await wechatUtil.getWxaCodeUnlimited(user.user_no, {
+      page: 'pages/index/index',
+      width: 280
+    })
+
+    const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`
+    const qrCodeUrl = `${baseUrl}${qrPath}`
+    qrCodeCache.set(cacheKey, { url: qrCodeUrl, time: Date.now() })
+    return success(res, { qrCodeUrl })
+  } catch (err) {
+    console.error('生成邀请二维码失败:', err.message)
+    return error(res, '生成二维码失败: ' + err.message, 10030, 500)
+  }
+})
+
+router.get('/invite-stats', auth, async (req, res, next) => {
+  try {
+    const where = { inviter_id: req.userId }
+
+    const [inviteCount, rewardedCount, totalRewardTimes, grantedRewardTimes] = await Promise.all([
+      db.Invitation.count({ where }),
+      db.Invitation.count({ where: { ...where, granted_times: { [Sequelize.Op.gt]: 0 } } }),
+      db.Invitation.sum('reward_times', { where }),
+      db.Invitation.sum('granted_times', { where })
+    ])
+
+    const pendingRewardTimes = Math.max(0, (parseInt(totalRewardTimes) || 0) - (parseInt(grantedRewardTimes) || 0))
+
+    return success(res, {
+      inviteCount: parseInt(inviteCount) || 0,
+      rewardedCount: parseInt(rewardedCount) || 0,
+      totalRewardTimes: parseInt(totalRewardTimes) || 0,
+      pendingRewardTimes: parseInt(pendingRewardTimes) || 0,
+      grantedRewardTimes: parseInt(grantedRewardTimes) || 0
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/invite-records', auth, async (req, res, next) => {
+  try {
+    const { page = 1, pageSize = 20 } = req.query
+    const { offset, limit } = paginate(page, pageSize)
+
+    const { count, rows } = await db.Invitation.findAndCountAll({
+      where: { inviter_id: req.userId },
+      include: [
+        { model: db.User, as: 'Invitee', attributes: ['id', 'nickname', 'avatar', 'created_at'] }
+      ],
+      order: [['created_at', 'DESC']],
+      offset,
+      limit
+    })
+
+    const list = rows.map(item => ({
+      id: item.id,
+      inviteCode: item.invite_code,
+      rewardTimes: item.reward_times,
+      grantedTimes: item.granted_times,
+      status: item.status,
+      createdAt: item.created_at,
+      invitee: item.Invitee ? {
+        id: item.Invitee.id,
+        nickname: item.Invitee.nickname,
+        avatar: item.Invitee.avatar,
+        createdAt: item.Invitee.created_at
+      } : null
+    }))
+
+    return paginateResponse(res, list, count, page, pageSize)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ===== 收藏报价单 =====
+
+// 获取收藏列表
+router.get('/favorites', auth, async (req, res, next) => {
+  try {
+    const { page = 1, pageSize = 20 } = req.query
+    const { offset, limit } = paginate(page, pageSize)
+
+    const { count, rows } = await db.Favorite.findAndCountAll({
+      where: { user_id: req.userId },
+      include: [
+        {
+          model: db.Brand,
+          as: 'Brand',
+          attributes: ['id', 'name', 'bg_color', 'icon_text', 'icon_style', 'category_id'],
+          include: [{
+            model: db.Category,
+            as: 'Category',
+            attributes: ['id', 'name']
+          }]
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      offset,
+      limit
+    })
+
+    const list = rows.map(fav => ({
+      id: fav.id,
+      brand_id: fav.Brand ? fav.Brand.id : null,
+      brand_name: fav.Brand ? fav.Brand.name : '',
+      category_name: fav.Brand && fav.Brand.Category ? fav.Brand.Category.name : '',
+      bg_color: fav.Brand ? fav.Brand.bg_color : '',
+      icon_text: fav.Brand ? fav.Brand.icon_text : '',
+      icon_style: fav.Brand ? fav.Brand.icon_style : '',
+      created_at: fav.created_at
+    }))
+
+    return paginateResponse(res, list, count, page, pageSize)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 添加收藏
+router.post('/favorites', auth, async (req, res, next) => {
+  try {
+    const { brand_id } = req.body
+    if (!brand_id) return error(res, '参数错误：缺少 brand_id')
+
+    // 检查品牌是否存在
+    const brand = await db.Brand.findByPk(brand_id)
+    if (!brand) return notFound(res, '品牌不存在')
+
+    // 检查是否已收藏
+    const existing = await db.Favorite.findOne({
+      where: { user_id: req.userId, brand_id }
+    })
+    if (existing) {
+      return success(res, { id: existing.id, isFavorited: true }, '已收藏')
+    }
+
+    const favorite = await db.Favorite.create({
+      user_id: req.userId,
+      brand_id
+    })
+
+    return success(res, { id: favorite.id, isFavorited: true }, '收藏成功')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 取消收藏
+router.delete('/favorites/:id', auth, async (req, res, next) => {
+  try {
+    const favorite = await db.Favorite.findOne({
+      where: { id: req.params.id, user_id: req.userId }
+    })
+    if (!favorite) return notFound(res, '收藏记录不存在')
+
+    await favorite.destroy()
+    return success(res, null, '已取消收藏')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 根据 brand_id 取消收藏
+router.delete('/favorites/brand/:brandId', auth, async (req, res, next) => {
+  try {
+    const favorite = await db.Favorite.findOne({
+      where: { user_id: req.userId, brand_id: req.params.brandId }
+    })
+    if (!favorite) return notFound(res, '收藏记录不存在')
+
+    await favorite.destroy()
+    return success(res, null, '已取消收藏')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 检查是否已收藏
+router.get('/favorites/check/:brandId', auth, async (req, res, next) => {
+  try {
+    const favorite = await db.Favorite.findOne({
+      where: { user_id: req.userId, brand_id: req.params.brandId }
+    })
+    return success(res, {
+      isFavorited: !!favorite,
+      id: favorite ? favorite.id : null
+    })
   } catch (err) {
     next(err)
   }

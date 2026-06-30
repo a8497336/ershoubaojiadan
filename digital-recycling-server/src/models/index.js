@@ -27,6 +27,7 @@ db.Sequelize = Sequelize
 db.sequelize = sequelize
 
 db.User = require('./User')(sequelize, Sequelize)
+db.Invitation = require('./Invitation')(sequelize, Sequelize)
 db.Address = require('./Address')(sequelize, Sequelize)
 db.Wallet = require('./Wallet')(sequelize, Sequelize)
 db.WalletLog = require('./WalletLog')(sequelize, Sequelize)
@@ -58,6 +59,14 @@ db.AdminLog = require('./AdminLog')(sequelize, Sequelize)
 db.Setting = require('./Setting')(sequelize, Sequelize)
 db.UserStock = require('./UserStock')(sequelize, Sequelize)
 db.PopupAd = require('./PopupAd')(sequelize, Sequelize)
+db.Favorite = require('./Favorite')(sequelize, Sequelize)
+db.UserMessageRead = require('./UserMessageRead')(sequelize, Sequelize)
+
+// Favorite 关联
+db.User.hasMany(db.Favorite, { foreignKey: 'user_id', as: 'Favorites' })
+db.Favorite.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
+db.Brand.hasMany(db.Favorite, { foreignKey: 'brand_id', as: 'Favorites' })
+db.Favorite.belongsTo(db.Brand, { foreignKey: 'brand_id', as: 'Brand' })
 
 db.Category.hasMany(db.Brand, { foreignKey: 'category_id', as: 'Brands' })
 db.Brand.belongsTo(db.Category, { foreignKey: 'category_id', as: 'Category' })
@@ -83,6 +92,10 @@ db.PriceHistory.belongsTo(db.ProductCondition, { foreignKey: 'condition_id', as:
 db.User.hasOne(db.Wallet, { foreignKey: 'user_id', as: 'Wallet' })
 db.Wallet.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
 
+db.User.hasMany(db.Invitation, { foreignKey: 'inviter_id', as: 'Invitations' })
+db.Invitation.belongsTo(db.User, { foreignKey: 'inviter_id', as: 'Inviter' })
+db.Invitation.belongsTo(db.User, { foreignKey: 'invitee_id', as: 'Invitee' })
+
 db.User.hasMany(db.Address, { foreignKey: 'user_id', as: 'Addresses' })
 db.Address.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
 
@@ -102,6 +115,11 @@ db.LogisticsTimeline.belongsTo(db.Order, { foreignKey: 'order_id', as: 'Order' }
 
 db.User.hasMany(db.Message, { foreignKey: 'user_id', as: 'Messages' })
 db.Message.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
+
+db.User.hasMany(db.UserMessageRead, { foreignKey: 'user_id', as: 'MessageReads' })
+db.UserMessageRead.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })
+db.Message.hasMany(db.UserMessageRead, { foreignKey: 'message_id', as: 'UserReads' })
+db.UserMessageRead.belongsTo(db.Message, { foreignKey: 'message_id', as: 'Message' })
 
 db.User.hasMany(db.WalletLog, { foreignKey: 'user_id', as: 'WalletLogs' })
 db.WalletLog.belongsTo(db.User, { foreignKey: 'user_id', as: 'User' })

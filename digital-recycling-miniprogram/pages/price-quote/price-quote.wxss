@@ -54,6 +54,20 @@
   text-align: center;
   margin-bottom: 16rpx;
   letter-spacing: 2rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.favorite-btn {
+  font-size: 40rpx;
+  color: rgba(255,255,255,0.7);
+  padding: 4rpx 8rpx;
+}
+
+.favorite-btn.favorited {
+  color: #FFD700;
 }
 
 .header-info {

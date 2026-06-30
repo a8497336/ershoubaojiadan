@@ -9,6 +9,44 @@ const db = require('../../models')
 const wechatUtil = require('../../utils/wechat')
 const { generateUserNo, getVipStatus } = require('../../utils/helpers')
 
+const INVITE_REWARD_TIMES_KEY = 'invite_reward_times'
+const DEFAULT_INVITE_REWARD_TIMES = 10
+
+const getInviteRewardTimes = async () => {
+  const setting = await db.Setting.findOne({ where: { key: INVITE_REWARD_TIMES_KEY } })
+  return parseInt(setting?.value) || DEFAULT_INVITE_REWARD_TIMES
+}
+
+const processInvitation = async (invitee, inviteCode, transaction) => {
+  if (!inviteCode || !invitee || invitee.referrer) return
+
+  const inviter = await db.User.findOne({
+    where: { user_no: inviteCode },
+    transaction
+  })
+  if (!inviter || inviter.id === invitee.id) return
+
+  const existing = await db.Invitation.findOne({
+    where: { invitee_id: invitee.id },
+    transaction
+  })
+  if (existing) return
+
+  const rewardTimes = await getInviteRewardTimes()
+
+  await db.Invitation.create({
+    inviter_id: inviter.id,
+    invitee_id: invitee.id,
+    invite_code: inviteCode,
+    status: 1,
+    reward_times: rewardTimes,
+    granted_times: rewardTimes
+  }, { transaction })
+
+  await inviter.increment('quote_remaining', { by: rewardTimes, transaction })
+  await invitee.update({ referrer: inviteCode }, { transaction })
+}
+
 router.post('/wx-login',
   [
     body('code').notEmpty().withMessage('微信登录code不能为空')
@@ -16,7 +54,8 @@ router.post('/wx-login',
   validate,
   async (req, res, next) => {
     try {
-      const { code, userInfo, location, encryptedData, iv } = req.body
+      const { code, userInfo, extra, encryptedData, iv } = req.body
+      const inviteCode = extra && extra.inviteCode ? extra.inviteCode : null
       let wxData
       try {
         wxData = await wechatUtil.code2Session(code)
@@ -35,26 +74,36 @@ router.post('/wx-login',
       }
 
       let user = await db.User.findOne({ where: { openid: wxData.openid } })
+      let isNewUser = false
 
       if (!user) {
-        const userData = {
-          openid: wxData.openid,
-          union_id: wxData.unionid,
-          user_no: generateUserNo(),
-          nickname: (userInfo && (userInfo.nickName || userInfo.nickname)) || '微信用户',
-          avatar: (userInfo && (userInfo.avatarUrl || userInfo.avatar)) || '/images/icons/avatar.svg',
-          phone: phone || null,
-          scan_remaining: 10,
-          status: 1
-        }
-        user = await db.User.create(userData)
-        await db.Wallet.create({
-          user_id: user.id,
-          balance: 0,
-          frozen: 0,
-          total_income: 0,
-          total_withdraw: 0
+        isNewUser = true
+        const result = await db.sequelize.transaction(async (t) => {
+          const userData = {
+            openid: wxData.openid,
+            union_id: wxData.unionid,
+            user_no: generateUserNo(),
+            nickname: (userInfo && (userInfo.nickName || userInfo.nickname)) || '微信用户',
+            avatar: (userInfo && (userInfo.avatarUrl || userInfo.avatar)) || '/images/icons/avatar.svg',
+            phone: phone || null,
+            scan_remaining: 10,
+            status: 1
+          }
+          const newUser = await db.User.create(userData, { transaction: t })
+          await db.Wallet.create({
+            user_id: newUser.id,
+            balance: 0,
+            frozen: 0,
+            total_income: 0,
+            total_withdraw: 0
+          }, { transaction: t })
+
+          // 仅新用户处理邀请关系并发放奖励
+          await processInvitation(newUser, inviteCode, t)
+
+          return newUser
         })
+        user = result
       } else {
         const updateData = { last_login_at: new Date() }
         if (userInfo) {
@@ -65,6 +114,7 @@ router.post('/wx-login',
         }
         if (phone) updateData.phone = phone
         await user.update(updateData)
+        // 老用户登录忽略 inviteCode
       }
 
       const vipStatus = await getVipStatus(user)

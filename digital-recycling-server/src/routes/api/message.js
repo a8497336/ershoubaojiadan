@@ -79,6 +79,31 @@ const { success, paginate } = require('../../utils/response')
 const db = require('../../models')
 const { Op } = require('sequelize')
 
+/**
+ * 获取当前用户已读的广播消息 ID 列表
+ */
+async function getReadBroadcastIds(userId) {
+  const rows = await db.UserMessageRead.findAll({
+    where: { user_id: userId },
+    attributes: ['message_id'],
+    raw: true
+  })
+  return rows.map(r => r.message_id)
+}
+
+/**
+ * 将广播消息的 is_read 修正为当前用户的真实已读状态
+ */
+function applyBroadcastReadStatus(messages, readBroadcastIds) {
+  return messages.map(msg => {
+    const plain = msg.toJSON ? msg.toJSON() : msg
+    if (plain.is_broadcast && readBroadcastIds.includes(plain.id)) {
+      plain.is_read = 1
+    }
+    return plain
+  })
+}
+
 router.get('/', auth, async (req, res, next) => {
   try {
     const { type, page = 1, pageSize = 20 } = req.query
@@ -88,13 +113,12 @@ router.get('/', auth, async (req, res, next) => {
         { is_broadcast: 1 }
       ]
     }
-    if (type && type !== 'all') {
-      if (type === 'unread') {
-        where.is_read = 0
-      } else {
-        where.type = type
-      }
+
+    if (type && type !== 'all' && type !== 'unread') {
+      where.type = type
     }
+
+    const readBroadcastIds = await getReadBroadcastIds(req.userId)
 
     const { offset, limit } = paginate(page, pageSize)
     const { count, rows } = await db.Message.findAndCountAll({
@@ -104,8 +128,20 @@ router.get('/', auth, async (req, res, next) => {
       limit
     })
 
+    let list = applyBroadcastReadStatus(rows, readBroadcastIds)
+
+    // 筛选未读消息：个人消息 is_read=0 或 广播消息未读
+    if (type === 'unread') {
+      list = list.filter(msg => {
+        if (msg.is_broadcast) {
+          return !readBroadcastIds.includes(msg.id)
+        }
+        return msg.is_read === 0
+      })
+    }
+
     return success(res, {
-      list: rows,
+      list,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -123,9 +159,20 @@ router.put('/:id/read', auth, async (req, res, next) => {
     const message = await db.Message.findOne({
       where: { id: req.params.id, [Op.or]: [{ user_id: req.userId }, { is_broadcast: 1 }] }
     })
-    if (message && !message.is_read) {
+    if (!message) {
+      return success(res, null, '消息不存在')
+    }
+
+    if (message.is_broadcast) {
+      // 广播消息：写入 user_message_reads 表，不修改全局 is_read
+      await db.UserMessageRead.findOrCreate({
+        where: { user_id: req.userId, message_id: message.id }
+      })
+    } else if (!message.is_read) {
+      // 个人消息：直接标记 is_read
       await message.update({ is_read: 1 })
     }
+
     return success(res, null, '已标记为已读')
   } catch (err) {
     next(err)
@@ -134,10 +181,27 @@ router.put('/:id/read', auth, async (req, res, next) => {
 
 router.put('/read-all', auth, async (req, res, next) => {
   try {
+    // 1. 标记所有个人消息为已读
     await db.Message.update(
       { is_read: 1 },
       { where: { user_id: req.userId, is_read: 0 } }
     )
+
+    // 2. 标记所有广播消息为已读（写入 user_message_reads）
+    const broadcastMessages = await db.Message.findAll({
+      where: { is_broadcast: 1 },
+      attributes: ['id'],
+      raw: true
+    })
+    const readBroadcastIds = await getReadBroadcastIds(req.userId)
+    const newReads = broadcastMessages
+      .filter(m => !readBroadcastIds.includes(m.id))
+      .map(m => ({ user_id: req.userId, message_id: m.id }))
+
+    if (newReads.length > 0) {
+      await db.UserMessageRead.bulkCreate(newReads, { ignoreDuplicates: true })
+    }
+
     return success(res, null, '已全部标记为已读')
   } catch (err) {
     next(err)
@@ -166,13 +230,20 @@ router.post('/feedback', auth, async (req, res, next) => {
 
 router.get('/unread-count', auth, async (req, res, next) => {
   try {
-    const count = await db.Message.count({
-      where: {
-        [Op.or]: [{ user_id: req.userId }, { is_broadcast: 1 }],
-        is_read: 0
-      }
+    // 1. 个人未读消息
+    const personalUnread = await db.Message.count({
+      where: { user_id: req.userId, is_read: 0 }
     })
-    return success(res, { count })
+
+    // 2. 广播消息中当前用户未读的数量
+    const readBroadcastIds = await getReadBroadcastIds(req.userId)
+    const broadcastWhere = { is_broadcast: 1 }
+    if (readBroadcastIds.length > 0) {
+      broadcastWhere.id = { [Op.notIn]: readBroadcastIds }
+    }
+    const broadcastUnread = await db.Message.count({ where: broadcastWhere })
+
+    return success(res, { count: personalUnread + broadcastUnread })
   } catch (err) {
     next(err)
   }

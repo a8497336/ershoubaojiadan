@@ -1,19 +1,129 @@
 @import '/styles/design-tokens.wxss';
+
 .page-container { min-height: 100vh; background: var(--color-background); padding-bottom: 40rpx; }
+
 .list-wrap { padding: 24rpx; display: flex; flex-direction: column; gap: 20rpx; }
-.fav-item { display: flex; background: var(--color-background-white); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+
+.fav-item {
+  display: flex;
+  align-items: center;
+  background: var(--color-background-white);
+  border-radius: var(--radius-lg);
+  padding: 24rpx;
+  box-shadow: var(--shadow-sm);
+  gap: 20rpx;
+}
+
 .fav-item:active { background: var(--card-active-bg); }
-.fav-img { width: 160rpx; height: 160rpx; flex-shrink: 0; }
-.fav-img-placeholder { width: 160rpx; height: 160rpx; flex-shrink: 0; background: var(--skeleton-base); display: flex; align-items: center; justify-content: center; }
-.fav-d-icon { width: 64rpx; height: 64rpx; opacity: 0.3; }
-.fav-info { flex: 1; padding: 24rpx; display: flex; flex-direction: column; justify-content: space-between; }
-.fav-name { font-size: var(--font-size-base); color: var(--color-text-primary); font-weight: var(--font-weight-medium); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-.fav-bottom { display: flex; justify-content: space-between; align-items: center; }
-.fav-price { font-size: var(--font-size-md); color: var(--color-primary); font-weight: var(--font-weight-semibold); }
-.fav-date { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
-.error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 600rpx; }
+
+.fav-brand-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.bg-apple { background: linear-gradient(135deg, #636366, #48484a); }
+.bg-huawei { background: linear-gradient(135deg, #cf0a2c, #e60012); }
+.bg-xiaomi { background: linear-gradient(135deg, #ff6900, #fd4900); }
+.bg-oppo { background: linear-gradient(135deg, #1a9140, #0d7c2e); }
+.bg-vivo { background: linear-gradient(135deg, #415fff, #2b3db0); }
+.bg-samsung { background: linear-gradient(135deg, #1428a0, #0c1a6e); }
+.bg-realme { background: linear-gradient(135deg, #f4c542, #e8b730); }
+.bg-oneplus { background: linear-gradient(135deg, #eb0028, #c7001e); }
+.bg-nokia { background: linear-gradient(135deg, #124191, #0d2e6e); }
+.bg-jinli { background: linear-gradient(135deg, #e65c00, #c74e00); }
+.bg-meitu { background: linear-gradient(135deg, #ff69b4, #e05598); }
+.bg-meizu { background: linear-gradient(135deg, #00a0e9, #0085c2); }
+.bg-nubia { background: linear-gradient(135deg, #d4232a, #b01e24); }
+.bg-360 { background: linear-gradient(135deg, #4db849, #3a9e37); }
+.bg-smartisan { background: linear-gradient(135deg, #8b4513, #6b3410); }
+.bg-zte { background: linear-gradient(135deg, #0066b3, #004d8a); }
+.bg-coolpad { background: linear-gradient(135deg, #0078d7, #005a9e); }
+.bg-lenovo { background: linear-gradient(135deg, #e2231a, #c41e16); }
+.bg-htc { background: linear-gradient(135deg, #69b32d, #559226); }
+.bg-blackberry { background: linear-gradient(135deg, #1a1a1a, #333333); }
+.bg-sugar { background: linear-gradient(135deg, #e91e63, #c2185b); }
+.bg-hisense { background: linear-gradient(135deg, #009944, #007a36); }
+.bg-doov { background: linear-gradient(135deg, #ff4081, #e0356e); }
+.bg-8848 { background: linear-gradient(135deg, #8d6e63, #6d4c41); }
+.bg-leeco { background: linear-gradient(135deg, #e53935, #c62828); }
+.bg-tcl { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+.bg-chinamobile { background: linear-gradient(135deg, #4caf50, #388e3c); }
+.bg-bbk { background: linear-gradient(135deg, #2196f3, #1976d2); }
+.bg-gree { background: linear-gradient(135deg, #0097a7, #00838f); }
+.bg-moto { background: linear-gradient(135deg, #1e88e5, #1565c0); }
+.bg-asus { background: linear-gradient(135deg, #00bcd4, #0097a7); }
+.bg-royole { background: linear-gradient(135deg, #5c6bc0, #3949ab); }
+.bg-google { background: linear-gradient(135deg, #4285f4, #3367d6); }
+
+.fav-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  overflow: hidden;
+}
+
+.fav-name {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fav-category {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.fav-remove {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.remove-icon {
+  font-size: 40rpx;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 600rpx;
+}
+
 .error-img { width: 160rpx; height: 160rpx; margin-bottom: 24rpx; }
-.error-title { font-size: var(--font-size-xl); color: var(--color-text-primary); font-weight: var(--font-weight-bold); margin-bottom: 12rpx; }
+
+.error-title {
+  font-size: var(--font-size-xl);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 12rpx;
+}
+
 .error-desc { font-size: var(--font-size-base); color: var(--color-text-tertiary); }
+
 .empty-wrap { padding: 80rpx 0; }
-.no-more { text-align: center; padding: 32rpx; color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+
+.no-more {
+  text-align: center;
+  padding: 32rpx;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}

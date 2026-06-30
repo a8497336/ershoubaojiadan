@@ -35,6 +35,7 @@ Page({
   data: {
     isAgreed: false,
     redirectUrl: '',
+    inviteCode: '',
     loggingIn: false,
     avatarUrl: '',
     statusBarHeight: 0
@@ -43,6 +44,13 @@ Page({
   onLoad(options) {
     if (options && options.redirect) {
       this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
+    }
+    if (options && options.invite_code) {
+      this.setData({ inviteCode: options.invite_code })
+    }
+    // 兜底：从 globalData 读取首页暂存的邀请码
+    if (app && app.globalData && app.globalData.pendingInviteCode && !this.data.inviteCode) {
+      this.setData({ inviteCode: app.globalData.pendingInviteCode })
     }
     if (app && app.globalData && typeof app.globalData.statusBarHeight === 'number') {
       this.setData({ statusBarHeight: app.globalData.statusBarHeight })
@@ -121,7 +129,7 @@ Page({
         authApi.wxLogin(loginRes.code, {
           avatarUrl: this.data.avatarUrl || '/images/icons/avatar.svg',
           nickName: '微信用户'
-        })
+        }, { inviteCode: this.data.inviteCode })
           .then((res) => {
             const token = res.data.token
             const userInfoData = res.data.userInfo || {}

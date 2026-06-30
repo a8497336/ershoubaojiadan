@@ -142,8 +142,7 @@ Page({
     const index = e.currentTarget.dataset.index
     switch (index) {
       case 0: wx.navigateTo({ url: '/pages/my-points/my-points' }); break
-      case 1: wx.navigateTo({ url: '/pages/points-mall/points-mall' }); break
-      case 2: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
+      case 1: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
     }
   },
 

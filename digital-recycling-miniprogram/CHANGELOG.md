@@ -6,6 +6,20 @@
 
 ---
 
+## [Unreleased] - 2026-06-29
+
+### Fixed
+- **消息未读计数接口 `/api/messages/unread-count` 改为查询真实数据**
+  - 文件：`digital-recycling-server/src/routes/api/message.js`、`digital-recycling-server/src/models/UserMessageRead.js`（新增）、`digital-recycling-server/src/models/index.js`
+  - **根因**：广播消息的 `is_read` 是全局字段，用户 A 标记广播消息已读后，用户 B 也会看到已读，导致未读计数不准确。
+  - **方案**：新增 `user_message_reads` 表，独立追踪每个用户对广播消息的已读状态。`/unread-count` 接口分开计算个人未读消息 + 广播消息中当前用户未读的数量。
+  - **影响接口**：
+    - `GET /api/messages/unread-count`：个人未读 + 广播未读（排除用户已读的广播消息）
+    - `GET /api/messages`：返回的广播消息 is_read 根据 user_message_reads 表修正
+    - `PUT /api/messages/:id/read`：广播消息写入 user_message_reads 表，不再修改全局 is_read
+    - `PUT /api/messages/read-all`：同时标记广播消息已读
+  - **数据库迁移**：新增 `user_message_reads` 表（user_id + message_id 唯一索引）
+
 ## [Unreleased] - 2026-06-24
 
 ### Fixed

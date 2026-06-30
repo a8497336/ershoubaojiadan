@@ -20,7 +20,10 @@
         <text class="quota-text">今日剩余：{{quoteDailyRemaining}} 次</text>
       </block>
     </view>
-    <view class="header-title">{{pageTitle}}</view>
+    <view class="header-title">
+      {{pageTitle}}
+      <text wx:if="{{brandId}}" class="favorite-btn {{isFavorited ? 'favorited' : ''}}" bindtap="toggleFavorite">{{isFavorited ? '⭐' : '☆'}}</text>
+    </view>
     <!-- <view class="header-info">
       <text>收货地址：{{receiverAddress}}</text>
       <text>收件人：{{receiverName}}</text>
