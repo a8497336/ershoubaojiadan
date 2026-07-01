@@ -157,12 +157,53 @@
  */
 
 const router = require('express').Router()
+const multer = require('multer')
+const path = require('path')
 const { auth } = require('../../middlewares/auth')
 const { success, error, notFound, paginateResponse, paginate } = require('../../utils/response')
 const { getVipStatus } = require('../../utils/helpers')
 const db = require('../../models')
 const wechatUtil = require('../../utils/wechat')
+const uploadConfig = require('../../config/upload')
 const { Sequelize } = require('sequelize')
+
+// 头像上传 multer 配置（复用 upload.js 的 diskStorage 模式）
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadConfig.uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.png'
+    cb(null, `avatar-${Date.now()}-${Math.random().toString(36).substr(2, 9)}${ext}`)
+  }
+})
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: uploadConfig.maxFileSize },
+  fileFilter: (req, file, cb) => {
+    if (uploadConfig.allowedImageTypes.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error('不支持的图片类型'))
+    }
+  }
+})
+
+// 上传头像
+router.post('/avatar', auth, avatarUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return error(res, '请选择头像文件', 422, 422)
+    }
+    const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`
+    const url = `${baseUrl}/uploads/${req.file.filename}`
+    await req.user.update({ avatar: url })
+    // 重新查询确认数据库已更新
+    await req.user.reload()
+    console.log('[avatar] 头像更新成功, userId=%s, avatar=%s', req.user.id, req.user.avatar)
+    return success(res, { url: req.user.avatar }, '头像上传成功')
+  } catch (err) {
+    next(err)
+  }
+})
 
 router.get('/profile', auth, async (req, res, next) => {
   try {
@@ -210,6 +251,80 @@ router.put('/profile', auth, async (req, res, next) => {
     if (avatar) updateData.avatar = avatar
     await req.user.update(updateData)
     return success(res, null, '更新成功')
+  } catch (err) {
+    next(err)
+  }
+})
+
+// 邀请奖励次数配置（与 auth.js 保持一致）
+const INVITE_REWARD_TIMES_KEY = 'invite_reward_times'
+const DEFAULT_INVITE_REWARD_TIMES = 10
+const getInviteRewardTimes = async () => {
+  const setting = await db.Setting.findOne({ where: { key: INVITE_REWARD_TIMES_KEY } })
+  return parseInt(setting?.value) || DEFAULT_INVITE_REWARD_TIMES
+}
+
+// 绑定邀请码（双方各得报价次数奖励）
+router.post('/bind-invite-code', auth, async (req, res, next) => {
+  try {
+    const { inviteCode } = req.body
+    if (!inviteCode || typeof inviteCode !== 'string' || !inviteCode.trim()) {
+      return error(res, '请输入邀请码')
+    }
+
+    const code = inviteCode.trim()
+    const me = req.user
+
+    // 防自邀
+    if (code === me.user_no) {
+      return error(res, '不能绑定自己的邀请码')
+    }
+
+    // 防重复绑定
+    if (me.referrer) {
+      return error(res, '您已绑定过邀请码，无法重复绑定')
+    }
+
+    // 查找邀请人
+    const inviter = await db.User.findOne({ where: { user_no: code } })
+    if (!inviter) {
+      return error(res, '邀请码无效，请检查后重试')
+    }
+
+    // 防重复邀请记录
+    const existing = await db.Invitation.findOne({ where: { invitee_id: me.id } })
+    if (existing) {
+      return error(res, '您已绑定过邀请码，无法重复绑定')
+    }
+
+    const rewardTimes = await getInviteRewardTimes()
+
+    const result = await db.sequelize.transaction(async (t) => {
+      await db.Invitation.create({
+        inviter_id: inviter.id,
+        invitee_id: me.id,
+        invite_code: code,
+        status: 1,
+        reward_times: rewardTimes,
+        granted_times: rewardTimes
+      }, { transaction: t })
+
+      // 邀请人奖励
+      await inviter.increment('quote_remaining', { by: rewardTimes, transaction: t })
+      // 被邀请人奖励
+      await me.increment('quote_remaining', { by: rewardTimes, transaction: t })
+      await me.update({ referrer: code }, { transaction: t })
+
+      return { rewardTimes }
+    })
+
+    // reload 获取事务后的最新值
+    await me.reload()
+
+    return success(res, {
+      rewardTimes: result.rewardTimes,
+      quoteRemaining: me.quote_remaining
+    }, '绑定成功，奖励已发放')
   } catch (err) {
     next(err)
   }
@@ -310,8 +425,9 @@ router.get('/invite-qr-code', auth, async (req, res, next) => {
       return success(res, { qrCodeUrl: cached.url })
     }
 
+    // 不传 page 参数，让微信默认跳主页（首页 index.js 已实现 scene 解析）
+    // 传 page 会触发微信路径校验导致 40066 错误
     const qrPath = await wechatUtil.getWxaCodeUnlimited(user.user_no, {
-      page: 'pages/index/index',
       width: 280
     })
 

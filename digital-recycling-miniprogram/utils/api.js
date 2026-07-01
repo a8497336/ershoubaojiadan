@@ -85,7 +85,19 @@ const uploadFile = (filePath, customUrl) => {
       name: 'file',
       header: token ? { 'Authorization': `Bearer ${token}` } : {},
       success: (res) => {
-        const data = JSON.parse(res.data)
+        if (res.statusCode !== 200) {
+          wx.showToast({ title: '上传失败(' + res.statusCode + ')', icon: 'none' })
+          reject(Object.assign({ statusCode: res.statusCode }, { message: '上传失败' }))
+          return
+        }
+        let data
+        try {
+          data = JSON.parse(res.data)
+        } catch (e) {
+          wx.showToast({ title: '上传失败', icon: 'none' })
+          reject({ message: '响应解析失败', originalError: e })
+          return
+        }
         if (data.code === 0) {
           resolve(data)
         } else {

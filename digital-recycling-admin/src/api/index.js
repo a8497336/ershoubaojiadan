@@ -24,6 +24,7 @@ export const exportOrders = (params) => request.get('/admin/orders/export', { pa
 export const getPrices = (params) => request.get('/admin/prices', { params })
 export const createPrice = (data) => request.post('/admin/prices', data)
 export const deletePrice = (id) => request.delete(`/admin/prices/${id}`)
+export const clearPricesByBrand = (brandId) => request.delete(`/admin/prices/by-brand/${brandId}`)
 export const batchUpdatePrices = (data) => request.post('/admin/prices/batch', data)
 export const getPriceTrend = (productId, params) => request.get(`/admin/prices/trend/${productId}`, { params })
 

@@ -1,0 +1,60 @@
+<view class="edit-profile-page" style="{{pageStyle}}">
+  <!-- 提示卡片 -->
+  <view class="tip-card {{profileIncomplete ? 'warn' : 'done'}}">
+    <text class="tip-emoji">{{profileIncomplete ? '💡' : '✅'}}</text>
+    <view class="tip-body">
+      <text class="tip-title">{{profileIncomplete ? '完善个人资料' : '资料已完善'}}</text>
+      <text class="tip-desc">{{profileIncomplete ? '您还有 ' + incompleteCount + ' 项资料未完善，完善后体验更佳' : '所有资料均已设置完成'}}</text>
+    </view>
+  </view>
+
+  <!-- 头像 -->
+  <view class="card">
+    <view class="card-title">头像</view>
+    <button class="avatar-row" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <view class="avatar-preview">
+        <image wx:if="{{userInfo.avatar}}" src="{{userInfo.avatar}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder">
+          <text class="placeholder-text">{{userInfo.nickname ? userInfo.nickname[0] : '用'}}</text>
+        </view>
+      </view>
+      <view class="row-meta">
+        <text class="status-tag {{avatarDone ? 'done' : 'todo'}}">{{avatarDone ? '已设置' : '未设置'}}</text>
+        <text class="arrow">›</text>
+      </view>
+    </button>
+  </view>
+
+  <!-- 昵称 -->
+  <view class="card">
+    <view class="card-title">昵称</view>
+    <view class="nickname-row">
+      <input class="nickname-input" type="nickname" value="{{nicknameInput}}" placeholder="请输入昵称" bindinput="onNicknameInput" bindblur="onNicknameBlur" maxlength="20" />
+      <text class="status-tag {{nicknameDone ? 'done' : 'todo'}}">{{nicknameDone ? '已设置' : '未设置'}}</text>
+    </view>
+  </view>
+
+  <!-- 手机号 -->
+  <view class="card">
+    <view class="card-title">手机号</view>
+    <block wx:if="{{phoneDone}}">
+      <view class="phone-row">
+        <text class="phone-value">{{userInfo.phone}}</text>
+        <text class="status-tag done">已绑定</text>
+      </view>
+    </block>
+    <block wx:else>
+      <button class="phone-bind-row" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
+        <text class="phone-placeholder">点击绑定手机号</text>
+        <text class="bind-btn">绑定</text>
+      </button>
+    </block>
+  </view>
+
+  <view class="tips-section">
+    <view class="tips-title">温馨提示</view>
+    <view class="tips-item">• 头像和昵称将展示在回收报价单、邀请海报中</view>
+    <view class="tips-item">• 手机号用于订单通知和客服联系</view>
+    <view class="tips-item">• 所有信息仅用于本平台服务，不会泄露给第三方</view>
+  </view>
+</view>

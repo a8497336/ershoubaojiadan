@@ -22,7 +22,7 @@
     <!-- Banner轮播 -->
     <view class="banner" wx:if="{{banners.length > 0}}">
       <swiper class="banner-swiper" current="{{bannerCurrent}}" autoplay="{{true}}" interval="3000" duration="500" circular="{{true}}" bindchange="onBannerChange">
-        <swiper-item wx:for="{{banners}}" wx:key="id">
+        <swiper-item wx:for="{{banners}}" wx:key="id" bindtap="onBannerTap" data-item="{{item}}">
           <image wx:if="{{item.image}}" src="{{item.image}}" class="banner-image" mode="aspectFill" />
           <view wx:else class="banner-text">
             <text class="banner-subtitle">{{item.subtitle || 'BUSINESS PARTNER'}}</text>

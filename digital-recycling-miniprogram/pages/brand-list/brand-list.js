@@ -48,7 +48,8 @@ Page({
     this.setData({ loading: true })
     this.fetchCategories().then(() => {
       this.setData({ loading: false })
-      this.fetchBrands()
+      // 分类API已包含品牌数据，直接提取，不再重复请求
+      this.updateBrandsFromCategory()
     }).catch(() => {
       this.setData({ loading: false })
     })
@@ -64,20 +65,24 @@ Page({
     })
   },
 
-  fetchBrands() {
+  // 从已加载的分类数据中提取当前分类的品牌（避免重复网络请求）
+  updateBrandsFromCategory() {
     const cats = this.data.categories
     if (cats.length === 0) return
     const cat = cats[this.data.currentCategoryIndex] || cats[0]
     if (!cat) return
-    contentApi.getBrandsByCategory(cat.id).then(res => {
-      const brands = res.data || res || []
-      this.setData({ brands: Array.isArray(brands) ? brands : [] })
-      if (brands.length > 0) {
-        this.selectBrand({ currentTarget: { dataset: { id: brands[2].id } } })
-      }
-    }).catch(() => {
-      this.setData({ brands: [] })
-    })
+    const brands = (cat.Brands || []).filter(b => b.status !== 0)
+    this.setData({ brands })
+    if (brands.length > 0) {
+      this.selectBrand({ currentTarget: { dataset: { id: brands[2].id } } })
+    } else {
+      this.setData({ productGroups: [], selectedBrandId: null })
+    }
+  },
+
+  fetchBrands() {
+    // 兼容旧调用，内部改为从已缓存的分类数据提取
+    this.updateBrandsFromCategory()
   },
 
   switchCategory(e) {

@@ -426,9 +426,7 @@ Page({
       } else {
         this._announcementsCache = []
         this.setData({
-          displayAnnouncements: [
-            { id: 'default', title: '东莞东城 冯先生 门店批量 收益8500元', time: '135分钟前' }
-          ]
+          displayAnnouncements: []
         })
       }
 
@@ -1387,6 +1385,75 @@ Page({
   },
 
   onBannerChange(e) { this.setData({ bannerCurrent: e.detail.current }) },
+
+  // 点击 Banner 跳转
+  onBannerTap(e) {
+    const item = e.currentTarget.dataset.item
+    if (!item || !item.link_url) return
+
+    const link = item.link_url.trim()
+    if (!link) return
+
+    // 微信小程序短链
+    if (link.indexOf('#小程序://') === 0 || link.indexOf('#小程序%3A//') === 0) {
+      const shortLink = decodeURIComponent(link)
+      wx.navigateToMiniProgram({
+        shortLink: shortLink,
+        fail: () => this._copyLink(link)
+      })
+      return
+    }
+
+    if (link.indexOf('/pages/') === 0 || link.indexOf('pages/') === 0) {
+      const url = link.indexOf('/') === 0 ? link : '/' + link
+      const [pathOnly, queryStr] = url.split('?')
+      const query = queryStr ? '?' + queryStr : ''
+      const tabBarPages = [
+        '/pages/index/index',
+        '/pages/brand-list/brand-list',
+        '/pages/scan-price/scan-price',
+        '/pages/shopping/shopping',
+        '/pages/profile/profile'
+      ]
+      const isTabBar = tabBarPages.some(p => pathOnly === p)
+
+      // 路径自动修正：/pages/xxx/index → /pages/xxx/xxx
+      const pathParts = pathOnly.replace(/^\//, '').split('/')
+      let finalUrl = pathOnly + query
+      let altUrl = null
+      if (pathParts.length === 3 && pathParts[2] === 'index') {
+        altUrl = '/pages/' + pathParts[0] + '/' + pathParts[1] + '/' + pathParts[1] + query
+      }
+
+      const tryNavigate = (targetUrl) => {
+        wx.navigateTo({
+          url: targetUrl,
+          fail: () => {
+            if (altUrl && targetUrl !== altUrl) {
+              tryNavigate(altUrl)
+            } else {
+              this._copyLink(link)
+            }
+          }
+        })
+      }
+
+      if (isTabBar) {
+        wx.switchTab({ url: pathOnly, fail: () => tryNavigate(finalUrl) })
+      } else {
+        tryNavigate(finalUrl)
+      }
+    } else if (link.indexOf('http') === 0) {
+      wx.navigateTo({
+        url: '/pages/webview/webview?url=' + encodeURIComponent(link),
+        fail: () => this._copyLink(link)
+      })
+    }
+  },
+
+  _copyLink(link) {
+    wx.setClipboardData({ data: link, success: () => wx.showToast({ title: '链接已复制', icon: 'none' }) })
+  },
 
   /**
    * 点击公告栏：展示公告详情弹窗

@@ -3,6 +3,26 @@
 > 本文件记录项目根目录 `c:\Users\17798\Desktop\陈峰\数码回收` 下所有需求的变更留痕。
 > 时间统一使用 UTC+8（Asia/Shanghai）。
 
+## 2026-06-30（邀请二维码：改用 wxacode.get 生成小程序码）
+
+### 根因
+该小程序 `wxb7cf435c7b2908d2` 不支持 `wxacode.getUnlimited` API，无论传什么参数（page/check_path/env_version）均返回 `errcode=40066 (invalid url)`。但 `wxacode.get` API 可以正常生成小程序码。
+
+### 后端变更
+- **`src/utils/wechat.js`** — `getWxaCodeUnlimited` 函数：
+  - **策略1 改用 `wxacode.get`**（替代 `wxacode.getUnlimited`）：邀请码通过 `path` 查询参数传递（`pages/index/index?invite_code=xxx`），而非原来的 `scene` 参数。首页和登录页已兼容两种传参方式，无需额外修改。
+  - 保留三级降级策略：小程序码 → URL Link + QR → 纯文本 QR。
+  - 增强全链路错误日志，便于排查问题。
+
+### 前端
+- 无需修改。`index.js` 和 `login.js` 已同时兼容 `invite_code` 查询参数和 `scene` 参数。
+
+### 注意
+- `wxacode.get` 有数量限制（总计 10 万个），对于邀请场景通常足够。若将来超过限制，可考虑 `wxacode.createQRCode` 作为替代。
+- 部署后验证：搜索日志 `[wxacode] 策略1 成功: 小程序码已生成` 确认正常。
+
+---
+
 ## 2026-06-29（报价单收藏功能）
 
 ### 新增功能

@@ -8,17 +8,17 @@ const STORE = {
   // 定位失败时的默认门店：补齐经纬度，确保导航（wx.openLocation）可用；
   // distance 设为 null，配合 wxml 文案显示「距离暂不可用」而非「获取中…」
   DEFAULT_STORE: {
-    name: '安徽门店',
-    phone: '18755875222',
-    wechat: '18755875222',
-    contact_name: '范凯旋',
-    contact_phone: '18755875222',
-    province: '安徽省阜阳市',
-    city: '太和县',
-    address: '双浮镇双北路1号联赢电子回收网废旧手机回收中心（五星大桥南50米路）',
-    latitude: 33.03175,
-    longitude: 115.74835,
-    distance: null
+    // name: '安徽门店',
+    // phone: '18755875222',
+    // wechat: '18755875222',
+    // contact_name: '范凯旋',
+    // contact_phone: '18755875222',
+    // province: '安徽省阜阳市',
+    // city: '太和县',
+    // address: '双浮镇双北路1号联赢电子回收网废旧手机回收中心（五星大桥南50米路）',
+    // latitude: 33.03175,
+    // longitude: 115.74835,
+    // distance: null
   }
 }
 

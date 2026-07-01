@@ -42,11 +42,22 @@ Page({
   },
 
   onLoad(options) {
+    // 已登录用户直接跳首页（处理扫小程序码进入 login 页的场景）
+    const token = wx.getStorageSync('token')
+    if (token) {
+      wx.switchTab({ url: '/pages/index/index' })
+      return
+    }
+
     if (options && options.redirect) {
       this.setData({ redirectUrl: decodeURIComponent(options.redirect) })
     }
     if (options && options.invite_code) {
       this.setData({ inviteCode: options.invite_code })
+    }
+    // 扫小程序码进入：从 scene 参数解析邀请码
+    if (!this.data.inviteCode && options && options.scene) {
+      this.setData({ inviteCode: decodeURIComponent(options.scene) })
     }
     // 兜底：从 globalData 读取首页暂存的邀请码
     if (app && app.globalData && app.globalData.pendingInviteCode && !this.data.inviteCode) {

@@ -542,7 +542,9 @@ router.post('/import', adminAuth, importUpload.single('file'), async (req, res, 
     let hasModelCode = false
     let modelCodeColIndex = -1
     let productNameColOffset = 0
-    let productSortOrder = 0
+    // 新产品排序从已有产品最大 sort_order 之后开始，避免序号冲突
+    const maxExistingSortOrder = existingProducts.reduce((max, p) => Math.max(max, p.sort_order || 0), 0)
+    let productSortOrder = maxExistingSortOrder
     let conditionSortOrder = 0
     const conditionCache = {}
 

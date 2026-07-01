@@ -5,7 +5,6 @@
       <view class="nav-back-icon">‹</view>
     </view>
     <view class="nav-title">登录</view>
-    <!-- 占位,避免被右上角胶囊遮挡 -->
     <view class="nav-placeholder"></view>
   </view>
 
@@ -27,13 +26,15 @@
         暂不登录
       </view>
     </view>
-  </view>
 
-  <view class="agreement-footer safe-area-bottom">
-    <view class="agreement-check {{isAgreed ? 'checked' : ''}}" bindtap="onAgreementChange"></view>
-    <text class="agreement-label">我已阅读并同意</text>
-    <text class="agreement-link" bindtap="onUserAgreement" hover-class="agreement-link-hover">《用户协议》</text>
-    <text class="agreement-label">、</text>
-    <text class="agreement-link" bindtap="onPrivacyAgreement" hover-class="agreement-link-hover">《隐私政策协议》</text>
+    <view class="agreement-section">
+      <view class="agreement-row">
+        <view class="agreement-check {{isAgreed ? 'checked' : ''}}" bindtap="onAgreementChange"></view>
+        <text class="agreement-label">我已阅读并同意</text>
+        <text class="agreement-link" bindtap="onUserAgreement" hover-class="agreement-link-hover">《用户协议》</text>
+        <text class="agreement-label">、</text>
+        <text class="agreement-link" bindtap="onPrivacyAgreement" hover-class="agreement-link-hover">《隐私政策协议》</text>
+      </view>
+    </view>
   </view>
 </view>

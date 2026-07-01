@@ -209,6 +209,10 @@ const createCrudRouter = (model, name, options = {}) => {
     try {
       const item = await model.findByPk(req.params.id)
       if (!item) return notFound(res, `${name}不存在`)
+      // 删除前清理关联数据（如果配置了 onBeforeDelete 钩子）
+      if (typeof options.onBeforeDelete === 'function') {
+        await options.onBeforeDelete(item, db)
+      }
       await item.destroy()
       return success(res, null, '删除成功')
     } catch (err) { next(err) }
@@ -221,7 +225,13 @@ const db = require('../../models')
 module.exports = {
   bannerManage: createCrudRouter(db.Banner, 'Banner', { searchableFields: ['title', 'subtitle'] }),
   announcementManage: createCrudRouter(db.Announcement, '公告', { searchableFields: ['title', 'content'] }),
-  storeManage: createCrudRouter(db.Store, '门店', { searchableFields: ['name', 'contact_name', 'contact_phone', 'address'] }),
+  storeManage: createCrudRouter(db.Store, '门店', {
+    searchableFields: ['name', 'contact_name', 'contact_phone', 'address'],
+    onBeforeDelete: async (store) => {
+      // 清理门店相关的残留数据（如有其他表引用 store，在此清理）
+      console.log(`[store-delete] 删除门店: id=${store.id}, name=${store.name}`)
+    }
+  }),
   videoManage: createCrudRouter(db.Video, '视频', { searchableFields: ['title', 'category'] }),
   popupAdManage: createCrudRouter(db.PopupAd, '弹窗广告', { searchableFields: ['title'] })
 }

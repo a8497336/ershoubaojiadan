@@ -43,8 +43,6 @@
   color: #ffffff;
   font-size: 34rpx;
   font-weight: 500;
-  /* 避开右侧胶囊(胶囊宽约 88px + 边距) */
-  padding-right: 140rpx;
 }
 .nav-placeholder {
   width: 88rpx;
@@ -57,8 +55,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   /* padding-top 由 wxml 内联 style 提供:statusBarHeight + 44px */
   padding-top: 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .logo-wrap {
@@ -161,18 +161,19 @@
   padding: 16rpx 0;
 }
 
-.agreement-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+.agreement-section {
+  width: 100%;
+  padding: 0 48rpx;
+  box-sizing: border-box;
+  margin-top: 48rpx;
+}
+
+.agreement-row {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 24rpx 48rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
+  flex-wrap: wrap;
 }
 
 .agreement-check {
@@ -195,11 +196,11 @@
   content: '';
   position: absolute;
   left: 50%;
-  top: 45%;
-  transform: translate(-50%, -50%) rotate(-45deg);
+  top: 50%;
+  transform: translate(-50%, -60%) rotate(45deg);
   width: 10rpx;
   height: 18rpx;
-  border-left: 3rpx solid #ffffff;
+  border-right: 3rpx solid #ffffff;
   border-bottom: 3rpx solid #ffffff;
 }
 

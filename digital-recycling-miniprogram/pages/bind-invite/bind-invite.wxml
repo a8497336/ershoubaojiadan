@@ -1,0 +1,59 @@
+<view class="bind-page">
+  <view class="bind-header">
+    <view class="header-icon">🔗</view>
+    <view class="header-title">绑定邀请码</view>
+    <view class="header-desc">输入好友的邀请码，绑定成功后双方均可获得报价次数奖励</view>
+  </view>
+
+  <view class="bind-card">
+    <view class="card-label">邀请码</view>
+    <view class="input-wrap">
+      <input
+        class="code-input"
+        type="text"
+        value="{{inviteCode}}"
+        placeholder="请输入邀请码"
+        placeholder-class="input-placeholder"
+        maxlength="20"
+        bindinput="onInput"
+        confirm-type="done"
+        bindconfirm="onSubmit"
+      />
+      <view wx:if="{{inviteCode}}" class="clear-btn" bindtap="onClear">✕</view>
+    </view>
+    <view class="card-tip">邀请码可在好友的「邀请好友」页面查看</view>
+  </view>
+
+  <view class="submit-btn {{(!inviteCode || submitting) ? 'disabled' : ''}}" bindtap="onSubmit">
+    <text wx:if="{{submitting}}">绑定中...</text>
+    <text wx:else>立即绑定</text>
+  </view>
+
+  <view class="reward-section">
+    <view class="reward-title">🎁 奖励说明</view>
+    <view class="reward-list">
+      <view class="reward-item">
+        <text class="reward-dot"></text>
+        <text>绑定成功后，您和邀请人各获得报价次数奖励</text>
+      </view>
+      <view class="reward-item">
+        <text class="reward-dot"></text>
+        <text>每个用户仅可绑定一次邀请码，绑定后不可更改</text>
+      </view>
+      <view class="reward-item">
+        <text class="reward-dot"></text>
+        <text>不能绑定自己的邀请码</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{bound}}" class="success-modal" catchtouchmove="noop">
+    <view class="success-mask"></view>
+    <view class="success-content">
+      <view class="success-icon">🎉</view>
+      <view class="success-title">绑定成功</view>
+      <view class="success-desc">您和好友各获得 {{rewardTimes}} 次报价奖励</view>
+      <view class="success-btn" bindtap="onSuccessConfirm">知道了</view>
+    </view>
+  </view>
+</view>

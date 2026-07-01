@@ -43,7 +43,9 @@ const processInvitation = async (invitee, inviteCode, transaction) => {
     granted_times: rewardTimes
   }, { transaction })
 
+  // 双方各得报价次数奖励
   await inviter.increment('quote_remaining', { by: rewardTimes, transaction })
+  await invitee.increment('quote_remaining', { by: rewardTimes, transaction })
   await invitee.update({ referrer: inviteCode }, { transaction })
 }
 
@@ -110,7 +112,10 @@ router.post('/wx-login',
           const nick = userInfo.nickName || userInfo.nickname
           const ava = userInfo.avatarUrl || userInfo.avatar
           if (nick) updateData.nickname = nick
-          if (ava) updateData.avatar = ava
+          // 仅当 avatar 是有效网络地址时才更新，避免微信临时路径(wxfile://)或本地资源(/images/)覆盖已上传的头像
+          if (ava && /^https?:\/\//.test(ava)) {
+            updateData.avatar = ava
+          }
         }
         if (phone) updateData.phone = phone
         await user.update(updateData)

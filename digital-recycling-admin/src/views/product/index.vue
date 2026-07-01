@@ -26,9 +26,10 @@
               <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="160">
+          <el-table-column label="操作" width="220">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button :type="row.status === 1 ? 'warning' : 'success'" link size="small" @click="handleToggleCategoryStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
               <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
             </template>
           </el-table-column>
@@ -97,6 +98,7 @@
         <el-form-item label="名称"><el-input v-model="categoryFormData.name" /></el-form-item>
         <el-form-item label="编码"><el-input v-model="categoryFormData.code" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="categoryFormData.sort_order" :min="0" /></el-form-item>
+        <el-form-item label="状态"><el-switch v-model="categoryFormData.status" :active-value="1" :inactive-value="0" active-text="启用" inactive-text="停用" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="categoryFormVisible = false">取消</el-button>
@@ -389,7 +391,7 @@ const loadBrands = async () => {
 const handleAdd = () => {
   if (activeTab.value === 'category') {
     categoryFormId.value = null
-    categoryFormData.value = { sort_order: 0 }
+    categoryFormData.value = { sort_order: 0, status: 1 }
     categoryFormVisible.value = true
   } else if (activeTab.value === 'brand') {
     brandFormId.value = null
@@ -468,6 +470,18 @@ const handleDelete = async (row) => {
       console.error('删除失败:', error)
       ElMessage.error(error?.message || '删除失败，请重试')
     }
+  }
+}
+
+const handleToggleCategoryStatus = async (row) => {
+  try {
+    const newStatus = row.status === 1 ? 0 : 1
+    await updateCategory(row.id, { ...row, status: newStatus })
+    ElMessage.success(newStatus === 1 ? '已启用' : '已停用')
+    await loadData()
+  } catch (error) {
+    console.error('切换状态失败:', error)
+    ElMessage.error(error?.message || '操作失败，请重试')
   }
 }
 

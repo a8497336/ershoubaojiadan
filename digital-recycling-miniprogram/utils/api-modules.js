@@ -19,7 +19,8 @@ const authApi = {
 const inviteApi = {
   getQrCode: () => request({ url: '/user/invite-qr-code' }),
   getStats: () => request({ url: '/user/invite-stats' }),
-  getRecords: (data) => request({ url: '/user/invite-records', data })
+  getRecords: (data) => request({ url: '/user/invite-records', data }),
+  bindInviteCode: (inviteCode) => request({ url: '/user/bind-invite-code', method: 'POST', data: { inviteCode } })
 }
 
 const userApi = {

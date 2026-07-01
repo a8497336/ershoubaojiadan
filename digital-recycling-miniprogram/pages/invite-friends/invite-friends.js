@@ -237,18 +237,18 @@ Page({
           ctx.beginPath(); ctx.arc(60, 200, 40, 0, Math.PI * 2); ctx.fill()
 
           // ========== 关闭按钮 ==========
-          const closeBtnCx = POSTER_W - 32
-          const closeBtnCy = 32
-          const closeBtnR = 16
-          ctx.fillStyle = 'rgba(0,0,0,0.4)'
-          ctx.beginPath()
-          ctx.arc(closeBtnCx, closeBtnCy, closeBtnR, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.fillStyle = '#ffffff'
-          ctx.font = 'bold 18px sans-serif'
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.fillText('×', closeBtnCx, closeBtnCy + 1)
+          // const closeBtnCx = POSTER_W - 32
+          // const closeBtnCy = 32
+          // const closeBtnR = 16
+          // ctx.fillStyle = 'rgba(0,0,0,0.4)'
+          // ctx.beginPath()
+          // ctx.arc(closeBtnCx, closeBtnCy, closeBtnR, 0, Math.PI * 2)
+          // ctx.fill()
+          // ctx.fillStyle = '#ffffff'
+          // ctx.font = 'bold 18px sans-serif'
+          // ctx.textAlign = 'center'
+          // ctx.textBaseline = 'middle'
+          // ctx.fillText('×', closeBtnCx, closeBtnCy + 1)
 
           // ========== 3. 顶部白色卡片（个人信息） ==========
           const cardX = 20, cardY = 48, cardW = 335, cardH = 210, cardR = 18

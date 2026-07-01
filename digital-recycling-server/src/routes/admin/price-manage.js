@@ -359,4 +359,32 @@ router.delete('/:id', adminAuth, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+// 按品牌清空所有报价（含历史）
+router.delete('/by-brand/:brandId', adminAuth, async (req, res, next) => {
+  try {
+    const brandId = req.params.brandId
+    if (!brandId) return error(res, '请选择品牌', 422, 422)
+
+    // 查找该品牌下所有产品ID
+    const products = await db.Product.findAll({
+      where: { brand_id: brandId },
+      attributes: ['id']
+    })
+    const productIds = products.map(p => p.id)
+
+    if (productIds.length === 0) {
+      return success(res, { deleted: 0 }, '该品牌下无产品')
+    }
+
+    // 删除这些产品的所有报价（不限日期）
+    const deleted = await db.Price.destroy({
+      where: {
+        product_id: { [Op.in]: productIds }
+      }
+    })
+
+    return success(res, { deleted }, `已清空 ${deleted} 条报价`)
+  } catch (err) { next(err) }
+})
+
 module.exports = router

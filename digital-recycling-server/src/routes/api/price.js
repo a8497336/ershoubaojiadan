@@ -80,33 +80,52 @@ const { Op, literal, fn, col } = require('sequelize')
 const db = require('../../models')
 const { getPriceTrendData } = require('../../utils/priceTrend')
 
+// 内存缓存：价格同步标记，避免每次请求都检查（每天重置）
+let _priceSyncedDate = null
+
 router.get('/today', auth, async (req, res, next) => {
   try {
-    const { brand_id, category_id, product_id } = req.query
+    const { brand_id, category_id, product_id, type } = req.query
     const user = req.user
     const isVip = user.membership_id && user.membership_expire && new Date(user.membership_expire) > new Date()
     const today = new Date().toISOString().split('T')[0]
 
     let dailyMax = 10
+    let currentDailyCount = parseInt(user.quote_daily_count) || 0
+    const dailyDate = user.quote_daily_date
+
     if (!isVip) {
       const dailySetting = await db.Setting.findOne({ where: { key: 'free_scan_count' } })
       dailyMax = parseInt(dailySetting?.value || '10')
 
-      let dailyCount = parseInt(user.quote_daily_count) || 0
-      const dailyDate = user.quote_daily_date
-
       if (dailyDate !== today) {
-        dailyCount = 1
-        await user.update({
-          quote_daily_count: 1,
-          quote_daily_date: today
-        })
-      } else if (dailyCount < dailyMax) {
-        dailyCount += 1
-        await user.update({ quote_daily_count: dailyCount })
+        currentDailyCount = 1
+        await user.update({ quote_daily_count: 1, quote_daily_date: today })
+      } else if (currentDailyCount < dailyMax) {
+        currentDailyCount += 1
+        await user.update({ quote_daily_count: currentDailyCount })
       } else {
         return error(res, '今日查看次数已用完，开通会员可无限查看报价', 10007, 403)
       }
+    }
+
+    // 如果仅是 type 参数（老年机/电容屏图片页调用），只累加浏览量，不查产品价格
+    if (type && !brand_id && !category_id && !product_id) {
+      // 更新浏览量（单次操作）
+      await db.PriceView.increment('view_count', { where: { view_date: today } })
+      const viewCount = await db.PriceView.sum('view_count', { where: { view_date: today } }) || 0
+
+      const quoteRemaining = isVip ? 9999 : Math.max(0, dailyMax - currentDailyCount)
+      return success(res, {
+        date: today,
+        effectiveDate: null,
+        updateTime: new Date().toISOString(),
+        viewCount,
+        list: [],
+        isVip,
+        quoteRemaining,
+        quoteDailyRemaining: quoteRemaining
+      })
     }
 
     const productWhere = { status: 1 }
@@ -125,63 +144,55 @@ router.get('/today', auth, async (req, res, next) => {
 
     const productIds = products.map(p => p.id)
     if (productIds.length === 0) {
-      const quotaRes = isVip
-        ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
-        : {
-            isVip: false,
-            quoteRemaining: (() => {
-              const dailyDate = user.quote_daily_date
-              if (dailyDate !== today) return dailyMax
-              return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
-            })(),
-            quoteDailyRemaining: (() => {
-              const dailyDate = user.quote_daily_date
-              if (dailyDate !== today) return dailyMax
-              return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
-            })()
-          }
+      const quoteRemaining = isVip ? 9999 : Math.max(0, dailyMax - currentDailyCount)
       return success(res, {
         date: today,
         effectiveDate: null,
         updateTime: new Date().toISOString(),
         viewCount: 0,
         list: [],
-        ...quotaRes
+        isVip,
+        quoteRemaining,
+        quoteDailyRemaining: quoteRemaining
       })
     }
 
-    // 自动同步：当日无价格时，从最近有效日期复制价格
-    const todayPriceCount = await db.Price.count({ where: { effective_date: today } })
-    if (todayPriceCount === 0) {
-      const latestDateResult = await db.Price.findOne({
-        attributes: [[fn('MAX', col('effective_date')), 'latest_date']],
-        raw: true
-      })
-      const latestDate = latestDateResult?.latest_date
-      if (latestDate) {
-        console.log(`[价格同步] 当日无价格，从 ${latestDate} 复制到 ${today}`)
-        const latestPrices = await db.Price.findAll({
-          where: { effective_date: latestDate },
+    // 自动同步：当日无价格时，从最近有效日期复制价格（内存缓存避免重复检查）
+    if (_priceSyncedDate !== today) {
+      const todayPriceCount = await db.Price.count({ where: { effective_date: today } })
+      if (todayPriceCount === 0) {
+        const latestDateResult = await db.Price.findOne({
+          attributes: [[fn('MAX', col('effective_date')), 'latest_date']],
           raw: true
         })
-        if (latestPrices.length > 0) {
-          const todayPrices = latestPrices.map(p => ({
-            product_id: p.product_id,
-            condition_id: p.condition_id,
-            price: p.price,
-            is_available: p.is_available,
-            effective_date: today
-          }))
-          try {
-            await db.Price.bulkCreate(todayPrices, { ignoreDuplicates: true })
-            console.log(`[价格同步] 成功复制 ${todayPrices.length} 条价格记录到 ${today}`)
-          } catch (syncErr) {
-            console.log(`[价格同步] 复制失败（可能已存在）: ${syncErr.message}`)
+        const latestDate = latestDateResult?.latest_date
+        if (latestDate) {
+          console.log(`[价格同步] 当日无价格，从 ${latestDate} 复制到 ${today}`)
+          const latestPrices = await db.Price.findAll({
+            where: { effective_date: latestDate },
+            raw: true
+          })
+          if (latestPrices.length > 0) {
+            const todayPrices = latestPrices.map(p => ({
+              product_id: p.product_id,
+              condition_id: p.condition_id,
+              price: p.price,
+              is_available: p.is_available,
+              effective_date: today
+            }))
+            try {
+              await db.Price.bulkCreate(todayPrices, { ignoreDuplicates: true })
+              console.log(`[价格同步] 成功复制 ${todayPrices.length} 条价格记录到 ${today}`)
+            } catch (syncErr) {
+              console.log(`[价格同步] 复制失败（可能已存在）: ${syncErr.message}`)
+            }
           }
         }
       }
+      _priceSyncedDate = today
     }
 
+    // 一次性查询：产品最新日期 + 对应价格（减少 DB 往返）
     const latestDates = await db.Price.findAll({
       where: { product_id: { [Op.in]: productIds } },
       attributes: ['product_id', [fn('MAX', col('effective_date')), 'latest_date']],
@@ -215,44 +226,29 @@ router.get('/today', auth, async (req, res, next) => {
       Prices: priceMap[p.id] || []
     }))
 
-    const todayView = await db.PriceView.findOne({ where: { view_date: today } })
-    if (todayView) {
-      await todayView.increment('view_count')
-    } else {
-      await db.PriceView.create({ view_date: today, view_count: 1 })
-    }
-
-    const viewCount = await db.PriceView.sum('view_count', {
-      where: { view_date: today }
+    // 更新浏览量（increment 不存在时返回 [0]，需要 upsert 兜底）
+    const [viewRow, created] = await db.PriceView.findOrCreate({
+      where: { view_date: today },
+      defaults: { view_date: today, view_count: 1 }
     })
+    if (!created) {
+      await viewRow.increment('view_count')
+    }
+    const viewCount = (viewRow.view_count || 0) + (created ? 0 : 1)
 
     const firstDate = datePairs.length > 0 ? datePairs[0].effective_date : null
 
-    await user.reload()
-
-    const quotaRes = isVip
-      ? { isVip: true, quoteRemaining: 9999, quoteDailyRemaining: 9999 }
-      : {
-          isVip: false,
-          quoteRemaining: (() => {
-            const dailyDate = user.quote_daily_date
-            if (dailyDate !== today) return dailyMax
-            return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
-          })(),
-          quoteDailyRemaining: (() => {
-            const dailyDate = user.quote_daily_date
-            if (dailyDate !== today) return dailyMax
-            return Math.max(0, dailyMax - (parseInt(user.quote_daily_count) || 0))
-          })()
-        }
+    const quoteRemaining = isVip ? 9999 : Math.max(0, dailyMax - currentDailyCount)
 
     return success(res, {
       date: firstDate || today,
       effectiveDate: firstDate,
       updateTime: new Date().toISOString(),
-      viewCount: viewCount || 0,
+      viewCount,
       list: productList,
-      ...quotaRes
+      isVip,
+      quoteRemaining,
+      quoteDailyRemaining: quoteRemaining
     })
   } catch (err) {
     next(err)

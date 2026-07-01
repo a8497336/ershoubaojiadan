@@ -14,31 +14,25 @@ const { success } = require('../../utils/response')
 router.get('/current', async (req, res, next) => {
   try {
     const now = new Date()
-    const where = {
-      status: 1,
-      // 至少有一张图片配置（JSON 数组非空）
-      images: { [Op.ne]: null }
-    }
 
-    // 独立判断每个时间字段，支持只设置开始或只设置结束
-    const timeConds = []
-    timeConds.push({ start_time: { [Op.or]: { [Op.lte]: now, [Op.eq]: null } } })
-    timeConds.push({ end_time: { [Op.or]: { [Op.gte]: now, [Op.eq]: null } } })
-
-    const ad = await db.PopupAd.findOne({
-      where: { ...where, [Op.and]: timeConds },
+    // 查询所有启用的弹窗广告，在内存中过滤时间条件（避免复杂 Op 嵌套的兼容性问题）
+    const ads = await db.PopupAd.findAll({
+      where: { status: 1 },
       order: [['sort_order', 'ASC'], ['created_at', 'DESC']]
     })
 
-    // 二次过滤：确保 images 是非空数组
-    let result = ad
-    if (ad) {
+    // 二次过滤：时间范围 + images 非空
+    const validAds = ads.filter(ad => {
+      // 时间校验
+      if (ad.start_time && new Date(ad.start_time).getTime() > now.getTime()) return false
+      if (ad.end_time && new Date(ad.end_time).getTime() < now.getTime()) return false
+      // images 校验
       const imgs = ad.images
-      if (!Array.isArray(imgs) || imgs.length === 0 || !imgs.some(i => i && i.url)) {
-        result = null
-      }
-    }
+      if (!Array.isArray(imgs) || imgs.length === 0 || !imgs.some(i => i && i.url)) return false
+      return true
+    })
 
+    const result = validAds.length > 0 ? validAds[0] : null
     return success(res, result || null)
   } catch (err) {
     next(err)

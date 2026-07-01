@@ -17,6 +17,8 @@
     "pages/announcement/announcement",
     "pages/my-points/my-points",
     "pages/invite-friends/invite-friends",
+    "pages/bind-invite/bind-invite",
+    "pages/webview/webview",
     "pages/recycling-process/recycling-process",
     "pages/mailing-address/mailing-address",
     "pages/feedback/feedback",
@@ -34,7 +36,9 @@
     "pages/price-changes/price-changes",
     "pages/sms-notify/sms-notify",
     "pages/store-list/store-list",
-    "pages/feature-phone-image/feature-phone-image"
+    "pages/feature-phone-image/feature-phone-image",
+    "pages/invite-landing/invite-landing",
+    "pages/edit-profile/edit-profile"
   ],
   "window": {
     "backgroundTextStyle": "light",

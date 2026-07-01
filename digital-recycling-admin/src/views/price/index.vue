@@ -10,6 +10,7 @@
             <el-select v-model="filterBrandId" placeholder="选择品牌" clearable style="width: 160px" @change="handleFilterChange">
               <el-option v-for="b in brands" :key="b.id" :label="b.name" :value="b.id" />
             </el-select>
+            <el-button type="danger" @click="handleClearByBrand" :disabled="!filterBrandId">清空该品牌报价</el-button>
             <el-button type="primary" @click="handleBatchSave">保存修改</el-button>
           </div>
         </div>
@@ -135,7 +136,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import { getPrices, batchUpdatePrices, getConditions, getBrands, createPrice, deletePrice, createCondition, updateCondition, deleteCondition, getProducts, getPriceTrend } from '@/api'
+import { getPrices, batchUpdatePrices, getConditions, getBrands, createPrice, deletePrice, clearPricesByBrand, createCondition, updateCondition, deleteCondition, getProducts, getPriceTrend } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
@@ -315,6 +316,33 @@ const handleDeletePrice = async (row) => {
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+const handleClearByBrand = async () => {
+  if (!filterBrandId.value) {
+    ElMessage.warning('请先选择品牌')
+    return
+  }
+  const brandName = brands.value.find(b => b.id === filterBrandId.value)?.name || ''
+  try {
+    await ElMessageBox.confirm(
+      `确定清空「${brandName}」品牌下所有产品的全部报价（含历史）？此操作不可恢复！`,
+      '危险操作',
+      {
+        confirmButtonText: '确定清空',
+        cancelButtonText: '取消',
+        type: 'error',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    const res = await clearPricesByBrand(filterBrandId.value)
+    ElMessage.success(res.data.message || `已清空 ${res.data.deleted} 条报价`)
+    loadData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '清空失败')
     }
   }
 }

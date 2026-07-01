@@ -102,45 +102,61 @@ const generateUrlLink = async (path, query) => {
 
 /**
  * 生成小程序码（三级降级策略）
- * 1. 优先微信原生小程序码 getWxaCodeUnlimited
+ * 1. 优先微信原生小程序码 wxacode.get（该小程序不支持 getUnlimited，始终返回 40066）
  * 2. 失败则用 generateUrlLink 生成 URL Link + qrcode 转二维码（扫码可进入小程序）
  * 3. 全部失败则返回纯文本二维码兜底
  */
 const getWxaCodeUnlimited = async (scene, options = {}) => {
-  // 策略1：尝试微信原生小程序码
+  const width = options.width || 280
+  const pagePath = options.page || 'pages/index/index'
+
+  // 策略1：微信原生小程序码 wxacode.get
+  // 该小程序不支持 getUnlimited API（始终返回 40066），改用 get API
+  // invite_code 通过 path 查询参数传递，数量限制 10 万个
   try {
+    console.log(`[wxacode] 开始获取 access_token...`)
     const accessToken = await getAccessToken()
-    const wxaUrl = `https://api.weixin.qq.com/wxa/getwxacodeunlimited?access_token=${accessToken}`
-    const res = await axios.post(wxaUrl, {
-      scene,
-      page: options.page || 'pages/index/index',
-      env_version: options.envVersion || wechatConfig.wxaEnvVersion || 'develop',
-      width: options.width || 280,
+    const wxaUrl = `https://api.weixin.qq.com/wxa/getwxacode?access_token=${accessToken}`
+    const pathWithQuery = `${pagePath}?invite_code=${encodeURIComponent(scene)}`
+    const requestBody = {
+      path: pathWithQuery,
+      width,
       auto_color: options.auto_color || false,
       line_color: options.line_color || { r: 0, g: 0, b: 0 },
       is_hyaline: options.is_hyaline || false
-    }, { responseType: 'arraybuffer' })
+    }
+    console.log(`[wxacode] 策略1: wxacode.get, path=${pathWithQuery}`)
+    const res = await axios.post(wxaUrl, requestBody, { responseType: 'arraybuffer' })
 
-    const contentType = res.headers['content-type']
+    const contentType = res.headers['content-type'] || ''
+    // wxacode.get 成功返回 image/jpeg 或 image/png
     if (contentType && contentType.includes('application/json')) {
       const err = JSON.parse(Buffer.from(res.data, 'binary').toString('utf8'))
-      throw new Error(`WeChat WxaCode API Error: ${err.errcode} - ${err.errmsg}`)
+      console.warn(`[wxacode] 策略1 失败: errcode=${err.errcode}, errmsg=${err.errmsg || '(无)'}`)
+    } else if (res.data && res.data.length > 100) {
+      const filename = `invite-qr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`
+      const filePath = path.join(uploadConfig.uploadDir, filename)
+      fs.writeFileSync(filePath, Buffer.from(res.data, 'binary'))
+      console.log(`[wxacode] 策略1 成功: 小程序码已生成, 文件: ${filename}, 大小: ${res.data.length} bytes`)
+      return `/uploads/${filename}`
+    } else {
+      console.warn(`[wxacode] 策略1 失败: 返回数据异常, dataLength=${res.data ? res.data.length : 0}`)
     }
-
-    const filename = `invite-qr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`
-    const filePath = path.join(uploadConfig.uploadDir, filename)
-    fs.writeFileSync(filePath, Buffer.from(res.data, 'binary'))
-    return `/uploads/${filename}`
   } catch (err) {
-    console.warn('微信小程序码生成失败，尝试 URL Link:', err.message)
+    console.warn(`[wxacode] 策略1 异常: ${err.message}`)
+    if (err.response) {
+      console.warn(`[wxacode] HTTP ${err.response.status}: ${JSON.stringify(err.response.data || {}).substring(0, 500)}`)
+    }
   }
+
+  console.warn('[wxacode] 策略1 失败，降级策略：尝试 URL Link + QR Code')
 
   // 策略2：generateUrlLink → qrcode 转二维码
   try {
-    const pagePath = options.page || 'pages/index/index'
     const query = `invite_code=${encodeURIComponent(scene)}`
+    console.log(`[wxacode] 策略2: 尝试生成 URL Link, pagePath=${pagePath}, query=${query}`)
     const urlLink = await generateUrlLink(pagePath, query)
-    console.log('URL Link 生成成功:', urlLink)
+    console.log(`[wxacode] URL Link 生成成功: ${urlLink}`)
 
     const filename = `invite-qr-link-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.png`
     const filePath = path.join(uploadConfig.uploadDir, filename)
@@ -152,12 +168,14 @@ const getWxaCodeUnlimited = async (scene, options = {}) => {
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     })
+    console.log(`[wxacode] 策略2 成功: QR Code 已生成, 文件: ${filename}`)
     return `/uploads/${filename}`
   } catch (err) {
-    console.warn('URL Link 生成失败，降级为纯文本二维码:', err.message)
+    console.warn(`[wxacode] 策略2 失败: URL Link 生成异常: ${err.message}`)
   }
 
   // 策略3：纯文本二维码兜底
+  console.warn(`[wxacode] 策略3: 使用纯文本 QR Code 兜底, scene=${scene}`)
   return await generateFallbackQRCode(scene)
 }
 
@@ -165,6 +183,7 @@ const getWxaCodeUnlimited = async (scene, options = {}) => {
  * 服务端生成纯文本二维码（最终兜底方案）
  */
 const generateFallbackQRCode = async (scene) => {
+  console.log(`[wxacode] 策略3: 生成纯文本 QR Code, scene=${scene}`)
   if (!fs.existsSync(uploadConfig.uploadDir)) {
     fs.mkdirSync(uploadConfig.uploadDir, { recursive: true })
   }
@@ -176,7 +195,7 @@ const generateFallbackQRCode = async (scene) => {
     margin: 2,
     color: { dark: '#000000', light: '#ffffff' }
   })
-
+  console.log(`[wxacode] 策略3 成功: 纯文本 QR Code 已生成, 文件: ${filename}`)
   return `/uploads/${filename}`
 }
 

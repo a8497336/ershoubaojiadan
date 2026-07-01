@@ -4,24 +4,25 @@
       <view class="nav-title">个人中心</view>
     </view>
 
-    <view class="user-info-area" id="userInfoArea">
-      <button class="user-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+    <view class="user-info-area" id="userInfoArea" bindtap="goToEditProfile">
+      <view class="user-avatar-btn">
         <image wx:if="{{userInfo.avatar}}" src="{{userInfo.avatar}}" mode="aspectFill" />
         <view wx:else class="avatar-placeholder">
           <text class="avatar-em">{{userInfo.nickname || userInfo.name || '用'}}</text>
         </view>
         <view class="avatar-edit-tag">更换头像</view>
-      </button>
+      </view>
       <view class="user-details">
-        <input class="u-name-input" type="nickname" value="{{userInfo.nickname || userInfo.name || ''}}" placeholder="请输入昵称" bind:blur="onNicknameBlur" maxlength="20" />
+        <view class="u-name-text">{{userInfo.nickname || userInfo.name || '未设置昵称'}}</view>
         <view class="u-id">编号：{{userInfo.id || userInfo.userId || '--'}}</view>
         <view class="u-phone" wx:if="{{userInfo.phone}}">
           <text class="u-phone-icon">📞</text>
           <text>{{userInfo.phone}}</text>
         </view>
-        <button wx:else class="phone-bind-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-          绑定手机号
-        </button>
+        <view class="u-phone" wx:else>
+          <text class="u-phone-icon">📞</text>
+          <text class="u-phone-tip">点击绑定手机号</text>
+        </view>
       </view>
     </view>
 
@@ -42,16 +43,29 @@
   <view class="vip-card-outer" bindtap="goToMembership">
     <view class="vip-card">
       <view class="vip-left">
-        <text class="vip-em">👑</text>
-        <view>
-          <view class="vip-text">{{userInfo.planName || '非'}}会员</view>
+        <view class="vip-crown {{userInfo.is_vip ? 'active' : ''}}">
+          <text class="vip-em">👑</text>
+        </view>
+        <view class="vip-info">
+          <view class="vip-text">{{userInfo.is_vip ? (userInfo.planName || '') + '会员' : '非会员'}}</view>
           <view class="vip-desc" wx:if="{{userInfo.membershipExpired}}">会员已过期，请续期</view>
+          <view class="vip-desc" wx:elif="{{userInfo.is_vip && userInfo.membershipExpireText}}">有效期至 {{userInfo.membershipExpireText}}</view>
           <view class="vip-desc" wx:elif="{{!userInfo.is_vip}}">开通会员享更多特权</view>
         </view>
       </view>
       <view class="vip-open-btn" wx:if="{{userInfo.membershipExpired}}">立刻续期</view>
       <view class="vip-open-btn" wx:elif="{{!userInfo.is_vip}}">立即开通</view>
+      <view class="vip-open-btn renew" wx:else>续费</view>
     </view>
+  </view>
+
+  <view class="profile-tip-banner" wx:if="{{profileIncomplete}}" bindtap="goToEditProfile">
+    <text class="tip-icon">💡</text>
+    <view class="tip-content">
+      <text class="tip-title">完善个人资料</text>
+      <text class="tip-desc">您还有 {{incompleteCount}} 项资料未完善，完善后体验更佳</text>
+    </view>
+    <text class="tip-arrow">去完善 ></text>
   </view>
 
   <view class="quick-entry">

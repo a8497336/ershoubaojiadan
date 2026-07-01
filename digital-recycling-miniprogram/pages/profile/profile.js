@@ -1,5 +1,5 @@
 const app = getApp()
-const { userApi, authApi, messageApi } = require('../../utils/api-modules')
+const { userApi, messageApi } = require('../../utils/api-modules')
 const { CONTACT } = require('../../utils/constants')
 const { checkLogin, clearAllData } = require('../../utils/common')
 
@@ -20,7 +20,8 @@ Page({
     pointActivities: [
       { icon: '⭐', label: '我的积分' },
       // { icon: '🛒', label: '积分商城' },
-      { icon: '👥', label: '邀请好友' }
+      { icon: '👥', label: '邀请好友' },
+      { icon: '🔗', label: '绑定邀请码' }
     ],
 
     commonFuncs: [
@@ -101,12 +102,45 @@ Page({
       const data = (res.data || res || {})
       data.is_vip = data.isVip || false
       data.membershipExpired = !!(data.membershipId && !data.isVip)
+      // 格式化会员到期时间
+      data.membershipExpireText = data.membershipExpire ? this._formatDate(data.membershipExpire) : ''
       app.globalData.userInfo = data
 
-      this.setData({ userInfo: data })
+      const profileStatus = this._checkProfileComplete(data)
+      this.setData({ userInfo: data, ...profileStatus })
     }).catch(() => {
       this.setData({ userInfo: user })
     })
+  },
+
+  // 格式化日期为 YYYY-MM-DD
+  _formatDate(dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return ''
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  },
+
+  // 计算资料完善状态：头像/昵称/手机号 是否为默认值
+  _checkProfileComplete(user) {
+    const incompleteItems = []
+    const isDefaultAvatar = !user.avatar ||
+      user.avatar === '/images/icons/avatar.svg' ||
+      (user.avatar || '').indexOf('avatar.svg') > -1
+    if (isDefaultAvatar) incompleteItems.push('avatar')
+    if (!user.nickname || user.nickname === '微信用户') incompleteItems.push('nickname')
+    if (!user.phone) incompleteItems.push('phone')
+
+    return {
+      profileIncomplete: incompleteItems.length > 0,
+      incompleteCount: incompleteItems.length,
+      avatarDone: !isDefaultAvatar,
+      nicknameDone: !!(user.nickname && user.nickname !== '微信用户'),
+      phoneDone: !!user.phone
+    }
   },
 
   loadWalletAndPoints() {
@@ -143,6 +177,7 @@ Page({
     switch (index) {
       case 0: wx.navigateTo({ url: '/pages/my-points/my-points' }); break
       case 1: wx.navigateTo({ url: '/pages/invite-friends/invite-friends' }); break
+      case 2: wx.navigateTo({ url: '/pages/bind-invite/bind-invite' }); break
     }
   },
 
@@ -193,68 +228,8 @@ Page({
     }
   },
 
-  // 微信 chooseAvatar 回调：选择头像后上传
-  onChooseAvatar(e) {
-    const avatarUrl = e.detail.avatarUrl
-    if (!avatarUrl) return
-
-    wx.showLoading({ title: '上传中...' })
-    userApi.uploadAvatar(avatarUrl).then(uploadRes => {
-      wx.hideLoading()
-      const url = uploadRes.data?.url || uploadRes.url || avatarUrl
-      const info = { ...this.data.userInfo, avatar: url }
-      this.setData({ userInfo: info })
-      app.globalData.userInfo = info
-
-      // 更新后端记录
-      userApi.updateProfile({ avatar: url }).catch(() => {})
-
-      wx.showToast({ title: '头像更新成功', icon: 'success' })
-    }).catch(() => {
-      wx.hideLoading()
-      wx.showToast({ title: '上传失败，请重试', icon: 'error' })
-    })
-  },
-
-  // 昵称 blur 回调：失焦时保存
-  onNicknameBlur(e) {
-    const nickname = e.detail.value
-    if (!nickname || nickname === this.data.userInfo.nickname) return
-
-    userApi.updateProfile({ nickname }).then(() => {
-      const info = { ...this.data.userInfo, nickname }
-      this.setData({ userInfo: info })
-      app.globalData.userInfo = info
-      wx.showToast({ title: '昵称已更新', icon: 'success' })
-    }).catch(() => {
-      wx.showToast({ title: '保存失败', icon: 'none' })
-    })
-  },
-
-  // 微信 getPhoneNumber 回调：获取手机号
-  onGetPhoneNumber(e) {
-    const { code, errMsg } = e.detail
-    if (!code) {
-      if (errMsg && errMsg.indexOf('deny') > -1) {
-        wx.showToast({ title: '您取消了授权', icon: 'none' })
-      }
-      return
-    }
-
-    wx.showLoading({ title: '获取中...' })
-    authApi.bindPhone(code).then(res => {
-      wx.hideLoading()
-      const phone = res.data?.phone || res.phone
-      if (phone) {
-        const info = { ...this.data.userInfo, phone }
-        this.setData({ userInfo: info })
-        app.globalData.userInfo = info
-        wx.showToast({ title: '手机号绑定成功', icon: 'success' })
-      }
-    }).catch(err => {
-      wx.hideLoading()
-      wx.showToast({ title: err.message || '绑定失败', icon: 'none' })
-    })
+  goToEditProfile() {
+    wx.navigateTo({ url: '/pages/edit-profile/edit-profile' })
   },
 
   goToMyPoints() { wx.navigateTo({ url: '/pages/my-points/my-points' }) },

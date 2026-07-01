@@ -1,0 +1,4 @@
+<view class="landing-container">
+  <view class="loading-icon"></view>
+  <text class="landing-text">正在进入...</text>
+</view>
