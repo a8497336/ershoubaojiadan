@@ -136,7 +136,7 @@
             >
               + 添加图片
             </el-button>
-            <div class="upload-tip" v-if="formData.images.length < 3">最多可添加 3 张图片，建议尺寸 600x400 像素</div>
+            <div class="upload-tip" v-if="formData.images.length < 3">最多可添加 3 张图片，建议尺寸 312x312 像素</div>
           </div>
         </el-form-item>
 

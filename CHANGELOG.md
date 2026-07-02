@@ -3,6 +3,28 @@
 > 本文件记录项目根目录 `c:\Users\17798\Desktop\陈峰\数码回收` 下所有需求的变更留痕。
 > 时间统一使用 UTC+8（Asia/Shanghai）。
 
+## 2026-07-01（新用户微信登录赠送会员）
+
+### 需求
+新用户通过微信一键登录时，自动赠送 N 天免费会员（默认 7 天），管理员可在后台调整天数或关闭（设为 0）。
+
+### 后端变更
+- **`src/routes/api/auth.js`** — `/wx-login` 新用户创建事务中：读 `new_user_free_membership_days` 配置，若 >0 则设定 `membership_expire`、`scan_remaining=9999`、`quote_remaining=9999`。仅在微信登录新用户创建时触发，老用户及手机号登录不受影响。
+- **`src/routes/admin/setting-manage.js`** — `DEFAULT_SETTINGS` 新增 `new_user_free_membership_days`（默认值 `7`，描述：新用户微信登录赠送会员天数）。
+- **`src/seeders/init_data.js`** — settings 种子数据新增此配置项。
+
+### 管理端
+- **`admin/src/views/system/index.vue`** — 系统设置「基本配置」页新增「新用户送会员(天)」输入框（范围 0-365）。
+
+### 前端
+- 小程序无需修改。登录响应 `isVip` 自动为 `true`，前端直接展示会员身份。
+
+### 注意
+- 无数据库表结构变更，无需执行迁移。
+- 会员过期后由现有 `/membership/status` 接口自动复位额度为普通用户值。
+
+---
+
 ## 2026-06-30（邀请二维码：改用 wxacode.get 生成小程序码）
 
 ### 根因

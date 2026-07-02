@@ -231,7 +231,10 @@ router.get('/', adminAuth, async (req, res, next) => {
 
     const { count, rows } = await db.User.findAndCountAll({
       where,
-      attributes: { exclude: ['openid', 'union_id'] },
+      attributes: {
+        exclude: ['openid', 'union_id'],
+        include: [[db.sequelize.literal('(SELECT COUNT(*) FROM invitations WHERE invitations.inviter_id = User.id)'), 'referral_count']]
+      },
       include: [{ model: db.MembershipPlan, as: 'MembershipPlan', attributes: ['name'] }],
       order: [['created_at', 'DESC']],
       offset,
@@ -369,15 +372,57 @@ router.get('/:id/orders', adminAuth, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+router.get('/:id/referrals', adminAuth, async (req, res, next) => {
+  try {
+    const invitations = await db.Invitation.findAll({
+      where: { inviter_id: req.params.id },
+      include: [{
+        model: db.User,
+        as: 'Invitee',
+        attributes: ['user_no', 'nickname', 'phone', 'created_at'],
+        include: [{ model: db.MembershipPlan, as: 'MembershipPlan', attributes: ['name'] }]
+      }],
+      order: [['created_at', 'DESC']]
+    })
+
+    const list = invitations.map(inv => {
+      const invitee = inv.Invitee
+      if (!invitee) return null
+      return {
+        user_no: invitee.user_no,
+        nickname: invitee.nickname,
+        phone: invitee.phone,
+        plan_name: invitee.MembershipPlan?.name || null,
+        created_at: invitee.created_at
+      }
+    }).filter(Boolean)
+
+    return success(res, list)
+  } catch (err) { next(err) }
+})
+
 router.delete('/:id', adminAuth, async (req, res, next) => {
   try {
     const user = await db.User.findByPk(req.params.id)
     if (!user) return notFound(res, '用户不存在')
-    await db.Wallet.destroy({ where: { user_id: user.id } })
-    await db.WalletLog.destroy({ where: { user_id: user.id } })
-    await db.PointsLog.destroy({ where: { user_id: user.id } })
-    await db.Message.destroy({ where: { user_id: user.id } })
-    await db.Cart.destroy({ where: { user_id: user.id } })
+
+    const userId = user.id
+
+    // 按外键依赖顺序清理关联数据，避免 user.destroy() 报外键约束错误
+    await db.Invitation.destroy({ where: { inviter_id: userId } })
+    await db.Invitation.destroy({ where: { invitee_id: userId } })
+    await db.Address.destroy({ where: { user_id: userId } })
+    await db.Cart.destroy({ where: { user_id: userId } })
+    await db.Favorite.destroy({ where: { user_id: userId } })
+    await db.UserMessageRead.destroy({ where: { user_id: userId } })
+    await db.Message.destroy({ where: { user_id: userId } })
+    await db.WalletLog.destroy({ where: { user_id: userId } })
+    await db.PointsLog.destroy({ where: { user_id: userId } })
+    await db.Order.destroy({ where: { user_id: userId } })
+    await db.MembershipOrder.destroy({ where: { user_id: userId } })
+    await db.UserStock.destroy({ where: { user_id: userId } })
+    await db.Wallet.destroy({ where: { user_id: userId } })
+
     await user.destroy()
     return success(res, null, '删除成功')
   } catch (err) { next(err) }

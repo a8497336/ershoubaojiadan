@@ -359,7 +359,7 @@ router.delete('/:id', adminAuth, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-// 按品牌清空所有报价（含历史）
+// 按品牌清空所有报价并删除产品
 router.delete('/by-brand/:brandId', adminAuth, async (req, res, next) => {
   try {
     const brandId = req.params.brandId
@@ -376,14 +376,27 @@ router.delete('/by-brand/:brandId', adminAuth, async (req, res, next) => {
       return success(res, { deleted: 0 }, '该品牌下无产品')
     }
 
-    // 删除这些产品的所有报价（不限日期）
-    const deleted = await db.Price.destroy({
-      where: {
-        product_id: { [Op.in]: productIds }
-      }
+    // 删除这些产品的购物车关联
+    await db.Cart.destroy({
+      where: { product_id: { [Op.in]: productIds } }
     })
 
-    return success(res, { deleted }, `已清空 ${deleted} 条报价`)
+    // 删除这些产品的所有报价（不限日期）
+    const priceDeleted = await db.Price.destroy({
+      where: { product_id: { [Op.in]: productIds } }
+    })
+
+    // 删除这些产品的报价历史
+    await db.PriceHistory.destroy({
+      where: { product_id: { [Op.in]: productIds } }
+    })
+
+    // 删除产品
+    const productDeleted = await db.Product.destroy({
+      where: { id: { [Op.in]: productIds } }
+    })
+
+    return success(res, { priceDeleted, productDeleted }, `已清空 ${priceDeleted} 条报价，删除 ${productDeleted} 个产品`)
   } catch (err) { next(err) }
 })
 

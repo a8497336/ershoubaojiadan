@@ -328,7 +328,7 @@ const handleClearByBrand = async () => {
   const brandName = brands.value.find(b => b.id === filterBrandId.value)?.name || ''
   try {
     await ElMessageBox.confirm(
-      `确定清空「${brandName}」品牌下所有产品的全部报价（含历史）？此操作不可恢复！`,
+      `确定清空「${brandName}」品牌下所有产品的报价及产品？此操作不可恢复！`,
       '危险操作',
       {
         confirmButtonText: '确定清空',
@@ -338,7 +338,9 @@ const handleClearByBrand = async () => {
       }
     )
     const res = await clearPricesByBrand(filterBrandId.value)
-    ElMessage.success(res.data.message || `已清空 ${res.data.deleted} 条报价`)
+    const data = res.data
+    ElMessage.success(data.message || `已清空 ${data.priceDeleted || 0} 条报价，删除 ${data.productDeleted || 0} 个产品`)
+    filterBrandId.value = ''
     loadData()
   } catch (error) {
     if (error !== 'cancel') {

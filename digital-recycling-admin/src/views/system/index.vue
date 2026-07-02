@@ -23,6 +23,7 @@
           <el-form-item label="会员服务电话"><el-input v-model="settingsForm.membership_phone" /></el-form-item>
           <el-form-item label="免费查价次数"><el-input-number v-model="settingsForm.free_scan_count" :min="0" /></el-form-item>
           <el-form-item label="签到积分"><el-input-number v-model="settingsForm.sign_points" :min="0" /></el-form-item>
+          <el-form-item label="新用户送会员(天)"><el-input-number v-model="settingsForm.new_user_free_membership_days" :min="0" :max="365" /></el-form-item>
           <el-form-item>
             <el-button type="primary" @click="saveSettings">保存设置</el-button>
           </el-form-item>

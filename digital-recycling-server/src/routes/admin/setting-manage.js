@@ -39,7 +39,8 @@ const { success } = require('../../utils/response')
 const db = require('../../models')
 
 const DEFAULT_SETTINGS = {
-  invite_reward_times: { value: '10', description: '邀请好友成功奖励的报价查看次数' }
+  invite_reward_times: { value: '10', description: '邀请好友成功奖励的报价查看次数' },
+  new_user_free_membership_days: { value: '7', description: '新用户微信登录赠送会员天数（0=关闭）' }
 }
 
 router.get('/', adminAuth, async (req, res, next) => {

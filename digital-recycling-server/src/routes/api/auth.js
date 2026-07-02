@@ -100,6 +100,22 @@ router.post('/wx-login',
             total_withdraw: 0
           }, { transaction: t })
 
+          // 新用户赠送免费会员
+          const freeDaysSetting = await db.Setting.findOne({
+            where: { key: 'new_user_free_membership_days' },
+            transaction: t
+          })
+          const freeDays = parseInt(freeDaysSetting?.value || '7')
+          if (freeDays > 0) {
+            const expireDate = new Date()
+            expireDate.setDate(expireDate.getDate() + freeDays)
+            await newUser.update({
+              membership_expire: expireDate,
+              scan_remaining: 9999,
+              quote_remaining: 9999
+            }, { transaction: t })
+          }
+
           // 仅新用户处理邀请关系并发放奖励
           await processInvitation(newUser, inviteCode, t)
 

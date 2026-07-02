@@ -25,6 +25,9 @@
         <el-table-column prop="referrer" label="推荐人" width="100">
           <template #default="{ row }">{{ row.referrer || '-' }}</template>
         </el-table-column>
+        <el-table-column prop="referral_count" label="推荐人数" width="90">
+          <template #default="{ row }">{{ row.referral_count || 0 }}</template>
+        </el-table-column>
         <el-table-column prop="points" label="积分" width="80" />
         <el-table-column prop="quoteDailyRemaining" label="当日剩余次数" width="100" />
         <el-table-column prop="total_recycled" label="回收台数" width="90" />
@@ -46,10 +49,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="注册时间" width="170" />
-        <el-table-column label="操作" fixed="right" width="220">
+        <el-table-column label="操作" fixed="right" width="300">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button type="info" link size="small" @click="handleViewDetail(row)">详情</el-button>
+            <el-button type="warning" link size="small" @click="handleViewReferrals(row)">推荐历史</el-button>
             <el-button :type="row.status === 1 ? 'danger' : 'success'" link size="small" @click="handleToggleStatus(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
@@ -145,12 +149,28 @@
         <el-table-column prop="created_at" label="创建时间" width="170" />
       </el-table>
     </el-dialog>
+
+    <!-- 推荐历史弹窗 -->
+    <el-dialog v-model="referralVisible" :title="`推荐历史 - ${referralUserName}`" width="750px">
+      <el-table :data="referrals" v-loading="referralLoading" stripe empty-text="暂无推荐记录">
+        <el-table-column prop="user_no" label="用户编号" width="120" />
+        <el-table-column prop="nickname" label="昵称" width="120" />
+        <el-table-column prop="phone" label="手机号" width="140" />
+        <el-table-column prop="plan_name" label="会员类型" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="row.plan_name" type="warning" size="small">{{ row.plan_name }}</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="created_at" label="注册时间" width="170" />
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUsers, exportUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders, getMembershipPlans } from '@/api'
+import { getUsers, exportUsers, getUserDetail, createUser, updateUser, updateUserStatus, deleteUser, getUserOrders, getUserReferrals, getMembershipPlans } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
@@ -190,6 +210,11 @@ const detailVisible = ref(false)
 const detailData = ref({})
 const userOrders = ref([])
 const membershipPlans = ref([])
+
+const referralVisible = ref(false)
+const referralLoading = ref(false)
+const referrals = ref([])
+const referralUserName = ref('')
 
 const statusMap = {
   shipping: { label: '待发货', type: 'info' },
@@ -345,6 +370,20 @@ const handleViewDetail = async (row) => {
     ElMessage.error('加载详情失败')
   } finally {
     detailLoading.value = false
+  }
+}
+
+const handleViewReferrals = async (row) => {
+  referralVisible.value = true
+  referralLoading.value = true
+  referralUserName.value = row.nickname || row.user_no
+  try {
+    const res = await getUserReferrals(row.id)
+    referrals.value = res.data || []
+  } catch (error) {
+    ElMessage.error('加载推荐历史失败')
+  } finally {
+    referralLoading.value = false
   }
 }
 

@@ -294,7 +294,8 @@ module.exports = {
       { key: 'free_scan_count', value: '10', description: '免费拍照查价次数', created_at: now, updated_at: now },
       { key: 'free_quote_count', value: '100', description: '新用户免费查看报价单次数', created_at: now, updated_at: now },
       { key: 'daily_quote_count', value: '10', description: '普通用户每日查看报价单次数', created_at: now, updated_at: now },
-      { key: 'sign_points', value: '5', description: '每日签到积分', created_at: now, updated_at: now }
+      { key: 'sign_points', value: '5', description: '每日签到积分', created_at: now, updated_at: now },
+      { key: 'new_user_free_membership_days', value: '7', description: '新用户微信登录赠送会员天数', created_at: now, updated_at: now }
     ], {})
   },
 

@@ -77,6 +77,7 @@ export const updateUser = (id, data) => request.put(`/admin/users/${id}`, data)
 export const updateUserStatus = (id, data) => request.put(`/admin/users/${id}/status`, data)
 export const deleteUser = (id) => request.delete(`/admin/users/${id}`)
 export const getUserOrders = (id, params) => request.get(`/admin/users/${id}/orders`, { params })
+export const getUserReferrals = (id) => request.get(`/admin/users/${id}/referrals`)
 
 // ========== 系统设置 / 角色 / 日志 ==========
 export const getSettings = () => request.get('/admin/settings')
